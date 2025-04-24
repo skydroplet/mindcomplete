@@ -1,0 +1,113 @@
+/* Settings for model, prompt, and MCP server selectors */
+.model-selector {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    flex-wrap: nowrap;
+    padding-bottom: 10px;
+    gap: 8px;
+    /* Consistent spacing between elements */
+}
+
+/* Make dropdowns fill available space equally */
+.model-selector select,
+.model-selector .mcp-dropdown {
+    flex: 1;
+    min-width: 120px;
+    /* Minimum width for usability */
+    max-width: none;
+    /* Remove max-width constraints */
+    margin: 0;
+    /* Remove default margins */
+}
+
+/* Standard settings for all dropdown elements */
+.model-selector select,
+.model-selector .mcp-dropdown-btn {
+    height: 32px;
+    box-sizing: border-box;
+    border: 1px solid var(--input-border);
+    border-radius: 4px;
+    background-color: var(--input-bg);
+    color: var(--text-color);
+    font-size: 14px;
+    padding: 5px 10px;
+}
+
+/* Override individual margin settings */
+.settings-select,
+.mcp-dropdown-btn {
+    margin: 0 !important;
+    /* Override any existing margins */
+}
+
+/* Active/focus states */
+.model-selector select:focus,
+.model-selector .mcp-dropdown-btn.active {
+    border-color: var(--button-bg);
+    outline: none;
+    box-shadow: 0 0 0 1px var(--button-bg, rgba(76, 175, 80, 0.2));
+}
+
+/* Keep the new session button at its natural size */
+.model-selector button.test-button {
+    flex: 0 0 auto;
+    height: 32px;
+    /* Match height with dropdowns */
+    line-height: 1;
+    padding: 0 15px;
+    margin: 0;
+    /* Remove default margins */
+    background-color: var(--button-bg);
+    color: var(--button-text);
+    border: none;
+}
+
+.model-selector button.test-button:hover {
+    background-color: var(--button-hover);
+}
+
+/* MCP dropdown content */
+.mcp-dropdown-content {
+    width: 100% !important;
+    /* Ensure it matches button width */
+    background-color: var(--dropdown-bg);
+    color: var(--text-color);
+}
+
+/* 下拉菜单项样式 */
+.mcp-server-item {
+    color: var(--text-color);
+    background-color: var(--dropdown-bg);
+}
+
+.mcp-server-item:hover {
+    background-color: var(--session-hover-bg);
+}
+
+.mcp-server-item.active {
+    background-color: var(--sidebar-active);
+    color: var(--button-text);
+}
+
+/* 为下拉框箭头设置颜色 */
+.model-selector select {
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24"><path fill="%23888" d="M7 10l5 5 5-5z"/></svg>');
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    padding-right: 24px;
+}
+
+/* 深色模式下的下拉箭头 */
+[data-theme="dark"] .model-selector select {
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24"><path fill="%23ccc" d="M7 10l5 5 5-5z"/></svg>');
+}
+
+/* 设置下拉菜单选项样式 */
+.model-selector select option {
+    background-color: var(--dropdown-bg);
+    color: var(--text-color);
+}

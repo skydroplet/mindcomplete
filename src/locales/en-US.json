@@ -1,0 +1,308 @@
+{
+    "app": {
+        "title": "MindComplete",
+        "description": "Rebuild the personalized interaction entrance with the digital world"
+    },
+    "ui": {
+        "inputPlaceholder": "Enter your question...",
+        "sendButton": "Send",
+        "status": {
+            "ready": "Ready",
+            "generating": "Generating response...",
+            "loading": "Loading session list...",
+            "error": "Error: {error}",
+            "sessionDeleted": "Session deleted",
+            "sessionCleared": "Session messages cleared",
+            "promptSelected": "Prompt selected",
+            "promptCleared": "Prompt cleared",
+            "creatingNewSession": "Creating new session...",
+            "newSessionCreated": "New session created: {name}",
+            "newSessionFailed": "Failed to create new session: {error}",
+            "loadingSession": "Loading session...",
+            "sessionLoadFailed": "Failed to load session: Session does not exist",
+            "sessionLoaded": "Session loaded: {name}",
+            "loadSessionFailed": "Failed to load session: {error}",
+            "renamingSessionFailed": "Failed to rename session: {error}",
+            "sessionRenamed": "Session renamed: {name}",
+            "openingAboutWindow": "Opening about window...",
+            "aboutWindowOpened": "About window opened",
+            "checkingForUpdates": "Checking for updates...",
+            "updateAvailable": "New version available: {version}",
+            "noUpdateAvailable": "You have the latest version"
+        },
+        "update": {
+            "newVersion": "New Version Available",
+            "version": "Version",
+            "date": "Release Date",
+            "description": "What's New",
+            "later": "Remind Me Later",
+            "download": "Download Now"
+        }
+    },
+    "messages": {
+        "user": "User",
+        "ai": "AI",
+        "tool": "Tool"
+    },
+    "errors": {
+        "apiKeyMissing": "API key not found, please check .env file",
+        "apiInitFailed": "API client initialization failed: {error}",
+        "apiRequestFailed": "API request failed: {error}",
+        "appCrash": "The application encountered a serious error: {error}",
+        "unknown": "Unknown error",
+        "saveFailed": "Save failed",
+        "promptSaveFailed": "Error saving prompt: {error}",
+        "deleteFailed": "Delete failed: {error}",
+        "checkModelSettings": ", please check model settings",
+        "openSettings": "Open Settings",
+        "openingSettingsWindow": "Opening settings window...",
+        "openSettingsWindowFailed": "Failed to open settings window: {error}",
+        "loadSessionListFailed": "Failed to load session list: {error}",
+        "noModelSelected": "Please select a model first",
+        "modelConfigNotExist": "Selected model configuration does not exist, please select a model again",
+        "createModelClientFailed": "Failed to create model client:",
+        "connectToModelApiFailed": "Failed to connect to model API: {error}",
+        "invalidApiKey": "API key is invalid or expired, please update your API key in settings",
+        "apiRequestLimit": "API request limit reached or insufficient balance, please try again later",
+        "modelServerError": "Model server error, please try again later",
+        "apiCallFailed": "API call failed: {error}",
+        "serverConfigIncomplete": "Server configuration incomplete, please provide at least executable path",
+        "executablePathNotFound": "Executable file path does not exist: {path}",
+        "connectMcpServerFailed": "Failed to connect to MCP server: {error}",
+        "testMcpServerFailed": "Failed to test MCP server: {error}",
+        "saveMcpServerFailed": "Failed to save MCP server status: {error}",
+        "loadMcpServerListFailed": "Failed to load MCP server list: {error}",
+        "languageChangeFailed": "Failed to change language: {error}",
+        "openAboutWindowFailed": "Failed to open about window: {error}"
+    },
+    "menu": {
+        "file": "File",
+        "settings": "Settings",
+        "quit": "Quit",
+        "edit": {
+            "label": "Edit",
+            "cut": "Cut",
+            "copy": "Copy",
+            "paste": "Paste",
+            "selectAll": "Select All"
+        },
+        "view": {
+            "label": "View",
+            "reload": "Reload",
+            "forceReload": "Force Reload",
+            "toggleDevTools": "Toggle Developer Tools",
+            "resetZoom": "Reset Zoom",
+            "zoomIn": "Zoom In",
+            "zoomOut": "Zoom Out",
+            "toggleFullscreen": "Toggle Fullscreen"
+        },
+        "window": {
+            "label": "Window",
+            "minimize": "Minimize",
+            "zoom": "Zoom",
+            "close": "Close",
+            "front": "Bring All to Front"
+        },
+        "help": {
+            "label": "Help",
+            "about": "About"
+        }
+    },
+    "chat": {
+        "send": "Send",
+        "placeholder": "Type a message..."
+    },
+    "env": {
+        "keyPlaceholder": "Variable name",
+        "valuePlaceholder": "Variable value"
+    },
+    "args": {
+        "valuePlaceholder": "Parameter value"
+    },
+    "config": {
+        "title": "Configuration",
+        "apiUrl": "API URL",
+        "apiKey": "API Key",
+        "modelName": "Model Name",
+        "save": "Save",
+        "cancel": "Cancel"
+    },
+    "about": {
+        "title": "About",
+        "languageSupport": "Supports Chinese and English languages",
+        "deploymentSupport": "Supports local deployment and remote API calls",
+        "version": "Version {version}"
+    },
+    "sidebar": {
+        "sessionList": "Session List",
+        "settings": "Settings",
+        "system": "System",
+        "about": "About",
+        "collapse": "Collapse Sidebar",
+        "expand": "Expand Session List",
+        "checkUpdate": "Check for Updates"
+    },
+    "header": {
+        "toggleTheme": "Toggle Dark/Light Mode"
+    },
+    "session": {
+        "newSession": "New Session",
+        "rename": "Rename Session",
+        "delete": "Delete Session",
+        "noSessions": "No sessions available",
+        "renameTitle": "Rename Session",
+        "newNamePlaceholder": "Enter new session name",
+        "cancel": "Cancel",
+        "confirm": "Confirm",
+        "confirmDelete": "Are you sure you want to delete this session? This action cannot be undone.",
+        "confirmClear": "Are you sure you want to clear all messages in the current session? This action cannot be undone.",
+        "defaultNewName": "New Session - {date}"
+    },
+    "modelSelector": {
+        "selectModel": "Please select a model first",
+        "promptTitle": "Choose a prompt as system message",
+        "mcpServer": "MCP Server"
+    },
+    "errorMessages": {
+        "pathNotExist": "Cannot find the specified executable file.\nPlease check:\n1. If the file path is correct\n2. If the file exists\n3. If you have permission to access the file",
+        "accessDenied": "Cannot access the specified executable file, permission denied.\nTry:\n1. Running the program as administrator\n2. Checking file permission settings",
+        "mcpServerError": "MCP server error.\nPossible reasons:\n1. The executable file is not a valid MCP server\n2. MCP server internal error\n3. Server parameter configuration is incorrect",
+        "testFailed": "MCP tool test failed ❌\n\nServer name: {serverName}\n\nError: {error}\n\n{userFriendlyMessage}",
+        "testError": "Error testing MCP tool ❌\n\nError: {error}"
+    },
+    "buttons": {
+        "testMcpTool": "Test MCP Tool"
+    },
+    "prompts": {
+        "confirmDelete": "Are you sure you want to delete this prompt?",
+        "addNew": "+ Add Prompt",
+        "loadingFailed": "Failed to load prompt list: {error}",
+        "systemType": "System Prompt",
+        "userType": "User Prompt",
+        "typeHelp": "System prompts define AI behavior and role. User prompts provide specific instructions or context."
+    },
+    "settings": {
+        "title": "Configuration",
+        "tabs": {
+            "models": "Models",
+            "prompts": "Prompts",
+            "mcp": "MCP Servers"
+        },
+        "labels": {
+            "modelName": "Model Name",
+            "modelType": "Model Type",
+            "apiUrl": "API URL",
+            "apiKey": "API Key",
+            "contextWindowSize": "Context Window Size",
+            "temperature": "Temperature",
+            "promptName": "Prompt Name",
+            "promptContent": "Prompt Content",
+            "promptType": "Prompt Type",
+            "serverName": "Server Name",
+            "serverPath": "Executable Path",
+            "envVars": "Environment Variables",
+            "cmdArgs": "Command Line Arguments"
+        },
+        "placeholders": {
+            "modelName": "Enter model name",
+            "apiUrl": "Enter API URL",
+            "apiKey": "Enter your API key",
+            "promptName": "Enter prompt name",
+            "promptContent": "Enter prompt content",
+            "serverName": "Enter MCP Server name",
+            "serverPath": "Enter executable file path"
+        },
+        "buttons": {
+            "addModel": "+ Add Model",
+            "saveModelBtn": "Save Model",
+            "resetModelBtn": "Reset",
+            "deleteModelBtn": "Delete Model",
+            "savePromptBtn": "Save Prompt",
+            "resetPromptBtn": "Reset",
+            "deletePromptBtn": "Delete Prompt",
+            "saveMcpBtn": "Save MCP Server",
+            "deleteMcpServerBtn": "Delete MCP Server",
+            "test-mcp-button": "Test MCP Tool",
+            "cancelBtn": "Cancel",
+            "saveBtn": "Save",
+            "cancelPromptBtn": "Cancel",
+            "cancelMcpBtn": "Cancel",
+            "addMcpServerBtn": "Add MCP Server",
+            "addPromptBtn": "Add Prompt Generator",
+            "add-env-btn": "Add Environment Variable",
+            "add-arg-btn": "Add Parameter"
+        }
+    },
+    "logs": {
+        "currentLanguage": "Current language:",
+        "modelList": "Model list:",
+        "currentModel": "Current model:",
+        "loadModelListFailed": "Failed to load model list:",
+        "loadSessionList": "Loading session list",
+        "sessionListLoadFailed": "Failed to load session list:",
+        "createSessionFailed": "Failed to create new session:",
+        "loadSessionFailed": "Failed to load session:",
+        "renameSessionFailed": "Failed to rename session:",
+        "modelConfigUpdated": "Model configuration updated, resetting client",
+        "mcpToolList": "Available MCP tools list:",
+        "getMcpToolFailed": "Failed to get MCP tools:"
+    },
+    "toolCalls": {
+        "executing": "**⚙️ Executing tool call...**",
+        "tool": "**🔧 Executing tool:** `{name}`",
+        "parameters": "**📋 Parameters:**\n```json\n{args}\n```\n",
+        "processing": "**⏳ Processing...**\n",
+        "result": "**✅ Tool execution result:**\n```json\n{result}\n```\n",
+        "invalidResult": "**❌ Tool returned invalid result:** {type}\n",
+        "error": "**❌ Tool execution error:** {message}\n",
+        "generatingResponse": "**🤔 Generating final response...**\n",
+        "responseFailed": "**❌ Failed to generate final response:** {message}\n"
+    },
+    "defaultSystemMessage": "You are a helpful AI assistant.",
+    "mcp": {
+        "addServer": "+ Add MCP Server",
+        "noServer": "No MCP Server available, please add one first",
+        "server": "MCP Server",
+        "selectedServers": "{count} Server selected",
+        "toggleFailed": "Failed to toggle MCP Server: {error}",
+        "toolsList": {
+            "title": "Tool List",
+            "index": "No.",
+            "name": "Name",
+            "description": "Description",
+            "autoApprove": "Auto Approve",
+            "noDescription": "No description",
+            "unnamedTool": "Unnamed Tool",
+            "testButton": "Test",
+            "testing": "Testing...",
+            "testSuccess": "MCP Tools Test Successful ✅",
+            "serverName": "Server Name",
+            "toolCount": "Tool Count",
+            "toolList": "Tool List"
+        },
+        "buttons": {
+            "addServer": "Add",
+            "deleteServer": "Delete",
+            "cancel": "Cancel",
+            "save": "Save",
+            "addEnvVar": "Add Environment Variable",
+            "addParam": "Add Parameter"
+        },
+        "labels": {
+            "serverName": "Server Name",
+            "executablePath": "Executable File",
+            "envVars": "Environment Variables",
+            "cmdArgs": "Command Line Arguments"
+        },
+        "authorization": {
+            "title": "Tool Authorization Request",
+            "message": "Application is requesting to use tool \"{name}\" which is not in the auto-approve list.",
+            "onetime": "Authorize Once",
+            "auto": "Auto-approve in Future",
+            "deny": "Deny",
+            "success": "Tool authorization status updated",
+            "error": "Failed to update authorization status: {error}",
+            "denied": "Tool execution request was denied"
+        }
+    }
+}

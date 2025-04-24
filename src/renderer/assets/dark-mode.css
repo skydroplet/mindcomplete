@@ -1,0 +1,336 @@
+:root {
+    --bg-color: #f5f5f5;
+    --container-bg: #ffffff;
+    --text-color: #333333;
+    --secondary-text-color: #666666;
+    --border-color: #eeeeee;
+    --header-bg: #ffffff;
+    --input-bg: #ffffff;
+    --input-border: #dddddd;
+    --input-text: #333333;
+    --button-bg: #4CAF50;
+    --button-hover: #45a049;
+    --button-text: #ffffff;
+    --sidebar-bg: #f0f0f0;
+    --sidebar-active: #4CAF50;
+    --message-user-bg: #e3f2fd;
+    --message-ai-bg: #f9f9f9;
+    --message-tool-bg: #f0f7ff;
+    --message-box-shadow: rgba(0, 0, 0, 0.1);
+    --pre-bg: #f5f5f5;
+    --code-bg: #f0f0f0;
+    --session-hover-bg: #e0e0e0;
+    --session-active-bg: #4CAF50;
+    --session-active-color: white;
+    --dropdown-bg: #f9f9f9;
+    --dropdown-shadow: rgba(0, 0, 0, 0.2);
+    --dialog-bg: #ffffff;
+    --dialog-shadow: rgba(0, 0, 0, 0.2);
+    --selection-bg: #4CAF50;
+    --selection-text: #ffffff;
+}
+
+[data-theme="dark"] {
+    --bg-color: #1a1a1a;
+    --container-bg: #2a2a2a;
+    --text-color: #e0e0e0;
+    --secondary-text-color: #aaaaaa;
+    --border-color: #3a3a3a;
+    --header-bg: #2a2a2a;
+    --input-bg: #333333;
+    --input-border: #444444;
+    --input-text: #e0e0e0;
+    --button-bg: #4CAF50;
+    --button-hover: #45a049;
+    --button-text: #ffffff;
+    --sidebar-bg: #252525;
+    --sidebar-active: #4CAF50;
+    --message-user-bg: #2c3e50;
+    --message-ai-bg: #333333;
+    --message-tool-bg: #2a3c4d;
+    --message-box-shadow: rgba(0, 0, 0, 0.3);
+    --pre-bg: #333333;
+    --code-bg: #2c2c2c;
+    --session-hover-bg: #3a3a3a;
+    --session-active-bg: #4CAF50;
+    --session-active-color: white;
+    --dropdown-bg: #333333;
+    --dropdown-shadow: rgba(0, 0, 0, 0.4);
+    --dialog-bg: #333333;
+    --dialog-shadow: rgba(0, 0, 0, 0.4);
+    --selection-bg: #4CAF50;
+    --selection-text: #ffffff;
+}
+
+/* 应用颜色变量到页面元素 */
+body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+}
+
+.container {
+    background-color: var(--container-bg);
+    box-shadow: 0 2px 10px var(--message-box-shadow);
+}
+
+.header {
+    background-color: var(--header-bg);
+    border-bottom-color: var(--border-color);
+}
+
+.header h1 {
+    color: var(--text-color);
+}
+
+.sidebar {
+    background-color: var(--sidebar-bg);
+    border-right-color: var(--border-color);
+}
+
+.chat-messages {
+    background-color: var(--container-bg);
+}
+
+.chat-input-container {
+    background-color: var(--container-bg);
+}
+
+.input-group input {
+    background-color: var(--input-bg);
+    border-color: var(--input-border);
+    color: var(--input-text);
+}
+
+.input-group button,
+.test-button,
+.settings-btn,
+.save-btn,
+.dialog-confirm-btn {
+    background-color: var(--button-bg);
+    color: var(--button-text);
+}
+
+.input-group button:hover,
+.test-button:hover,
+.settings-btn:hover,
+.save-btn:hover,
+.dialog-confirm-btn:hover {
+    background-color: var(--button-hover);
+}
+
+.cancel-btn,
+.delete-btn {
+    background-color: #f44336;
+}
+
+.message-sender {
+    color: var(--secondary-text-color);
+}
+
+.user-message {
+    background-color: var(--message-user-bg);
+    box-shadow: 0 0 8px var(--message-box-shadow);
+}
+
+.ai-message {
+    background-color: var(--message-ai-bg);
+    box-shadow: 0 0 8px var(--message-box-shadow);
+}
+
+/* 工具消息的深色模式样式 */
+.tool-message {
+    background-color: var(--message-tool-bg);
+    box-shadow: 0 0 8px var(--message-box-shadow);
+}
+
+[data-theme="dark"] .tool-message {
+    background-color: var(--message-tool-bg);
+    box-shadow: 0 0 8px var(--message-box-shadow);
+}
+
+[data-theme="dark"] .tool-message:hover {
+    /* Removed the box-shadow glow effect */
+}
+
+[data-theme="dark"] .tool-message .message-sender {
+    color: var(--secondary-text-color);
+}
+
+[data-theme="dark"] .tool-message .message-content {
+    color: var(--text-color);
+}
+
+.message-content code {
+    background-color: var(--code-bg);
+    color: var(--text-color);
+}
+
+.message-content pre {
+    background-color: var(--pre-bg);
+    border-color: var(--border-color);
+    color: var(--text-color);
+}
+
+.session-item {
+    background-color: var(--container-bg);
+    border-bottom-color: var(--border-color);
+}
+
+.session-item:hover {
+    background-color: var(--session-hover-bg);
+}
+
+.session-item.active {
+    background-color: var(--session-active-bg);
+    color: var(--session-active-color);
+}
+
+.session-name {
+    color: var(--text-color);
+}
+
+.session-action-btn {
+    background-color: transparent;
+    color: var(--text-color);
+}
+
+.mcp-dropdown-content {
+    background-color: var(--dropdown-bg);
+    box-shadow: 0px 8px 16px 0px var(--dropdown-shadow);
+}
+
+.custom-dialog {
+    background-color: var(--dialog-bg);
+    box-shadow: 0 4px 15px var(--dialog-shadow);
+}
+
+.dialog-content h3 {
+    color: var(--text-color);
+}
+
+.dialog-input {
+    background-color: var(--container-bg);
+    border-color: var(--input-border);
+    color: var(--text-color);
+}
+
+/* 增强深色模式下的代码块样式 */
+[data-theme="dark"] .message-content pre {
+    background-color: #2d2d2d;
+    border: 1px solid #444;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .message-content code {
+    background-color: #2c2c2c;
+    color: #e0e0e0;
+}
+
+[data-theme="dark"] .message-content pre code {
+    background-color: transparent;
+}
+
+[data-theme="dark"] .message-content table th {
+    background-color: #333;
+    border-color: #444;
+}
+
+[data-theme="dark"] .message-content table td {
+    border-color: #444;
+}
+
+/* 深色模式下的行内代码 */
+[data-theme="dark"] .message-content :not(pre)>code {
+    color: #ff79c6;
+    background-color: rgba(40, 42, 54, 0.5);
+}
+
+/* 深色模式下代码高亮样式 */
+[data-theme="dark"] .hljs-keyword,
+[data-theme="dark"] .message-content .hljs-keyword {
+    color: #ff79c6;
+}
+
+[data-theme="dark"] .hljs-function,
+[data-theme="dark"] .message-content .hljs-function,
+[data-theme="dark"] .message-content .hljs-title.function_ {
+    color: #bd93f9;
+}
+
+[data-theme="dark"] .hljs-string,
+[data-theme="dark"] .message-content .hljs-string {
+    color: #f1fa8c;
+}
+
+[data-theme="dark"] .hljs-comment,
+[data-theme="dark"] .message-content .hljs-comment {
+    color: #6272a4;
+}
+
+[data-theme="dark"] .hljs-number,
+[data-theme="dark"] .message-content .hljs-number {
+    color: #bd93f9;
+}
+
+[data-theme="dark"] .hljs-operator,
+[data-theme="dark"] .message-content .hljs-operator {
+    color: #ff79c6;
+}
+
+[data-theme="dark"] .hljs-class-name,
+[data-theme="dark"] .message-content .hljs-title.class_,
+[data-theme="dark"] .message-content .hljs-name {
+    color: #8be9fd;
+}
+
+/* 主题切换按钮样式 */
+.theme-toggle {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    padding: 5px 10px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-color);
+    margin-left: 10px;
+}
+
+.theme-toggle:hover {
+    background-color: var(--session-hover-bg);
+}
+
+.theme-toggle-icon {
+    width: 16px;
+    height: 16px;
+    display: inline-block;
+}
+
+/* 主题菜单样式 */
+.theme-menu {
+    position: absolute;
+    background-color: var(--dropdown-bg);
+    border-radius: 4px;
+    box-shadow: 0 2px 10px var(--dropdown-shadow);
+    z-index: 1000;
+    overflow: hidden;
+    min-width: 100px;
+}
+
+.theme-menu-item {
+    padding: 8px 16px;
+    cursor: pointer;
+    color: var(--text-color);
+    transition: background-color 0.2s;
+}
+
+.theme-menu-item:hover {
+    background-color: var(--session-hover-bg);
+}
+
+.theme-menu-item.active {
+    font-weight: bold;
+    background-color: var(--session-hover-bg);
+}

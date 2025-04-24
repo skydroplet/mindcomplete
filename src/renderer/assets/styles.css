@@ -1,0 +1,1150 @@
+@import './highlight.js/styles/github.css';
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    background-color: #f5f5f5;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.container {
+    display: flex;
+    height: 100vh;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.header {
+    padding: 15px 20px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.header h1 {
+    font-size: 18px;
+    color: #333;
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+}
+
+.language-select {
+    padding: 5px 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background-color: white;
+    font-size: 14px;
+}
+
+.chat-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    overflow: hidden;
+}
+
+.chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px;
+    margin-bottom: 20px;
+    /* 允许选择文本 */
+    user-select: text;
+    -webkit-user-select: text;
+    cursor: text;
+}
+
+/* 添加滚动条样式 */
+.chat-messages::-webkit-scrollbar {
+    width: 8px;
+}
+
+.chat-messages::-webkit-scrollbar-track {
+    background: var(--sidebar-bg);
+    border-radius: 4px;
+}
+
+.chat-messages::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 4px;
+}
+
+.chat-messages::-webkit-scrollbar-thumb:hover {
+    background: var(--button-bg);
+}
+
+.message {
+    margin-bottom: 15px;
+    padding: 10px 15px;
+    border-radius: 8px;
+    max-width: 80%;
+}
+
+.message-sender {
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 5px;
+}
+
+.message-content {
+    font-size: 14px;
+    line-height: 1.6;
+    /* 允许选择文本 */
+    user-select: text;
+    -webkit-user-select: text;
+    cursor: text;
+}
+
+.message-content pre {
+    background-color: #f8f9fa;
+    padding: 12px;
+    border-radius: 4px;
+    overflow-x: auto;
+    color: #333;
+    line-height: 1.5;
+    border: 1px solid #ddd;
+}
+
+.message-content code {
+    font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+    padding: 2px 4px;
+    border-radius: 2px;
+    color: #333;
+}
+
+/* Updated selectors for highlight.js classes */
+.message-content pre .hljs-keyword,
+.message-content .hljs-keyword {
+    color: #d73a49;
+}
+
+.message-content pre .hljs-function,
+.message-content .hljs-function,
+.message-content .hljs-title.function_ {
+    color: #6f42c1;
+}
+
+.message-content pre .hljs-string,
+.message-content .hljs-string {
+    color: #032f62;
+}
+
+.message-content pre .hljs-comment,
+.message-content .hljs-comment {
+    color: #6a737d;
+}
+
+.message-content pre .hljs-number,
+.message-content .hljs-number {
+    color: #005cc5;
+}
+
+.message-content pre .hljs-operator,
+.message-content .hljs-operator {
+    color: #d73a49;
+}
+
+.message-content pre .hljs-class-name,
+.message-content .hljs-title.class_,
+.message-content .hljs-name {
+    color: #22863a;
+}
+
+.message-content blockquote {
+    border-left: 4px solid #ddd;
+    padding: 0 15px;
+    color: #666;
+    margin: 1em 0;
+}
+
+.message-content ul,
+.message-content ol {
+    padding-left: 20px;
+    margin: 1em 0;
+}
+
+.message-content li {
+    margin-bottom: 0.5em;
+}
+
+.message-content h1,
+.message-content h2,
+.message-content h3 {
+    margin: 1em 0 0.5em;
+    line-height: 1.2;
+}
+
+.message-content h1 {
+    font-size: 1.5em;
+}
+
+.message-content h2 {
+    font-size: 1.3em;
+}
+
+.message-content h3 {
+    font-size: 1.1em;
+}
+
+.message-content a {
+    color: #007bff;
+    text-decoration: none;
+}
+
+.message-content a:hover {
+    text-decoration: underline;
+}
+
+.user-message {
+    background-color: #e3f2fd;
+    margin-left: auto;
+    box-shadow: 0 0 8px rgba(0, 123, 255, 0.3);
+    transition: box-shadow 0.3s ease;
+}
+
+.user-message:hover {
+    /* Removed the box-shadow glow effect */
+}
+
+.ai-message {
+    background-color: #f5f5f5;
+    margin-right: auto;
+    box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
+    transition: box-shadow 0.3s ease;
+}
+
+.ai-message:hover {
+    box-shadow: 0 0 12px rgba(0, 0, 0, 0.2);
+}
+
+/* 工具消息样式 */
+.tool-message {
+    background-color: var(--message-tool-bg);
+    margin-right: auto;
+    box-shadow: 0 0 8px var(--message-box-shadow);
+    transition: box-shadow 0.3s ease;
+}
+
+.tool-message:hover {
+    /* Removed the box-shadow glow effect */
+}
+
+.tool-message .message-sender {
+    color: var(--secondary-text-color);
+}
+
+.tool-message .message-content {
+    color: var(--text-color);
+}
+
+.chat-input-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 10px;
+    border-top: 1px solid #eee;
+}
+
+.model-selector {
+    display: flex;
+    align-items: center;
+    padding-bottom: 10px;
+    flex-wrap: nowrap;
+    width: 100%;
+}
+
+.model-selector label {
+    font-size: 14px;
+    color: #666;
+}
+
+/* Remove flex: 1 from select elements to prevent stretching */
+.model-selector select,
+.model-selector .mcp-dropdown,
+.model-selector button {
+    flex: 0 0 auto;
+    /* Don't grow or shrink */
+    margin: 5px;
+    /* Consistent margin around all elements */
+}
+
+/* Make select elements and MCP dropdown grow to fill space */
+.model-selector select {
+    flex: 1;
+    margin: 5px;
+    width: auto;
+    min-width: 120px;
+}
+
+.model-selector .mcp-dropdown {
+    flex: 1;
+    margin: 5px;
+}
+
+/* Keep button at its natural size */
+.model-selector button {
+    flex: 0 0 auto;
+    margin: 5px;
+}
+
+.input-group {
+    display: flex;
+    flex: 1;
+    gap: 10px;
+}
+
+.input-group input {
+    flex: 1;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.input-group button {
+    padding: 8px 16px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.input-group button:hover {
+    background-color: #0056b3;
+}
+
+.status {
+    padding: 10px;
+    font-size: 12px;
+    color: #666;
+    text-align: center;
+    border-top: 1px solid #eee;
+}
+
+/* 会话空状态提示 */
+.session-empty {
+    padding: 20px;
+    text-align: center;
+    color: #999;
+    font-style: italic;
+}
+
+/* 侧边栏拖动条样式 */
+.sidebar-resizer {
+    width: 5px;
+    background: transparent;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 250px;
+    /* 默认位置与侧边栏宽度一致 */
+    cursor: col-resize;
+    z-index: 150;
+    transition: background-color 0.2s ease, left 0.3s ease-in-out;
+    /* 重要：确保拖动线在非折叠状态下可点击 */
+    pointer-events: auto;
+}
+
+/* 当激活拖动时，移除过渡效果以确保流畅的拖动体验 */
+.sidebar-resizer.active {
+    transition: background-color 0.2s ease;
+    /* 只保留背景色的过渡效果，移除位置的过渡效果 */
+    background-color: rgba(76, 175, 80, 0.5);
+    /* 拖动时更明显的颜色 */
+    /* 确保在激活状态下鼠标事件可用 */
+    pointer-events: auto !important;
+}
+
+.sidebar-resizer:hover,
+.sidebar-resizer.active {
+    background-color: rgba(76, 175, 80, 0.3);
+    width: 5px;
+    /* 保持宽度一致 */
+}
+
+/* 修改：侧边栏折叠时禁用拖动条，但不折叠时应该保持可用状态 */
+.sidebar.collapsed~.sidebar-resizer {
+    left: 40px !important;
+    pointer-events: none !important;
+    /* 侧边栏折叠时强制禁用拖动条 */
+}
+
+/* 侧边栏展开时确保拖动条可用 */
+.sidebar:not(.collapsed)~.sidebar-resizer {
+    pointer-events: auto !important;
+    /* 确保侧边栏展开时拖动条可用 - 使用!important确保覆盖其他样式 */
+}
+
+/* 修改侧边栏样式，去除!important，以便拖动时可以修改宽度 */
+.sidebar {
+    width: 250px;
+    /* Default width */
+    background-color: #f5f5f5;
+    border-right: 1px solid #ddd;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    min-width: 180px;
+    /* 设置最小宽度 */
+    max-width: 500px;
+    /* 设置最大宽度 */
+    z-index: 100;
+    overflow-y: hidden;
+    /* 修改为hidden，让内部容器自己滚动 */
+    height: 100%;
+    /* 在正常使用时保留过渡效果 */
+    transition: width 0.3s ease-in-out;
+}
+
+/* 当拖动调整大小时，移除过渡效果 */
+.sidebar.resizing {
+    transition: none !important;
+    /* 拖动时禁用过渡效果，确保实时调整大小 */
+}
+
+/* 当拖动调整大小时，侧边栏下的所有元素都禁用过渡效果 */
+.sidebar.resizing * {
+    transition: none !important;
+}
+
+/* 调整上部区域高度，为下部区域腾出空间 */
+.sidebar-upper {
+    display: flex;
+    flex-direction: column;
+    height: calc(100% - 250px - 5px);
+    /* Default height - 可由用户自由调整 */
+    overflow: hidden;
+    transition: height 0.2s ease, width 0.3s ease-in-out;
+    width: 100%;
+    /* Ensure it fills the sidebar width */
+}
+
+/* 上下区域之间的拖动分隔条 */
+.sidebar-vertical-resizer {
+    height: 5px;
+    width: 100%;
+    background-color: transparent;
+    cursor: ns-resize;
+    position: relative;
+    z-index: 150;
+    transition: background-color 0.2s ease, width 0.3s ease-in-out;
+}
+
+/* 当激活垂直拖动时，移除过渡效果以确保流畅的拖动体验 */
+.sidebar-vertical-resizer.active {
+    transition: background-color 0.2s ease;
+    /* 只保留背景色的过渡效果，移除其他过渡效果 */
+    background-color: rgba(76, 175, 80, 0.5);
+    /* 拖动时更明显的颜色 */
+}
+
+.sidebar-vertical-resizer:hover,
+.sidebar-vertical-resizer.active {
+    background-color: rgba(76, 175, 80, 0.3);
+    height: 5px;
+    /* 保持高度一致 */
+}
+
+.sidebar.collapsed .sidebar-vertical-resizer {
+    display: none;
+}
+
+/* 设置按钮和系统菜单集成到下部区域 */
+.sidebar-lower {
+    height: auto;
+    /* 移除最大高度限制，允许自由调整 */
+    /* max-height: 250px; */
+    /* 移除最小高度限制 */
+    /* min-height: 150px; */
+    padding: 0;
+    /* Remove all padding */
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    /* Remove gap at the top for the first element */
+    background-color: var(--sidebar-bg);
+    transition: height 0.2s ease, width 0.3s ease-in-out;
+    /* Add width transition to match sidebar */
+    overflow-y: auto;
+    /* 允许内容溢出时滚动 */
+    overflow-x: hidden;
+    /* 防止横向滚动 */
+    position: relative;
+    width: calc(100% - 0px);
+    /* Ensure it fills the sidebar width */
+}
+
+/* 当垂直拖动时移除高度过渡效果 */
+.sidebar-upper.resizing,
+.sidebar-lower.resizing {
+    transition: none !important;
+    /* 拖动时禁用过渡效果，确保实时调整大小 */
+}
+
+/* 系统菜单和设置统一样式 */
+.sidebar-lower .settings-btn,
+.sidebar-lower .system-menu-trigger {
+    width: 100%;
+    /* Make sure it fills the container width */
+    padding: 8px 10px;
+    /* Add horizontal padding to match the sidebar-lower's previous padding */
+    margin: 0;
+    /* Remove all margins */
+    background-color: var(--input-bg);
+    border: none;
+    border-radius: 0;
+    /* Remove all border radius */
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    font-size: 14px;
+    color: var(--text-color);
+    transition: background-color 0.2s ease, width 0.3s ease-in-out;
+    /* Add width transition */
+    max-width: 100%;
+    /* Ensure it doesn't exceed container width */
+    position: sticky;
+    /* Keep it at the top */
+    top: 0;
+    z-index: 10;
+}
+
+/* Add bottom margin to the settings button to create space for other items */
+.sidebar-lower .settings-btn {
+    margin-bottom: 8px;
+    /* Add space below the button for other elements */
+}
+
+.sidebar-lower .settings-btn:hover,
+.sidebar-lower .system-menu-trigger:hover {
+    background-color: var(--button-bg);
+}
+
+/* 系统容器移到下部区域 */
+.sidebar-lower .system-container {
+    border-top: none;
+    margin-top: 0;
+    padding: 0 10px;
+    /* Add horizontal padding to match the original sidebar-lower padding */
+    margin-bottom: 5px;
+    max-height: none;
+    width: 100%;
+}
+
+/* 系统菜单在下部区域中的样式 */
+.sidebar-lower .system-menu {
+    position: relative;
+    top: auto;
+    right: auto;
+    margin-top: 0;
+    width: 100%;
+    z-index: 100;
+    background-color: var(--input-bg);
+    border: 1px solid var(--border-color);
+    margin-left: 10px;
+    margin-right: 10px;
+    width: calc(100% - 20px);
+    /* Account for the horizontal padding */
+    overflow-x: hidden;
+    /* 防止横向滚动 */
+}
+
+/* 系统项容器在下部区域中的样式 */
+.sidebar-lower .system-items-container {
+    position: relative;
+    top: auto;
+    left: auto;
+    width: calc(100% - 20px);
+    /* Account for the horizontal padding */
+    margin-left: 10px;
+    margin-right: 10px;
+    margin-top: 0;
+    max-height: none;
+    overflow-y: visible;
+    overflow-x: hidden;
+    /* 防止横向滚动 */
+    z-index: 100;
+}
+
+/* 折叠状态下的下部区域样式 */
+.sidebar.collapsed .sidebar-lower {
+    border-top: none;
+    padding: 0;
+    position: absolute;
+    bottom: 10px;
+    left: 0;
+    width: 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: transparent;
+    overflow: visible;
+    height: auto;
+    min-height: auto;
+    max-height: none;
+}
+
+/* 折叠状态下的设置按钮和系统菜单触发器样式 */
+.sidebar.collapsed .sidebar-lower .settings-btn,
+.sidebar.collapsed .sidebar-lower .system-menu-trigger {
+    background-color: transparent;
+    width: 40px;
+    height: 36px;
+    padding: 5px;
+    margin: 2px 0;
+    position: static;
+    /* Reset position to avoid sticky behavior in collapsed state */
+    border-radius: 0;
+    /* Reset border radius in collapsed state */
+    justify-content: center;
+}
+
+.sidebar.collapsed .sidebar-lower .settings-text,
+.sidebar.collapsed .sidebar-lower .system-menu-text {
+    display: none;
+}
+
+.sidebar.collapsed .sidebar-lower .settings-icon,
+.sidebar.collapsed .sidebar-lower .system-menu-icon {
+    display: block;
+    margin-left: 0;
+    font-size: 16px;
+}
+
+/* 折叠状态下的系统菜单和子菜单位置 */
+.sidebar.collapsed .system-menu,
+.sidebar.collapsed .system-items-container {
+    position: absolute;
+    left: 100%;
+    top: 0;
+    width: 250px;
+    /* 和默认侧边栏宽度保持一致 */
+    margin-left: 5px;
+    z-index: 150;
+    background-color: var(--input-bg);
+    border: 1px solid var(--border-color);
+    overflow-x: hidden;
+    /* 防止横向滚动 */
+    max-width: 250px;
+    /* 设置最大宽度 */
+}
+
+/* 系统菜单样式 */
+.system-menu {
+    position: relative;
+    /* 改为相对定位 */
+    top: auto;
+    right: auto;
+    margin-top: 5px;
+    background-color: var(--input-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    width: 100%;
+    padding: 5px 0;
+    display: flex;
+    flex-direction: column;
+    overflow-x: hidden;
+    /* 防止横向滚动 */
+}
+
+/* 添加更多菜单项时的样式 */
+.system-menu .menu-item:not(:last-child) {
+    border-top: 1px solid var(--border-color);
+}
+
+.sidebar-header {
+    padding: 10px;
+    border-bottom: 1px solid #ddd;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: opacity 0.2s ease;
+}
+
+.sidebar-toggle {
+    position: absolute;
+    top: 15px;
+    right: 10px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #555;
+    font-size: 16px;
+    z-index: 10;
+    transition: opacity 0.2s ease !important;
+    display: block;
+}
+
+.sidebar.collapsed .sidebar-toggle {
+    opacity: 0.2 !important;
+}
+
+.sidebar-collapse-icon {
+    position: absolute;
+    left: 0;
+    top: 0;
+    display: none;
+    font-size: 20px;
+    color: #4caf50;
+    cursor: pointer;
+    width: 40px;
+    height: 40px;
+    justify-content: center;
+    align-items: center;
+    z-index: 10;
+    transition: all 0.3s ease !important;
+}
+
+.sidebar.collapsed .sidebar-collapse-icon {
+    display: flex !important;
+    opacity: 1 !important;
+    z-index: 9;
+}
+
+@keyframes fade-in {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+/* 头部区域的新建按钮样式 */
+.header-right .new-session-btn {
+    background-color: #4caf50;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    margin-left: 10px;
+}
+
+.header-right .new-session-btn:hover {
+    background-color: #388e3c;
+}
+
+/* 自定义对话框样式 */
+.custom-dialog {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.dialog-content {
+    background-color: white;
+    border-radius: 8px;
+    padding: 20px;
+    width: 300px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.dialog-content h3 {
+    margin: 0 0 15px 0;
+    font-size: 16px;
+    color: #333;
+}
+
+.dialog-input {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.dialog-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.dialog-btn {
+    padding: 8px 15px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    background-color: #f5f5f5;
+}
+
+.dialog-confirm-btn {
+    background-color: #4caf50;
+    color: white;
+}
+
+.dialog-confirm-btn:hover {
+    background-color: #388e3c;
+}
+
+/* 会话列表项样式 */
+.session-item {
+    padding: 10px;
+    cursor: pointer;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #eee;
+    transition: background-color 0.2s ease;
+    min-height: 40px;
+}
+
+.session-item:hover {
+    background-color: #e8f5e9;
+}
+
+.session-item.active {
+    background-color: #e0f2f1;
+    border-left: 3px solid #4caf50;
+    padding-left: 7px;
+}
+
+.session-name {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding-right: 5px;
+    font-size: 14px;
+    color: #333;
+}
+
+.session-actions {
+    display: none;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    gap: 2px;
+}
+
+.session-item:hover .session-actions {
+    display: flex;
+    opacity: 1;
+}
+
+.session-action-btn {
+    background: none;
+    border: none;
+    color: #757575;
+    font-size: 14px;
+    padding: 2px;
+    margin: 0;
+    cursor: pointer;
+    opacity: 0.7;
+    transition: all 0.2s ease;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+}
+
+.session-action-btn:hover {
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+/* 设置按钮和底部区域样式 */
+.sidebar-footer,
+.sidebar-lower {
+    padding: 10px;
+    border-top: 1px solid var(--border-color);
+    margin-top: auto;
+    transition: all 0.3s ease, transform 0.2s ease;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* 系统区域样式 */
+.system-container {
+    overflow-y: auto;
+    transition: opacity 0.2s ease, display 0.3s ease;
+    border-top: none;
+    /* 移除上边框 */
+    margin-top: 10px;
+    padding-bottom: 5px;
+    flex: 0 0 auto;
+    max-height: none;
+    color: var(--text-color);
+}
+
+/* 系统项容器样式 */
+.system-items-container {
+    padding: 5px 0;
+    transition: all 0.3s ease;
+    background-color: var(--sidebar-bg);
+    width: 100%;
+    z-index: 100;
+    border-radius: 4px;
+    margin-bottom: 5px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    overflow-x: hidden;
+    /* 防止横向滚动 */
+}
+
+/* 在侧边栏展开状态下系统项容器的样式 */
+.sidebar:not(.collapsed) .system-items-container {
+    position: relative;
+    top: auto;
+    left: auto;
+    width: 100%;
+    margin-top: 5px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    border-top: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-color);
+    background-color: var(--sidebar-bg);
+    max-height: none;
+    overflow-y: visible;
+    overflow-x: hidden;
+    /* 防止横向滚动 */
+    z-index: 100;
+}
+
+/* 系统区域标题样式 */
+.system-container .sidebar-header {
+    padding-bottom: 5px;
+    margin-bottom: 5px;
+}
+
+/* 折叠状态下隐藏系统区域 */
+.sidebar.collapsed .system-container {
+    display: none !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
+.system-items {
+    padding: 5px 0;
+    width: 100%;
+    overflow-x: hidden;
+    /* 防止横向滚动 */
+}
+
+.system-item {
+    display: flex;
+    align-items: center;
+    padding: 10px 15px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    border-radius: 4px;
+    margin: 2px 5px;
+    color: var(--text-color);
+    white-space: nowrap;
+    /* 防止文本换行 */
+    overflow: hidden;
+    /* 防止内容溢出 */
+    text-overflow: ellipsis;
+    /* 溢出显示省略号 */
+}
+
+.system-item:hover {
+    background-color: var(--session-hover-bg);
+}
+
+.system-item-icon {
+    margin-right: 10px;
+    font-size: 16px;
+}
+
+.system-item-text {
+    font-size: 14px;
+    color: var(--text-color);
+    white-space: nowrap;
+    /* 防止文本换行 */
+    overflow: hidden;
+    /* 防止内容溢出 */
+    text-overflow: ellipsis;
+    /* 溢出显示省略号 */
+    flex: 1;
+    /* 确保文本占据剩余空间 */
+}
+
+/* Dropdown select styling for settings */
+.settings-select {
+    background-color: transparent;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 5px 10px;
+    cursor: pointer;
+    font-size: 14px;
+    margin-left: 5px;
+    margin-right: 5px;
+    width: 160px;
+    /* Set fixed width instead of min-width */
+    height: 32px;
+    /* Set fixed height */
+    box-sizing: border-box;
+    /* Include padding and border in width/height */
+    text-align: left;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    /* Add the following to ensure the dropdown opens upward */
+    appearance: menulist-button;
+    /* Standard property */
+    -webkit-appearance: menulist-button;
+    /* For Safari/Chrome */
+    -moz-appearance: menulist-button;
+    /* For Firefox */
+}
+
+/* Style for dropdown content */
+select.settings-select option {
+    padding: 8px 12px;
+}
+
+/* Control the appearance of the dropdown list */
+select.settings-select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>');
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    padding-right: 25px;
+}
+
+/* For the dropdown positioning and height limitation */
+html select.settings-select {
+    position: relative;
+}
+
+html select.settings-select:not([size]):not([multiple]) {
+    box-sizing: border-box;
+}
+
+.settings-select:focus {
+    outline: none;
+    border-color: #4CAF50;
+}
+
+.settings-select:hover {
+    background-color: transparent;
+}
+
+.menu-item {
+    padding: 8px 15px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    color: var(--text-color);
+}
+
+.menu-item:hover {
+    background-color: var(--session-hover-bg);
+}
+
+/* 系统区域样式 */
+.system-container {
+    overflow-y: auto;
+    transition: opacity 0.2s ease, display 0.3s ease;
+    border-top: none;
+    /* 移除上边框 */
+    margin-top: 10px;
+    padding-bottom: 5px;
+    flex: 0 0 auto;
+    max-height: none;
+}
+
+/* 系统菜单打开时的底部区域样式 */
+.sidebar-footer.menu-open,
+.sidebar-lower.menu-open {
+    transform: none;
+    /* 取消位移效果 */
+    margin-bottom: 0;
+    /* 取消空白区域 */
+}
+
+/* 修改会话容器样式使其填充上部区域，并确保底部对齐 */
+.sessions-container {
+    flex: 0 0 auto;
+    /* 从flex: 1改为不伸缩，严格使用设置的高度 */
+    overflow-y: auto;
+    transition: opacity 0.2s ease, transform 0.2s ease, width 0.3s ease-in-out;
+    min-height: 100px;
+    padding: 10px;
+    margin-top: 0;
+    height: calc(100% - 40px);
+    /* 减去sidebar-header的高度，确保会话列表底部与sidebar-upper底部对齐 */
+    width: 100%;
+    /* Ensure it fills the container width */
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar.collapsed {
+    width: 40px !important;
+    min-width: 40px !important;
+    max-width: 40px !important;
+    overflow: hidden !important;
+}
+
+/* 添加新的动画，仅重置垂直比例 */
+@keyframes reset-vertical-proportions {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+/* 应用垂直比例重置动画到上下区域 */
+.sidebar:not(.collapsed) .sidebar-upper,
+.sidebar:not(.collapsed) .sidebar-lower {
+    animation: reset-vertical-proportions 0.3s ease-in-out;
+}
+
+.sidebar.collapsed .sidebar-header,
+.sidebar.collapsed .sessions-container,
+.sidebar.collapsed .sidebar-upper,
+.sidebar.collapsed .sidebar-vertical-resizer {
+    opacity: 0 !important;
+    pointer-events: none !important;
+    transition: opacity 0.2s ease !important;
+}

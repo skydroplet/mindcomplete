@@ -1,0 +1,51 @@
+{
+  "name": "mindcomplete",
+  "version": "0.0.1",
+  "description": "心至 - MindComplete",
+  "main": "src/main/main.js",
+  "scripts": {
+    "start": "chcp 65001 && electron .",
+    "build": "electron-builder",
+    "build:all": "electron-builder -mwl",
+    "build:win": "electron-builder --win",
+    "build:mac": "electron-builder --mac",
+    "build:linux": "electron-builder --linux",
+    "postinstall": "electron-builder install-app-deps"
+  },
+  "author": "skydroplet",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^35.1.5",
+    "electron-builder": "^26.0.12",
+    "electron-reloader": "^1.2.3",
+    "eslint": "^9.24.0",
+    "prettier": "^3.5.3",
+    "typescript": "^5.8.3"
+  },
+  "build": {
+    "appId": "mindcomplete",
+    "productName": "mindcomplete",
+    "directories": {
+      "output": "dist"
+    },
+    "artifactName": "mindcomplete-${os}-${arch}-${version}.${ext}",
+    "win": {
+      "target": "nsis"
+    },
+    "mac": {
+      "target": "dmg"
+    },
+    "linux": {
+      "target": "AppImage"
+    }
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.9.0",
+    "axios": "^1.6.7",
+    "dotenv": "^16.4.5",
+    "dotenv-expand": "^11.0.7",
+    "highlight.js": "^11.11.1",
+    "marked": "^15.0.8",
+    "openai": "^4.93.0"
+  }
+}

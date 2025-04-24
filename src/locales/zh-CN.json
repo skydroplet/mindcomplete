@@ -1,0 +1,309 @@
+{
+    "app": {
+        "title": "心至 - MindComplete",
+        "description": "重新构建与数字世界的个性化交互入口"
+    },
+    "ui": {
+        "inputPlaceholder": "请输入您的问题...",
+        "sendButton": "发送",
+        "status": {
+            "ready": "就绪",
+            "generating": "正在生成回复...",
+            "loading": "正在加载会话列表...",
+            "error": "错误: {error}",
+            "sessionDeleted": "会话已删除",
+            "sessionCleared": "会话消息已清空",
+            "promptSelected": "已选择提示词",
+            "promptCleared": "已清除提示词",
+            "creatingNewSession": "正在创建新会话...",
+            "newSessionCreated": "创建了新会话: {name}",
+            "newSessionFailed": "创建新会话失败: {error}",
+            "loadingSession": "正在加载会话...",
+            "sessionLoadFailed": "加载会话失败: 会话不存在",
+            "sessionLoaded": "已加载会话: {name}",
+            "loadSessionFailed": "加载会话失败: {error}",
+            "renamingSessionFailed": "重命名会话失败: {error}",
+            "sessionRenamed": "已重命名会话: {name}",
+            "openingAboutWindow": "正在打开关于窗口...",
+            "aboutWindowOpened": "已打开关于窗口",
+            "checkingForUpdates": "正在检查更新...",
+            "updateAvailable": "发现新版本 {version}",
+            "noUpdateAvailable": "已是最新版本"
+        },
+        "update": {
+            "newVersion": "发现新版本",
+            "version": "版本",
+            "date": "发布日期",
+            "description": "更新内容",
+            "later": "稍后提醒",
+            "download": "前往下载"
+        }
+    },
+    "messages": {
+        "user": "用户",
+        "ai": "AI",
+        "tool": "工具"
+    },
+    "errors": {
+        "apiKeyMissing": "未找到 API 密钥，请检查 .env 文件",
+        "apiInitFailed": "API 客户端初始化失败: {error}",
+        "apiRequestFailed": "API 请求失败: {error}",
+        "appCrash": "程序发生严重错误: {error}",
+        "unknown": "未知错误",
+        "saveFailed": "保存失败",
+        "promptSaveFailed": "保存提示词时出错: {error}",
+        "deleteFailed": "删除失败: {error}",
+        "checkModelSettings": "，请检查模型设置",
+        "openSettings": "打开设置",
+        "openingSettingsWindow": "正在打开设置窗口...",
+        "openSettingsWindowFailed": "打开设置窗口失败: {error}",
+        "loadSessionListFailed": "加载会话列表失败: {error}",
+        "noModelSelected": "请先选择一个模型",
+        "modelConfigNotExist": "所选模型配置不存在，请重新选择模型",
+        "createModelClientFailed": "创建模型客户端失败:",
+        "connectToModelApiFailed": "连接到模型API失败: {error}",
+        "invalidApiKey": "API密钥无效或已过期，请在设置中更新您的API密钥",
+        "apiRequestLimit": "API请求次数已达上限或余额不足，请稍后再试",
+        "modelServerError": "模型服务器错误，请稍后再试",
+        "apiCallFailed": "API调用失败: {error}",
+        "serverConfigIncomplete": "服务配置不完整，请至少提供可执行路径",
+        "executablePathNotFound": "可执行文件路径不存在: {path}",
+        "connectMcpServerFailed": "连接MCP服务失败: {error}",
+        "testMcpServerFailed": "测试MCP服务失败: {error}",
+        "saveMcpServerFailed": "保存MCP服务激活状态失败: {error}",
+        "loadMcpServerListFailed": "加载MCP服务列表失败: {error}",
+        "languageChangeFailed": "切换语言失败: {error}",
+        "openAboutWindowFailed": "打开关于窗口失败: {error}"
+    },
+    "menu": {
+        "file": "文件",
+        "settings": "设置",
+        "quit": "退出",
+        "edit": {
+            "label": "编辑",
+            "cut": "剪切",
+            "copy": "复制",
+            "paste": "粘贴",
+            "selectAll": "全选"
+        },
+        "view": {
+            "label": "视图",
+            "reload": "重新加载",
+            "forceReload": "强制重新加载",
+            "toggleDevTools": "切换开发者工具",
+            "resetZoom": "重置缩放",
+            "zoomIn": "放大",
+            "zoomOut": "缩小",
+            "toggleFullscreen": "切换全屏"
+        },
+        "window": {
+            "label": "窗口",
+            "minimize": "最小化",
+            "zoom": "缩放",
+            "close": "关闭",
+            "front": "前置所有窗口"
+        },
+        "help": {
+            "label": "帮助",
+            "about": "关于"
+        }
+    },
+    "chat": {
+        "send": "发送",
+        "placeholder": "输入消息..."
+    },
+    "env": {
+        "keyPlaceholder": "变量名",
+        "valuePlaceholder": "变量值"
+    },
+    "args": {
+        "valuePlaceholder": "参数值"
+    },
+    "config": {
+        "title": "配置",
+        "apiUrl": "API 地址",
+        "apiKey": "API 密钥",
+        "modelName": "模型名称",
+        "save": "保存",
+        "cancel": "取消"
+    },
+    "about": {
+        "title": "关于",
+        "languageSupport": "支持中英文切换",
+        "deploymentSupport": "大模型流式API调用，MCP服务调用",
+        "version": "版本 {version}"
+    },
+    "sidebar": {
+        "sessionList": "会话列表",
+        "settings": "设置",
+        "system": "系统",
+        "about": "关于",
+        "collapse": "折叠侧边栏",
+        "expand": "展开会话列表",
+        "checkUpdate": "检查更新"
+    },
+    "header": {
+        "toggleTheme": "切换深色/浅色模式"
+    },
+    "session": {
+        "newSession": "新建会话",
+        "rename": "重命名会话",
+        "delete": "删除会话",
+        "noSessions": "没有会话记录",
+        "renameTitle": "重命名会话",
+        "newNamePlaceholder": "输入新的会话名称",
+        "cancel": "取消",
+        "confirm": "确定",
+        "confirmDelete": "确定要删除这个会话吗？此操作不可恢复。",
+        "confirmClear": "确定要清空当前会话的所有消息吗？此操作不可恢复。",
+        "defaultNewName": "新会话 - {date}"
+    },
+    "modelSelector": {
+        "selectModel": "请先选择一个模型",
+        "promptTitle": "选择提示词作为system message",
+        "mcpServer": "MCP服务"
+    },
+    "errorMessages": {
+        "pathNotExist": "无法找到指定的可执行文件。\n请检查:\n1. 文件路径是否正确\n2. 文件是否存在\n3. 是否有权限访问该文件",
+        "accessDenied": "无法访问指定的可执行文件，权限被拒绝。\n请尝试:\n1. 以管理员身份运行程序\n2. 检查文件权限设置",
+        "mcpServerError": "MCP服务运行出错。\n可能的原因:\n1. 可执行文件格式不是有效的MCP服务\n2. MCP服务内部出错\n3. 服务参数配置不正确",
+        "testFailed": "MCP工具测试失败 ❌\n\n服务名称: {serverName}\n\n错误: {error}\n\n{userFriendlyMessage}",
+        "testError": "测试MCP工具时出错 ❌\n\n错误: {error}"
+    },
+    "buttons": {
+        "testMcpTool": "测试MCP工具"
+    },
+    "prompts": {
+        "confirmDelete": "确定要删除这个提示词吗？",
+        "addNew": "+ 添加提示词",
+        "loadingFailed": "加载提示词列表失败: {error}",
+        "systemType": "系统提示词",
+        "userType": "用户提示词",
+        "typeHelp": "系统提示词用于设定AI的行为和角色，用户提示词可用于提供特定指令或上下文"
+    },
+    "settings": {
+        "title": "配置",
+        "tabs": {
+            "models": "模型",
+            "prompts": "提示词",
+            "mcp": "MCP服务"
+        },
+        "labels": {
+            "modelName": "模型名称",
+            "modelType": "模型类型",
+            "apiUrl": "API 地址",
+            "apiKey": "API 密钥",
+            "contextWindowSize": "上下文窗口大小",
+            "temperature": "温度",
+            "promptName": "提示词名称",
+            "promptContent": "提示词内容",
+            "promptType": "提示词类型",
+            "serverName": "服务名称",
+            "serverPath": "可执行文件",
+            "envVars": "环境变量",
+            "cmdArgs": "命令行参数"
+        },
+        "placeholders": {
+            "modelName": "输入模型名称",
+            "apiUrl": "输入API地址",
+            "apiKey": "输入你的API密钥",
+            "promptName": "输入提示词名称",
+            "promptContent": "输入提示词内容",
+            "serverName": "输入MCP服务名称",
+            "serverPath": "输入可执行文件路径"
+        },
+        "buttons": {
+            "addModel": "添加模型",
+            "addModelOption": "+ 添加模型",
+            "saveModelBtn": "保存模型",
+            "resetModelBtn": "重置",
+            "deleteModelBtn": "删除",
+            "savePromptBtn": "保存",
+            "resetPromptBtn": "重置",
+            "deletePromptBtn": "删除",
+            "saveMcpBtn": "保存",
+            "deleteMcpServerBtn": "删除",
+            "test-mcp-button": "测试",
+            "cancelBtn": "取消",
+            "saveBtn": "保存",
+            "cancelPromptBtn": "取消",
+            "cancelMcpBtn": "取消",
+            "addMcpServerBtn": "添加MCP服务",
+            "addPromptBtn": "添加提示词",
+            "add-env-btn": "添加环境变量",
+            "add-arg-btn": "添加参数"
+        }
+    },
+    "logs": {
+        "currentLanguage": "当前语言:",
+        "modelList": "模型列表:",
+        "currentModel": "当前模型:",
+        "loadModelListFailed": "加载模型列表失败:",
+        "loadSessionList": "加载会话列表",
+        "sessionListLoadFailed": "加载会话列表失败:",
+        "createSessionFailed": "创建新会话失败:",
+        "loadSessionFailed": "加载会话失败:",
+        "renameSessionFailed": "重命名会话失败:",
+        "modelConfigUpdated": "模型配置已更新，重置客户端",
+        "mcpToolList": "可用MCP工具列表:",
+        "getMcpToolFailed": "获取MCP工具失败:"
+    },
+    "toolCalls": {
+        "executing": "**⚙️ 正在执行工具调用...**",
+        "tool": "**🔧 执行工具:** `{name}`",
+        "parameters": "**📋 参数:**\n```json\n{args}\n```\n",
+        "processing": "**⏳ 处理中...**\n",
+        "result": "**✅ 工具执行结果:**\n```json\n{result}\n```\n",
+        "invalidResult": "**❌ 工具返回了无效结果:** {type}\n",
+        "error": "**❌ 工具执行错误:** {message}\n",
+        "generatingResponse": "**🤔 正在生成最终回复...**\n",
+        "responseFailed": "**❌ 生成最终回复失败:** {message}\n"
+    },
+    "defaultSystemMessage": "您是一个有用的AI助手。",
+    "mcp": {
+        "addServer": "+ 添加MCP服务",
+        "noServer": "没有可用的MCP服务，请先添加一个",
+        "server": "MCP服务",
+        "selectedServers": "已选择 {count} 个服务",
+        "toggleFailed": "切换MCP服务失败: {error}",
+        "toolsList": {
+            "title": "工具列表",
+            "index": "序号",
+            "name": "名称",
+            "description": "描述信息",
+            "autoApprove": "自动授权",
+            "noDescription": "无描述",
+            "unnamedTool": "未命名工具",
+            "testButton": "测试",
+            "testing": "测试中...",
+            "testSuccess": "MCP工具测试成功 ✅",
+            "serverName": "服务名称",
+            "toolCount": "工具数量",
+            "toolList": "工具列表"
+        },
+        "buttons": {
+            "addServer": "添加",
+            "deleteServer": "删除",
+            "cancel": "取消",
+            "save": "保存",
+            "addEnvVar": "添加环境变量",
+            "addParam": "添加参数"
+        },
+        "labels": {
+            "serverName": "服务名称",
+            "executablePath": "可执行文件",
+            "envVars": "环境变量",
+            "cmdArgs": "命令行参数"
+        },
+        "authorization": {
+            "title": "工具授权请求",
+            "message": "应用请求使用工具 \"{name}\"，该工具不在自动授权列表中。",
+            "onetime": "本次授权",
+            "auto": "后续自动授权",
+            "deny": "拒绝",
+            "success": "已更新工具授权状态",
+            "error": "更新授权状态失败: {error}",
+            "denied": "工具执行请求被拒绝"
+        }
+    }
+}
