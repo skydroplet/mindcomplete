@@ -1,0 +1,569 @@
+/**
+ * chatService.js
+ * 聊天服务模块
+ *
+ * 该模块负责处理聊天相关的所有功能，包括：
+ * - 消息的发送和接收
+ * - 消息的显示和更新
+ * - Markdown和代码块的处理
+ * - 工具授权管理
+ *
+ * 通过将聊天功能从renderer.js中分离出来，提高了代码的模块化和可维护性
+ */
+
+const { ipcRenderer } = require('electron');
+const Logger = require('../main/logger');
+const log = new Logger('chatService');
+const i18n = require('../locales/i18n');
+const marked = require('marked');
+const hljs = require('highlight.js');
+const sidebarSessionService = require('./sidebarSession');
+const modelService = require('./modelService');
+const promptService = require('./promptService');
+const mcpService = require('./mcpService');
+
+/**
+ * 聊天服务类
+ * 负责处理消息的发送、接收和显示
+ */
+class ChatSessionService {
+    constructor(sessionId) {
+        // 会话对应的标签id 用于关联到特定标签及其输入、选择框
+        this.tabId = null;
+
+        // 状态
+        this.statusElement = document.getElementById('status');
+
+        // session
+        this.sessionId = sessionId;
+        this.data = null;
+
+        // 配置 marked 使用 highlight.js
+        this.configureMarked();
+    }
+
+    /**
+     * 更新会话的标签ID，用于关联到特定标签及其输入、选择框
+     * @param {string} tabId - 标签ID
+     */
+    setTabId(tabId) {
+        log.info("set Session tab", this.sessionId, tabId)
+        this.tabId = tabId;
+
+        // 消息框
+        this.chatMessages = document.getElementById(`chat-messages-${this.tabId}`);
+
+        // 配置选择
+        this.modelSelect = document.getElementById(`model-select-${this.tabId}`);
+        this.promptSelect = document.getElementById(`prompt-select-${this.tabId}`);
+        this.McpSelect = document.getElementById(`mcp-select-${this.tabId}`);
+
+        // 新建会话按钮
+        this.newSessionButton = document.getElementById(`new-session-${this.tabId}`);
+
+        // 输入框
+        this.messageInput = document.getElementById(`message-input-${this.tabId}`);
+
+        this.updateUi();
+    }
+
+    /**
+     * 配置 marked 使用 highlight.js
+     */
+    configureMarked() {
+        marked.setOptions({
+            highlight: function (code, lang) {
+                const language = hljs.getLanguage(lang) ? lang : 'plaintext';
+                return hljs.highlight(code, { language }).value;
+            },
+            langPrefix: 'hljs language-',
+            breaks: true,      // 启用换行符转换为 <br>
+            gfm: true,         // 启用 GitHub 风格的 Markdown
+            mangle: false,     // 禁用自动转义 HTML
+            headerIds: true,   // 为标题生成 ID
+            smartLists: true   // 使用更智能的列表行为
+        });
+    }
+
+    /**
+     * 创建新会话
+     * @returns {Promise<Object>} 新创建的会话对象
+     */
+    async createNewSession() {
+        try {
+            this.statusElement.textContent = i18n.t('ui.status.creatingNewSession');
+
+            // 创建新会话
+            const session = await ipcRenderer.invoke('create-session');
+            this.sessionId = session.id;
+            this.data = session;
+
+            this.statusElement.textContent = i18n.t('ui.status.newSessionCreated', { name: session.name });
+            return session;
+        } catch (error) {
+            log.error(i18n.t('logs.createSessionFailed'), error.message);
+            this.statusElement.textContent = i18n.t('ui.status.newSessionFailed', { error: error.message });
+            throw error;
+        }
+    }
+
+    updateUi() {
+        if (!this.data) {
+            this.data = this.loadSession();
+        }
+
+        // 清空聊天界面
+        this.clearChatMessages();
+
+        // 渲染消息历史
+        if (this.data.messages) {
+            this.data.messages.forEach(msg => {
+                this.addMessage(msg.content, msg.role);
+            });
+        }
+
+        // 仅更新UI显示，不发送IPC消息
+        this.modelSelect.value = this.data.modelId;
+        this.promptSelect.value = this.data.promptId;
+        mcpService.updateMcpUIForSession(this.data.mcpServers);
+
+        this.statusElement.textContent = i18n.t('ui.status.sessionLoaded', { name: this.data.name });
+    }
+
+    async getConfig() {
+        // 从后端获取配置最新信息
+        const session = await ipcRenderer.invoke('load-session', this.sessionId);
+        if (!session) {
+            this.statusElement.textContent = i18n.t('ui.status.sessionLoadFailed');
+            return this.data;
+        }
+
+        // 只更新配置信息
+        this.data.name = session.name;
+        this.data.modelId = session.modelId;
+        this.data.promptId = session.promptId;
+        this.data.mcpServers = session.mcpServers;
+
+        return {
+            name: session.name,
+            modelId: session.modelId,
+            promptId: session.promptId,
+            mcpServers: session.mcpServers
+        }
+    }
+
+    /**
+     * 加载指定会话
+     *
+     * 此函数加载指定ID的会话，并在界面上显示其消息历史
+     *
+     * @returns {Promise<Object>} 加载的会话对象
+     */
+    async loadSession() {
+        try {
+            log.info("加载会话", this.sessionId)
+            this.statusElement.textContent = i18n.t('ui.status.loadingSession');
+
+            // 加载会话
+            const session = await ipcRenderer.invoke('load-session', this.sessionId);
+            if (!session) {
+                this.statusElement.textContent = i18n.t('ui.status.sessionLoadFailed');
+                return null;
+            }
+
+            this.data = session;
+            this.statusElement.textContent = i18n.t('ui.status.sessionLoaded', { name: this.data.name });
+            return session;
+        } catch (error) {
+            log.error(i18n.t('logs.loadSessionFailed'), error.message);
+            this.statusElement.textContent = i18n.t('ui.status.loadSessionFailed', { error: error.message });
+            throw error;
+        }
+    }
+
+    /**
+     * 向聊天界面添加一条消息
+     *
+     * 此函数用于在聊天界面中添加一条新消息，支持三种类型的消息：
+     * - user: 用户发送的消息，靠右显示，不解析Markdown
+     * - assistant: AI助手的回复，靠左显示，解析Markdown
+     * - tool 工具执行的消息，靠左显示，解析Markdown，有特殊样式
+     *
+     * @param {string} content - 消息内容。对于用户消息，直接显示；对于AI和工具消息，将解析Markdown格式
+     * @param {string} type - 消息类型，可选值为 'user'、'assistant'、'tool'，默认为 'assistant'
+     * @param {Object} authRequest - 授权请求对象，包含toolName、serverId等信息
+     * @returns {HTMLDivElement} - 消息内容元素，用于后续更新
+     */
+    addMessage(content, type = 'assistant', authRequest = null) {
+        if (!this.chatMessages) {
+            log.error(`尝试添加消息但未找到消息容器，tabId=${this.tabId}`);
+            return null;
+        }
+
+        // 创建消息容器元素
+        const messageDiv = document.createElement('div');
+
+        // 创建发送者信息元素
+        const sender = document.createElement('div');
+        sender.className = 'message-sender';
+
+        // 根据消息类型设置对应的类名和发送者文本
+        if (type === 'user') {
+            messageDiv.className = 'message user-message';
+            sender.textContent = i18n.t('messages.user');
+        } else if (type === 'tool') {
+            messageDiv.className = 'message tool-message';
+            sender.textContent = i18n.t('messages.tool');
+        } else {
+            messageDiv.className = 'message ai-message';
+            sender.textContent = i18n.t('messages.ai');
+        }
+
+        // 创建消息内容元素
+        const contentDiv = document.createElement('div');
+        contentDiv.className = 'message-content';
+
+        // 更新消息内容
+        this.updateMessage(contentDiv, content);
+
+        // 组装消息元素
+        messageDiv.appendChild(sender);
+        messageDiv.appendChild(contentDiv);
+
+        // 如果是工具消息，并且存在授权元数据，添加授权按钮
+        if (authRequest) {
+            const authButtons = this.createToolAuthButtons(authRequest);
+            messageDiv.appendChild(authButtons);
+        }
+
+        // 将消息添加到聊天容器中
+        this.chatMessages.appendChild(messageDiv);
+
+        // 滚动到最新消息
+        this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
+
+        // 保存引用以便后续使用updateMessage函数更新内容 这对于实现流式响应非常重要
+        return contentDiv;
+    }
+
+    /**
+     * 创建工具授权按钮组
+     *
+     * 此函数创建工具授权按钮容器，包含三个按钮：本次授权、后续自动授权和拒绝
+     *
+     * @param {Object} authRequest - 授权请求对象，包含toolName、serverId等信息
+     * @returns {HTMLDivElement} - 包含授权按钮的容器元素
+     */
+    createToolAuthButtons(authRequest) {
+        const { toolName, serverId, serverName } = authRequest;
+
+        // 创建按钮容器
+        const buttonsContainer = document.createElement('div');
+        buttonsContainer.className = 'tool-auth-buttons';
+        // 确保按钮容器始终可见
+        buttonsContainer.style.display = 'flex';
+        buttonsContainer.style.opacity = '1';
+        buttonsContainer.style.visibility = 'visible';
+
+        // 创建本次授权按钮
+        const onetimeBtn = document.createElement('button');
+        onetimeBtn.className = 'tool-auth-btn onetime';
+        onetimeBtn.textContent = i18n.t('mcp.authorization.onetime');
+        onetimeBtn.onclick = () => this.handleToolAuthorization(toolName, serverId, true, false);
+
+        // 创建后续自动授权按钮
+        const autoBtn = document.createElement('button');
+        autoBtn.className = 'tool-auth-btn auto';
+        autoBtn.textContent = i18n.t('mcp.authorization.auto');
+        autoBtn.onclick = () => this.handleToolAuthorization(toolName, serverId, true, true);
+
+        // 创建拒绝按钮
+        const denyBtn = document.createElement('button');
+        denyBtn.className = 'tool-auth-btn deny';
+        denyBtn.textContent = i18n.t('mcp.authorization.deny');
+        denyBtn.onclick = () => this.handleToolAuthorization(toolName, serverId, false, false);
+
+        // 将按钮添加到容器
+        buttonsContainer.appendChild(onetimeBtn);
+        buttonsContainer.appendChild(autoBtn);
+        buttonsContainer.appendChild(denyBtn);
+
+        return buttonsContainer;
+    }
+
+    /**
+     * 处理工具授权请求的响应
+     *
+     * 此函数根据用户点击的按钮向主进程发送授权结果
+     *
+     * @param {string} toolName - 工具名称
+     * @param {string} serverId - 服务ID
+     * @param {boolean} authorized - 是否授权
+     * @param {boolean} permanent - 是否永久授权
+     */
+    handleToolAuthorization(toolName, serverId, authorized, permanent) {
+        // 构造授权结果对象
+        const result = {
+            toolName,
+            serverId,
+            authorized,
+            permanent
+        };
+
+        // 向主进程发送授权结果
+        ipcRenderer.send('tool-authorization-response', result);
+
+        // 获取按钮容器
+        const buttons = document.querySelectorAll('.tool-auth-buttons');
+
+        // 找到并删除包含授权请求的整个消息元素
+        buttons.forEach(btn => {
+            if (btn.parentNode) {
+                // 查找包含此按钮的消息元素（向上查找到最近的.message元素）
+                const messageElement = btn.closest('.message');
+                if (messageElement && messageElement.parentNode) {
+                    // 删除整个消息元素
+                    messageElement.parentNode.removeChild(messageElement);
+                } else {
+                    // 如果找不到父消息元素，至少删除按钮
+                    btn.parentNode.removeChild(btn);
+                }
+            }
+        });
+
+        // 删除授权请求消息后，如果需要可以添加一个短暂的状态提示（可选）
+        this.statusElement.textContent = authorized
+            ? (permanent
+                ? i18n.t('mcp.authorization.success')
+                : i18n.t('mcp.authorization.onetime'))
+            : i18n.t('mcp.authorization.denied');
+
+        this.statusElement.textContent = i18n.t('ui.status.ready');
+    }
+
+    /**
+     * 更新已有消息的内容
+     *
+     * 此函数用于更新当前消息的内容，主要用于流式响应场景。
+     * 在流式响应时，首先通过addMessage添加一个空消息，然后随着内容流式返回，
+     * 不断调用此函数更新消息内容，从而实现打字机效果。
+     * @param {HTMLDivElement} messageDiv - 要更新的消息容器元素
+     * @param {string} content - 新的完整消息内容，将替换当前消息的内容
+     * @param {Object} authRequest - 授权请求对象，包含toolName、serverId等信息
+     */
+    updateMessage(messageDiv, content, authRequest = null) {
+        if (!messageDiv) {
+            return;
+        }
+
+        // 解析 Markdown 并更新消息内容
+        messageDiv.innerHTML = marked.parse(content);
+
+        // 确保内容可选择
+        messageDiv.style.userSelect = 'text';
+        messageDiv.style.webkitUserSelect = 'text';
+
+        // 对新添加的代码块应用语法高亮
+        if (window.applyHighlighting) {
+            // 使用全局高亮函数，如果存在
+            window.applyHighlighting();
+        } else {
+            // 否则使用highlight.js直接处理
+            messageDiv.querySelectorAll('pre code').forEach((block) => {
+                hljs.highlightElement(block);
+            });
+        }
+
+        // 滚动到最新内容，保持消息可见
+        this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
+    }
+
+    /**
+     * 对不完整或格式不正确的JSON代码块进行预处理和格式化
+     *
+     * 此函数查找Markdown中的JSON代码块，尝试解析并格式化它们，
+     * 使JSON内容更具可读性。如果解析失败，则保留原始内容。
+     *
+     * @param {string} text - 包含可能JSON代码块的Markdown文本
+     * @returns {string} - 处理后的文本，其中合法的JSON已被格式化
+     */
+    sanitizeJsonInMarkdown(text) {
+        // 查找所有JSON代码块：以```json开始，以```结束的内容
+        return text.replace(/```json\n([\s\S]*?)```/g, (match, jsonContent) => {
+            try {
+                // 尝试解析JSON内容
+                const parsed = JSON.parse(jsonContent);
+                // 将解析后的JSON重新格式化为缩进为2的美观格式
+                return '```json\n' + JSON.stringify(parsed, null, 2) + '\n```';
+            } catch (e) {
+                // 如果解析失败（可能是JSON不完整或格式错误），
+                // 则返回原始内容，不进行修改
+                return match;
+            }
+        });
+    }
+
+    /**
+     * 对Markdown中的代码块进行预处理，确保正确的语言标识
+     *
+     * 此函数对Markdown文本中的代码块进行预处理，包括：
+     * 1. 使用sanitizeJsonInMarkdown对JSON代码块进行格式化
+     * 2. 确保所有代码块都有语言标识，如果没有则使用默认值'plaintext'
+     *
+     * @param {string} text - 包含代码块的Markdown文本
+     * @returns {string} - 处理后的文本，所有代码块都有正确的语言标识
+     */
+    preprocessCodeBlocks(text) {
+        // 首先处理JSON代码块，使其格式化
+        text = this.sanitizeJsonInMarkdown(text);
+
+        // 正则表达式匹配所有代码块，包括语言标识部分和代码内容部分
+        const codeBlockRegex = /```([^\n]*)\n([\s\S]*?)```/g;
+
+        // 替换每个匹配的代码块
+        return text.replace(codeBlockRegex, (match, language, code) => {
+            // 如果语言标识为空，设置为'plaintext'
+            language = language.trim() || 'plaintext';
+            // 重新构造代码块，确保有正确的语言标识
+            return '```' + language + '\n' + code + '```';
+        });
+    }
+
+    /**
+     * 发送消息到AI
+     *
+     * @param {string} message - 要发送的消息内容
+     * @param {string} currentModel - 当前选择的模型ID
+     * @param {string} currentSessionId - 当前会话ID
+     * @param {Function} openSettingsWindow - 打开设置窗口的函数
+     */
+    async sendMessage(message, openSettingsWindow) {
+        if (!message.trim()) return;
+
+        // 检查是否选择了模型
+        if (!this.data.modelId) {
+            this.statusElement.textContent = i18n.t('modelSelector.selectModel');
+
+            // 自动打开设置窗口
+            window.openSettingsWindowWithTab('model');
+            return;
+        }
+
+        this.addMessage(message, 'user');
+
+        this.messageInput.value = '';
+        this.statusElement.textContent = i18n.t('ui.status.generating');
+
+        // 跟踪AI消息的原始文本
+        let currentAiMessage = null;
+        let currentRawText = '';
+
+        // 跟踪Mcp工具消息的原始文本
+        let currentToolMessage = null;
+        let currentToolRawText = '';
+
+        try {
+            // 设置事件监听器
+            // 添加空的AI回复消息，准备接收流式内容
+            ipcRenderer.on('new-ai-message', (event, chunk) => {
+                currentAiMessage = this.addMessage('', 'assistant');
+                currentRawText = chunk;
+
+                const processedText = this.preprocessCodeBlocks(currentRawText);
+                this.updateMessage(currentAiMessage, processedText);
+            });
+
+            // 持续接收ai消息
+            ipcRenderer.on('ai-message-chunk', (event, chunk) => {
+                currentRawText += chunk;
+                const processedText = this.preprocessCodeBlocks(currentRawText);
+                this.updateMessage(currentAiMessage, processedText);
+            });
+
+            // 创建新的mcp工具响应 准备接收后续消息
+            ipcRenderer.on('new-mcp-tool-message', (event, chunk) => {
+                currentToolMessage = this.addMessage('', 'tool');
+                currentToolRawText = chunk;
+                const processedText = this.preprocessCodeBlocks(currentToolRawText);
+                this.updateMessage(currentToolMessage, processedText);
+            });
+
+            // 持续接收mcp工具响应消息
+            ipcRenderer.on('mcp-tool-message-chunk', (event, chunk) => {
+                currentToolRawText += chunk;
+                const processedText = this.preprocessCodeBlocks(currentToolRawText);
+                this.updateMessage(currentToolMessage, processedText);
+            });
+
+            // 工具授权请求监听
+            ipcRenderer.on('tool-authorization-request', (event, authRequest) => {
+                // 添加包含授权按钮的工具消息
+                const messageContent = i18n.t('mcp.authorization.message', { serverName: authRequest.serverName, name: authRequest.toolName });
+                this.addMessage(messageContent, 'tool', authRequest);
+            });
+
+            // 获取当前选择的提示词和MCP服务（使用会话特定的配置）
+            // 在send-message IPC中传递会话特定的配置
+            await ipcRenderer.invoke('send-message', this.data.id, message);
+
+            // 更新标签名称和会话列表
+            if (!this.data) {
+                sidebarSessionService.loadSessions();
+            }
+            this.statusElement.textContent = i18n.t('ui.status.ready');
+        } catch (error) {
+            log.error('发送消息失败:', {
+                error: error.message,
+                stack: error.stack
+            });
+
+            // 显示更友好的错误信息
+            let errorMsg = error.message || i18n.t('errors.unknown');
+
+            // 如果错误与模型API相关，提示用户检查设置
+            if (errorMsg.includes('API') || errorMsg.includes('模型') || errorMsg.includes('Key')) {
+                errorMsg += i18n.t('errors.checkModelSettings');
+                // 添加错误处理逻辑，如果错误与设置相关，显示设置按钮
+                const errorWithButton = document.createElement('div');
+                errorWithButton.innerHTML = `<div class="error-message">${errorMsg}
+                    <button class="open-settings-btn">${i18n.t('errors.openSettings')}</button>
+                </div>`;
+
+                // 在现有AI消息中添加错误提示
+                if (currentAiMessage) {
+                    currentAiMessage.appendChild(errorWithButton);
+
+                    // 添加设置按钮点击事件
+                    const settingsBtn = errorWithButton.querySelector('.open-settings-btn');
+                    if (settingsBtn) {
+                        settingsBtn.addEventListener('click', openSettingsWindow);
+                    }
+                }
+            }
+
+            this.statusElement.textContent = i18n.t('ui.status.error', { error: errorMsg });
+        } finally {
+            // 清理事件监听器
+            ipcRenderer.removeAllListeners('new-ai-message');
+            ipcRenderer.removeAllListeners('ai-message-chunk');
+            ipcRenderer.removeAllListeners('new-mcp-tool-message');
+            ipcRenderer.removeAllListeners('mcp-tool-message-chunk');
+            ipcRenderer.removeAllListeners('tool-authorization-request');
+        }
+    }
+
+    /**
+     * 清空聊天界面
+     */
+    clearChatMessages() {
+        if (this.chatMessages) {
+            this.chatMessages.innerHTML = '';
+            log.info(`已清空聊天消息容器: ${this.chatMessages.id}`);
+        } else {
+            log.error('尝试清空消息但未找到消息容器');
+        }
+    }
+}
+
+// 创建并导出聊天服务实例
+module.exports = ChatSessionService;

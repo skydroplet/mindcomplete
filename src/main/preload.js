@@ -26,7 +26,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // 应用更新相关
     checkForUpdates: (force = false) => ipcRenderer.invoke('check-for-updates', force),
 
-    // 事件监听
+    // 相关配置名称更新时 更新页面展示
     onConfigData: (callback) => {
         ipcRenderer.on('config-data', (event, data) => callback(event, data));
     },

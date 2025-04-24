@@ -1,6 +1,12 @@
 /**
+ * mcpManager.js
  * MCP服务配置管理模块
- * 负责MCP服务的添加、删除、更新和管理活跃MCP服务
+ *
+ * 负责Model Context Protocol(MCP)服务的配置管理，包括：
+ * - MCP服务的添加、删除和更新
+ * - 活跃MCP服务的管理
+ * - MCP服务配置的持久化存储
+ * - 向所有窗口通知MCP配置变更
  */
 
 const Logger = require('../logger');
@@ -11,7 +17,19 @@ const EventEmitter = require('events');
 const crypto = require('crypto');
 const { app } = require('electron');
 
+/**
+ * MCP配置管理器类
+ *
+ * 负责管理MCP服务配置，提供添加、删除、更新服务的功能
+ * 继承自EventEmitter，可以发出配置变更事件
+ */
 class McpConfigManager extends EventEmitter {
+    /**
+     * 创建MCP配置管理器实例
+     *
+     * 初始化配置文件路径，加载现有配置
+     * 设置窗口注册系统，用于通知配置变更
+     */
     constructor() {
         super();
         const userDataPath = app.getPath('userData');
@@ -27,7 +45,13 @@ class McpConfigManager extends EventEmitter {
         this.registeredWindows = new Set();
     }
 
-    // 生成不重复的随机MCP服务ID
+    /**
+     * 生成不重复的随机MCP服务ID
+     *
+     * 使用加密随机数生成唯一标识符，确保在现有服务中不重复
+     *
+     * @returns {string} 生成的唯一服务ID
+     */
     generateMcpServerId() {
         const randomId = 'mcp-' + crypto.randomBytes(5).toString('hex');
         // 确保ID不重复
@@ -37,6 +61,14 @@ class McpConfigManager extends EventEmitter {
         return randomId;
     }
 
+    /**
+     * 加载MCP服务配置
+     *
+     * 从配置文件中读取MCP服务配置，如果文件不存在或读取失败，返回默认配置
+     * 支持兼容旧版配置格式，自动转换为新格式
+     *
+     * @returns {Object} MCP服务配置对象
+     */
     loadConfig() {
         try {
             if (!fs.existsSync(this.configPath)) {
@@ -61,7 +93,7 @@ class McpConfigManager extends EventEmitter {
 
             return config;
         } catch (error) {
-            log.error('加载MCP服务配置失败:', error);
+            log.error('加载MCP服务配置失败:', error.message);
             return {
                 servers: {},
                 activeMcps: []
@@ -69,6 +101,13 @@ class McpConfigManager extends EventEmitter {
         }
     }
 
+    /**
+     * 保存MCP服务配置
+     *
+     * 将当前MCP服务配置保存到配置文件，并通知所有注册的窗口配置已更新
+     *
+     * @returns {boolean} 保存是否成功
+     */
     saveConfig() {
         try {
             log.info('保存MCP服务配置:', this.config);
@@ -79,21 +118,45 @@ class McpConfigManager extends EventEmitter {
             this.emit('mcp-config-updated', this.config);
             return true;
         } catch (error) {
-            log.error('保存MCP服务配置失败:', error);
+            log.error('保存MCP服务配置失败:', error.message);
             return false;
         }
     }
 
-    // 兼容旧版本的 API（已废弃，保留兼容性）
+    /**
+     * 保存MCP服务配置（兼容旧版本API）
+     *
+     * 已废弃，保留兼容性，调用saveConfig方法
+     *
+     * @returns {boolean} 保存是否成功
+     * @deprecated 使用saveConfig代替
+     */
     saveMcpServers() {
         return this.saveConfig();
     }
 
-    // 兼容旧版本的 API（已废弃，保留兼容性）
+    /**
+     * 加载MCP服务配置（兼容旧版本API）
+     *
+     * 已废弃，保留兼容性，返回当前配置中的servers对象
+     *
+     * @returns {Object} MCP服务配置对象
+     * @deprecated 使用getMcpConfig代替
+     */
     loadMcpServers() {
         return this.config.servers || {};
     }
 
+    /**
+     * 添加新的MCP服务
+     *
+     * 创建新的MCP服务配置并保存，自动生成唯一ID
+     * 支持从不同格式的输入数据转换为标准配置格式
+     *
+     * @param {string} name - MCP服务名称
+     * @param {Object} serverData - MCP服务配置数据
+     * @returns {boolean} 添加是否成功
+     */
     addMcpServer(name, serverData) {
         try {
             log.info('添加MCP服务配置:', name, serverData);
@@ -130,11 +193,21 @@ class McpConfigManager extends EventEmitter {
 
             return this.saveConfig();
         } catch (err) {
-            log.error('添加MCP服务配置失败:', err);
+            log.error('添加MCP服务配置失败:', err.message);
             return false;
         }
     }
 
+    /**
+     * 更新现有MCP服务
+     *
+     * 更新指定ID的MCP服务配置并保存
+     * 保留原有配置中未明确更新的字段
+     *
+     * @param {string} serverId - 要更新的MCP服务ID
+     * @param {Object} config - 新的MCP服务配置对象
+     * @returns {boolean} 更新是否成功
+     */
     updateMcpServer(serverId, config) {
         try {
             log.info('更新MCP服务配置:', serverId, config);
@@ -166,11 +239,19 @@ class McpConfigManager extends EventEmitter {
             }
             return false;
         } catch (err) {
-            log.error('更新MCP服务配置失败:', err);
+            log.error('更新MCP服务配置失败:', err.message);
             return false;
         }
     }
 
+    /**
+     * 删除MCP服务
+     *
+     * 删除指定ID的MCP服务配置，如果删除的是当前活跃的MCP服务，则从活跃列表中移除
+     *
+     * @param {string} serverId - 要删除的MCP服务ID
+     * @returns {boolean} 删除是否成功
+     */
     deleteMcpServer(serverId) {
         if (!this.config.servers) {
             return false;
@@ -190,15 +271,37 @@ class McpConfigManager extends EventEmitter {
         return false;
     }
 
+    /**
+     * 获取所有MCP服务
+     *
+     * 返回当前配置中的所有MCP服务
+     *
+     * @returns {Object} MCP服务配置对象
+     */
     getMcpServers() {
         return this.config.servers || {};
     }
 
+    /**
+     * 获取MCP配置
+     *
+     * 返回当前的MCP配置对象，包含所有服务和活跃服务列表
+     *
+     * @returns {Object} MCP配置对象
+     */
     getMcpConfig() {
         return this.config;
     }
 
-    // 添加或移除活跃的MCP
+    /**
+     * 添加或移除活跃的MCP服务
+     *
+     * 根据isActive参数，将指定ID的MCP服务添加到活跃列表或从活跃列表中移除
+     *
+     * @param {string} serverId - MCP服务ID
+     * @param {boolean} isActive - 是否激活该服务
+     * @returns {boolean} 操作是否成功
+     */
     toggleActiveMcp(serverId, isActive) {
         if (!this.config.servers || !this.config.servers[serverId]) {
             return false;
@@ -223,7 +326,14 @@ class McpConfigManager extends EventEmitter {
         return true; // 状态没变，视为成功
     }
 
-    // 设置活跃MCPs（可一次设置多个）
+    /**
+     * 设置活跃MCP服务列表
+     *
+     * 一次性设置多个活跃的MCP服务，替换当前的活跃列表
+     *
+     * @param {string|string[]} mcpServerIds - 要设置为活跃的MCP服务ID或ID数组
+     * @returns {boolean} 设置是否成功
+     */
     setActiveMcps(mcpServerIds) {
         if (!Array.isArray(mcpServerIds)) {
             mcpServerIds = [mcpServerIds].filter(Boolean);
@@ -238,12 +348,24 @@ class McpConfigManager extends EventEmitter {
         return this.saveConfig();
     }
 
-    // 获取活跃MCPs
+    /**
+     * 获取活跃MCP服务列表
+     *
+     * 返回当前活跃的MCP服务ID数组
+     *
+     * @returns {string[]} 活跃MCP服务ID数组
+     */
     getActiveMcps() {
         return this.config.activeMcps || [];
     }
 
-    // 窗口注册系统，确保所有窗口保持配置一致
+    /**
+     * 注册窗口以接收配置更新
+     *
+     * 将窗口的WebContents添加到注册列表，以便在配置变更时通知
+     *
+     * @param {Electron.WebContents} webContents - 要注册的窗口WebContents
+     */
     registerWindow(webContents) {
         if (webContents && !webContents.isDestroyed()) {
             this.registeredWindows.add(webContents);
@@ -255,10 +377,22 @@ class McpConfigManager extends EventEmitter {
         }
     }
 
+    /**
+     * 取消注册窗口
+     *
+     * 从注册列表中移除窗口的WebContents
+     *
+     * @param {Electron.WebContents} webContents - 要取消注册的窗口WebContents
+     */
     unregisterWindow(webContents) {
         this.registeredWindows.delete(webContents);
     }
 
+    /**
+     * 通知所有注册的窗口配置已更新
+     *
+     * 向所有注册的窗口发送配置更新事件
+     */
     notifyAllWindows() {
         for (const webContents of this.registeredWindows) {
             if (!webContents.isDestroyed()) {

@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title id="app-title">心至 - MindComplete</title>
+    <link rel="stylesheet" href="../assets/styles.css">
+    <link rel="stylesheet" href="../assets/settings.css">
+    <link rel="stylesheet" href="../assets/dark-mode.css">
+    <link rel="stylesheet" href="../assets/main-styles.css">
+    <link rel="stylesheet" href="../assets/tabs.css">
+    <link id="highlight-theme" rel="stylesheet" href="../assets/highlight.js/styles/github.min.css">
+</head>
+
+<body>
+    <div class="container">
+        <!-- 会话管理侧边栏 -->
+        <div class="sidebar" id="sidebar">
+            <button id="sidebar-toggle" class="sidebar-toggle" title="折叠侧边栏">
+                ◀
+            </button>
+            <div class="sidebar-collapse-icon" title="展开会话列表">
+                🕒
+            </div>
+
+            <!-- 会话列表区域（上部区域） -->
+            <div class="sidebar-upper">
+                <div class="sidebar-header">
+                    <h3 id="session-list-title">会话列表</h3>
+                </div>
+                <div id="sessions-container" class="sessions-container">
+                    <!-- 会话列表将通过JavaScript动态生成 -->
+                </div>
+            </div>
+
+            <!-- 上下区域之间的拖动分隔条 -->
+            <div id="sidebar-vertical-resizer" class="sidebar-vertical-resizer" title="拖动调整高度"></div>
+
+            <!-- 设置和系统按钮（下部区域） -->
+            <div class="sidebar-lower" id="sidebar-footer">
+                <button id="settings-btn" class="settings-btn" title="设置">
+                    <span class="settings-text" id="settings-text">设置</span>
+                    <span class="settings-icon">⚙️</span>
+                </button>
+
+                <button id="system-btn" class="settings-btn" title="系统" style="position: relative;">
+                    <span class="settings-text" id="system-text">系统</span>
+                    <span class="settings-icon">🔧</span>
+                </button>
+
+                <!-- 系统菜单项，默认隐藏，显示在系统按钮下方 -->
+                <div id="system-items-container" class="system-items-container" style="display: none;">
+                    <div class="system-items">
+                        <div class="system-item" id="about-item">
+                            <span class="system-item-icon">ℹ️</span>
+                            <span class="system-item-text">关于</span>
+                        </div>
+                        <div class="system-item" id="check-update-item">
+                            <span class="system-item-icon">🔄</span>
+                            <span class="system-item-text">检查更新</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 侧边栏拖动条 -->
+        <div id="sidebar-resizer" class="sidebar-resizer" title="拖动调整宽度"></div>
+
+        <!-- 主内容区 -->
+        <div class="main-content">
+            <div class="header">
+                <div id="tabs-container" class="tabs-container">
+                    <!-- 标签将通过JavaScript动态生成 -->
+                    <button id="new-tab-button" class="new-tab-button" title="新建标签页">+</button>
+                </div>
+                <div class="header-right">
+                    <button id="theme-toggle" class="theme-toggle" title="切换深色/浅色模式">
+                        <span id="theme-toggle-icon" class="theme-toggle-icon">🌓</span>
+                    </button>
+                    <select id="language-select" class="language-select">
+                        <option value="zh-CN">中文</option>
+                        <option value="en-US">English</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="tabs-content" class="chat-container">
+                <!-- 默认的标签内容 -->
+                <div id="tab-content-default" class="tab-content active">
+                    <div id="chat-messages" class="chat-messages"></div>
+                    <div class="chat-input-container">
+                        <div class="model-selector">
+                            <select id="model-select" class="settings-select">
+                            </select>
+                            <select id="prompt-select" class="settings-select" title="选择提示词作为system message">
+                                <!-- 提示词选项将通过JavaScript动态添加 -->
+                            </select>
+
+                            <!-- MCP服务下拉选择框 -->
+                            <div class="mcp-dropdown">
+                                <button id="mcp-dropdown-btn" class="mcp-dropdown-btn" type="button">MCP服务</button>
+                                <div id="mcp-dropdown-content" class="mcp-dropdown-content">
+                                    <!-- MCP服务选项将通过JavaScript动态添加 -->
+                                </div>
+                            </div>
+
+                            <!-- 对话模式切换按钮 -->
+                            <button id="conversation-mode-btn" class="test-button" title="切换对话模式">单次对话</button>
+
+                            <button id="new-session-btn" class="test-button" title="创建新会话">新建会话</button>
+                        </div>
+
+                        <div class="input-group">
+                            <input type="text" id="message-input" placeholder="输入消息，AI回复支持Markdown格式...">
+                            <button id="send-button">发送</button>
+                        </div>
+                    </div>
+                </div>
+                <!-- 其他标签内容将通过JavaScript动态生成 -->
+            </div>
+            <div id="status" class="status">就绪</div>
+        </div>
+    </div>
+
+    <!-- 自定义对话框 -->
+    <div id="rename-dialog" class="custom-dialog" style="display: none;">
+        <div class="dialog-content">
+            <h3 id="rename-title">重命名会话</h3>
+            <input type="text" id="new-name-input" class="dialog-input" placeholder="输入新的会话名称">
+            <div class="dialog-buttons">
+                <button id="rename-cancel-btn" class="dialog-btn">取消</button>
+                <button id="rename-confirm-btn" class="dialog-btn dialog-confirm-btn">确定</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript引用 -->
+    <script src="../../locales/i18n.js"></script>
+    <script src="index.js"></script>
+</body>
+
+</html>

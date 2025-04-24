@@ -28,6 +28,11 @@
     --dialog-shadow: rgba(0, 0, 0, 0.2);
     --selection-bg: #4CAF50;
     --selection-text: #ffffff;
+    --context-menu-bg: #ffffff;
+    --context-menu-text: #333333;
+    --context-menu-hover: #f0f0f0;
+    --context-menu-border: #ddd;
+    --context-menu-shadow: rgba(0, 0, 0, 0.2);
 }
 
 [data-theme="dark"] {
@@ -60,6 +65,11 @@
     --dialog-shadow: rgba(0, 0, 0, 0.4);
     --selection-bg: #4CAF50;
     --selection-text: #ffffff;
+    --context-menu-bg: #333333;
+    --context-menu-text: #e0e0e0;
+    --context-menu-hover: #3a3a3a;
+    --context-menu-border: #444444;
+    --context-menu-shadow: rgba(0, 0, 0, 0.4);
 }
 
 /* 应用颜色变量到页面元素 */
@@ -200,7 +210,12 @@ body {
 }
 
 .custom-dialog {
-    background-color: var(--dialog-bg);
+    background-color: transparent;
+}
+
+.dialog-content {
+    background-color: var(--container-bg);
+    border: 1px solid var(--border-color);
     box-shadow: 0 4px 15px var(--dialog-shadow);
 }
 
@@ -209,21 +224,35 @@ body {
 }
 
 .dialog-input {
-    background-color: var(--container-bg);
+    background-color: var(--input-bg);
     border-color: var(--input-border);
-    color: var(--text-color);
+    color: var(--input-text);
+}
+
+/* Improve dialog input styles for dark mode */
+[data-theme="dark"] .dialog-input {
+    background-color: var(--input-bg);
+    border-color: var(--input-border);
+    color: var(--input-text);
+    box-shadow: 0 1px 3px var(--dropdown-shadow);
+}
+
+[data-theme="dark"] .dialog-input:focus {
+    border-color: var(--button-bg);
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.3);
 }
 
 /* 增强深色模式下的代码块样式 */
 [data-theme="dark"] .message-content pre {
-    background-color: #2d2d2d;
-    border: 1px solid #444;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    background-color: var(--pre-bg);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 1px 3px var(--dropdown-shadow);
 }
 
 [data-theme="dark"] .message-content code {
-    background-color: #2c2c2c;
-    color: #e0e0e0;
+    background-color: var(--code-bg);
+    color: var(--text-color);
 }
 
 [data-theme="dark"] .message-content pre code {
@@ -231,12 +260,12 @@ body {
 }
 
 [data-theme="dark"] .message-content table th {
-    background-color: #333;
-    border-color: #444;
+    background-color: var(--input-bg);
+    border-color: var(--border-color);
 }
 
 [data-theme="dark"] .message-content table td {
-    border-color: #444;
+    border-color: var(--border-color);
 }
 
 /* 深色模式下的行内代码 */
@@ -333,4 +362,29 @@ body {
 .theme-menu-item.active {
     font-weight: bold;
     background-color: var(--session-hover-bg);
+}
+
+[data-theme="dark"] .dialog-content {
+    background-color: var(--container-bg);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .dialog-btn {
+    background-color: var(--input-bg);
+    color: var(--text-color);
+    border: 1px solid var(--input-border);
+}
+
+[data-theme="dark"] .dialog-btn:hover {
+    background-color: var(--session-hover-bg);
+}
+
+[data-theme="dark"] .dialog-confirm-btn {
+    background-color: var(--button-bg);
+    color: var(--button-text);
+    border: none;
+}
+
+[data-theme="dark"] .dialog-confirm-btn:hover {
+    background-color: var(--button-hover);
 }

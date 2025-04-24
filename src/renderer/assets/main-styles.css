@@ -1,0 +1,401 @@
+/* Markdown 样式 */
+.message-content {
+    line-height: 1.5;
+}
+
+.message-content h1,
+.message-content h2,
+.message-content h3 {
+    margin-top: 1em;
+    margin-bottom: 0.5em;
+}
+
+.message-content p {
+    margin-bottom: 1em;
+}
+
+.message-content pre {
+    background-color: var(--pre-bg);
+    padding: 10px;
+    border-radius: 4px;
+    overflow-x: auto;
+    user-select: text;
+    -webkit-user-select: text;
+}
+
+.message-content code {
+    background-color: var(--code-bg);
+    padding: 2px 4px;
+    border-radius: 3px;
+    user-select: text;
+    -webkit-user-select: text;
+    color: var(--text-color);
+}
+
+.message-content blockquote {
+    border-left: 4px solid var(--border-color);
+    padding-left: 10px;
+    color: var(--secondary-text-color);
+    margin-left: 0;
+    user-select: text;
+    -webkit-user-select: text;
+}
+
+.message-content ul,
+.message-content ol {
+    padding-left: 2em;
+}
+
+.message-content table {
+    border-collapse: collapse;
+    width: 100%;
+    margin-bottom: 1em;
+}
+
+.message-content th,
+.message-content td {
+    border: 1px solid var(--border-color);
+    padding: 8px;
+}
+
+.message-content th {
+    background-color: var(--session-hover-bg);
+}
+
+/* 工具执行相关样式 */
+.message-content em {
+    color: var(--secondary-text-color);
+    font-style: italic;
+}
+
+.message-content strong {
+    font-weight: bold;
+    color: var(--text-color);
+}
+
+/* 代码块中的JSON格式化样式 */
+.hljs-attr {
+    color: #0451a5;
+}
+
+.hljs-string {
+    color: #a31515;
+}
+
+.hljs-number {
+    color: #098658;
+}
+
+.hljs-literal {
+    color: #0000ff;
+}
+
+/* 深色模式下的JSON高亮样式覆盖 */
+[data-theme="dark"] .hljs-attr {
+    color: #9cdcfe;
+}
+
+[data-theme="dark"] .hljs-string {
+    color: #ce9178;
+}
+
+[data-theme="dark"] .hljs-number {
+    color: #b5cea8;
+}
+
+[data-theme="dark"] .hljs-literal {
+    color: #569cd6;
+}
+
+/* 测试按钮样式 */
+.test-button {
+    margin-left: 10px;
+    padding: 5px 10px;
+    background-color: var(--button-bg);
+    color: var(--button-text);
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.test-button:hover {
+    background-color: var(--button-hover);
+}
+
+/* 会话管理相关样式 - 已移到外部CSS文件 */
+/* 保留这里的注释以便查找 */
+
+.main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+}
+
+.container {
+    display: flex;
+    height: 100vh;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .sidebar {
+        display: none;
+    }
+}
+
+/* MCP服务选择器样式 */
+.mcp-dropdown {
+    position: relative;
+    display: inline-block;
+    width: 100%;
+    /* Fill available width in container */
+}
+
+.mcp-dropdown-btn {
+    background-color: var(--input-bg);
+    border: 1px solid var(--input-border);
+    border-radius: 4px;
+    padding: 5px 10px;
+    cursor: pointer;
+    font-size: 14px;
+    margin-left: 5px;
+    margin-right: 5px;
+    width: 100%;
+    /* Fill available width in container */
+    height: 32px;
+    /* Match settings-select height */
+    box-sizing: border-box;
+    /* Include padding and border in width/height */
+    text-align: left;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: flex;
+    /* Use flexbox for better alignment */
+    align-items: center;
+    /* Center content vertically */
+    justify-content: space-between;
+    /* Space between text and arrow */
+    color: var(--text-color);
+}
+
+.mcp-dropdown-btn::after {
+    content: "";
+    width: 12px;
+    height: 12px;
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24"><path fill="%23888" d="M7 10l5 5 5-5z"/></svg>');
+    background-repeat: no-repeat;
+    background-position: center;
+    margin-left: 5px;
+}
+
+[data-theme="dark"] .mcp-dropdown-btn::after {
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24"><path fill="%23ccc" d="M7 10l5 5 5-5z"/></svg>');
+}
+
+.mcp-dropdown-btn.active {
+    background-color: var(--input-bg);
+    border-color: var(--button-bg);
+}
+
+.mcp-dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: var(--dropdown-bg);
+    width: 100%;
+    /* Match button width exactly */
+    box-shadow: 0px 8px 16px 0px var(--dropdown-shadow);
+    z-index: 1000;
+    max-height: calc(10 * 36px);
+    /* Height for 10 items (each ~36px with padding) */
+    overflow-y: auto;
+    border-radius: 4px;
+    bottom: 100%;
+    /* Position above the button instead of below */
+    left: 0;
+}
+
+.mcp-dropdown-content.show {
+    display: block;
+}
+
+.mcp-server-item {
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    cursor: pointer;
+    color: var(--text-color);
+    background-color: var(--dropdown-bg);
+    font-size: 14px;
+    /* Match font size with settings-select */
+}
+
+.mcp-server-name {
+    font-size: 14px;
+    /* Match font size with settings-select */
+    color: var(--text-color);
+    /* Match color with settings-select */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex-grow: 1;
+}
+
+.mcp-server-item:hover {
+    background-color: var(--session-hover-bg);
+}
+
+.mcp-server-item.active {
+    background-color: var(--session-hover-bg);
+    border-left: 3px solid var(--button-bg);
+}
+
+.mcp-server-item.add-server-item {
+    color: var(--text-color);
+    font-weight: normal;
+    padding: 5px 10px;
+    font-size: 14px;
+    /* Match font size with settings-select */
+}
+
+.mcp-server-item.add-server-item:hover {
+    background-color: var(--session-hover-bg);
+}
+
+.mcp-server-item input {
+    margin-right: 8px;
+    cursor: pointer;
+}
+
+.mcp-empty-message {
+    padding: 8px 12px;
+    color: var(--secondary-text-color);
+    font-style: italic;
+    background-color: var(--dropdown-bg);
+    font-size: 14px;
+    /* Match font size with settings-select */
+}
+
+/* 添加缺失的样式定义 */
+.mcp-dropdown-divider {
+    height: 1px;
+    background-color: var(--border-color);
+    margin: 4px 0;
+}
+
+.mcp-server-checkbox {
+    margin-right: 8px;
+}
+
+.mcp-server-container {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    cursor: pointer;
+}
+
+.no-server {
+    color: var(--text-color-secondary, #888);
+    font-style: italic;
+    font-size: 14px;
+    /* Match font size with settings-select */
+}
+
+/* 错误信息样式 */
+.error-message {
+    background-color: rgba(255, 0, 0, 0.1);
+    border-left: 4px solid #ff6b6b;
+    padding: 10px 15px;
+    margin: 10px 0;
+    color: var(--text-color);
+    font-size: 14px;
+    border-radius: 4px;
+}
+
+.open-settings-btn {
+    background-color: var(--button-bg);
+    color: var(--button-text);
+    border: none;
+    padding: 5px 10px;
+    margin-top: 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    display: block;
+}
+
+.open-settings-btn:hover {
+    background-color: var(--button-hover);
+}
+
+/* 添加配置按钮样式 */
+.add-config-btn {
+    background-color: var(--button-bg);
+    color: var(--button-text);
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    line-height: 20px;
+    font-size: 16px;
+    margin-left: 5px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+}
+
+.add-config-btn:hover {
+    background-color: var(--button-hover);
+}
+
+/* 上下文菜单样式 */
+.context-menu {
+    position: fixed;
+    z-index: 1000;
+    background-color: var(--context-menu-bg);
+    border: 1px solid var(--context-menu-border);
+    border-radius: 4px;
+    box-shadow: 0 2px 5px var(--context-menu-shadow);
+    min-width: 120px;
+    padding: 5px 0;
+}
+
+.context-menu-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    user-select: none;
+    transition: background-color 0.2s;
+    color: var(--context-menu-text);
+}
+
+.context-menu-item:hover {
+    background-color: var(--context-menu-hover);
+}
+
+/* 系统菜单样式 */
+.system-menu {
+    position: absolute;
+    bottom: 60px;
+    right: 10px;
+    background-color: var(--input-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    box-shadow: 0 2px 10px var(--dropdown-shadow);
+    z-index: 1000;
+    min-width: 150px;
+}
+
+.menu-item {
+    padding: 8px 15px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    color: var(--text-color);
+}
+
+.menu-item:hover {
+    background-color: var(--session-hover-bg);
+}

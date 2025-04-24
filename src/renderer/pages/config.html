@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title id="app-title">心至 - MindComplete</title>
+    <link rel="stylesheet" href="../assets/styles.css">
+    <link rel="stylesheet" href="../assets/settings.css">
+    <link rel="stylesheet" href="../assets/dark-mode.css">
+    <link rel="stylesheet" href="../assets/main-styles.css">
+    <link rel="stylesheet" href="../assets/config.css">
+    <link id="highlight-theme" rel="stylesheet" href="../assets/highlight.js/styles/github.min.css">
+</head>
+
+<body>
+    <div class="config-container">
+        <div class="tab-nav">
+            <button class="tab-link active" data-target="models" data-tab="models">模型配置</button>
+            <button class="tab-link" data-target="prompts" data-tab="prompts">提示词管理</button>
+            <button class="tab-link" data-target="mcp-servers" data-tab="mcp">MCP服务</button>
+            <div style="flex: 1;"></div>
+            <button id="theme-toggle" class="theme-toggle" title="切换深色/浅色模式">
+                <span id="theme-toggle-icon" class="theme-toggle-icon">🌓</span>
+            </button>
+        </div>
+
+        <!-- 模型配置标签页 -->
+        <div class="tab-content active" id="models">
+            <div class="model-list">
+                <button class="add-btn" id="addModelBtn">添加模型</button>
+                <div id="modelList"></div>
+            </div>
+            <div class="model-form">
+                <form id="modelForm">
+                    <div class="form-group">
+                        <label for="modelName">模型名称</label>
+                        <input type="text" id="modelName" name="modelName" placeholder="输入模型名称">
+                    </div>
+                    <div class="form-group">
+                        <label for="modelType">模型类型</label>
+                        <input type="text" id="modelType" name="modelType" placeholder="">
+                    </div>
+                    <div class="form-group">
+                        <label for="apiUrl">API 地址</label>
+                        <input type="text" id="apiUrl" name="apiUrl" placeholder="http://localhost:8000/v1">
+                    </div>
+                    <div class="form-group">
+                        <label for="apiKey">API 密钥</label>
+                        <input type="text" id="apiKey" name="apiKey" placeholder="输入你的 API 密钥">
+                    </div>
+                    <div class="form-group">
+                        <div style="display: flex; align-items: center;">
+                            <label for="contextWindowSize"
+                                style="margin-bottom: 0; margin-right: 10px; width: 120px;">上下文窗口大小</label>
+                            <div style="display: flex; align-items: center; flex: 1;">
+                                <input type="number" id="contextWindowSize" name="contextWindowSize" min="1" value="32"
+                                    style="flex: 1;">
+                                <span style="margin-left: 8px; color: var(--text-color);">K</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div style="display: flex; align-items: center;">
+                            <label for="temperature"
+                                style="margin-bottom: 0; margin-right: 10px; width: 120px;">温度</label>
+                            <div style="display: flex; align-items: center; flex: 1;">
+                                <input type="number" id="temperature" name="temperature" min="0" max="2" step="0.1"
+                                    value="0.7" style="flex: 1;">
+                            </div>
+                        </div>
+                    </div>
+                </form>
+
+                <!-- 模型配置按钮 -->
+                <div class="form-buttons" id="model-buttons">
+                    <button class="delete-btn hidden" id="deleteModelBtn">删除模型</button>
+                    <button class="copy-btn hidden" id="copyModelBtn">复制模型</button>
+                    <button class="cancel-btn" id="cancelBtn">取消</button>
+                    <button class="save-btn" id="saveBtn">保存</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- MCP服务配置标签页 -->
+        <div class="tab-content" id="mcp-servers">
+            <div class="model-list">
+                <button class="add-btn" id="addMcpServerBtn" data-i18n="mcp.buttons.addServer">添加MCP服务</button>
+                <div id="mcpServersList" class="config-list"></div>
+            </div>
+            <div class="model-form">
+                <form id="mcpServerForm">
+                    <div class="form-group">
+                        <label for="serverName" data-i18n="mcp.labels.serverName">服务名称</label>
+                        <input type="text" id="serverName" name="serverName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="serverPath" data-i18n="mcp.labels.executablePath">可执行文件</label>
+                        <input type="text" id="serverPath" name="serverPath" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="envVars" data-i18n="mcp.labels.envVars">环境变量</label>
+                        <div id="envVarsContainer" class="key-value-container"></div>
+                        <button type="button" class="add-env-btn" id="add-env-btn"
+                            data-i18n="mcp.buttons.addEnvVar">添加环境变量</button>
+                    </div>
+                    <div class="form-group">
+                        <label for="cmdArgs" data-i18n="mcp.labels.cmdArgs">命令行参数</label>
+                        <div id="argsContainer" class="key-value-container"></div>
+                        <button type="button" class="add-arg-btn" id="add-arg-btn"
+                            data-i18n="mcp.buttons.addParam">添加参数</button>
+                    </div>
+                </form>
+
+                <!-- 工具列表展示区域 -->
+                <div id="toolsListContainer" class="hidden">
+                    <h3 data-i18n="mcp.toolsList.title">工具列表</h3>
+                    <div id="toolsList" class="tools-list-container"></div>
+                </div>
+
+                <!-- MCP服务按钮 -->
+                <div class="form-buttons" id="mcp-buttons">
+                    <button class="test-btn" id="test-mcp-button" data-i18n="mcp.toolsList.testButton"
+                        title="测试">测试</button>
+                    <button class="delete-btn hidden" id="deleteMcpServerBtn"
+                        data-i18n="mcp.buttons.deleteServer">删除</button>
+                    <button class="copy-btn hidden" id="copyMcpServerBtn" data-i18n="mcp.buttons.copy">复制</button>
+                    <button class="cancel-btn" id="cancelMcpBtn" data-i18n="mcp.buttons.cancel">取消</button>
+                    <button class="save-btn" id="saveMcpBtn" data-i18n="mcp.buttons.save">保存</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 提示词标签页 -->
+        <div class="tab-content" id="prompts">
+            <div class="model-list">
+                <button class="add-btn" id="addPromptBtn">添加提示词</button>
+                <div id="promptList" class="config-list"></div>
+            </div>
+            <div class="model-form">
+                <form id="promptForm">
+                    <div class="form-group">
+                        <label for="promptName">提示词名称</label>
+                        <input type="text" id="promptName" name="promptName" placeholder="输入提示词名称" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="promptType" data-i18n="settings.labels.promptType">提示词类型</label>
+                        <select id="promptType" name="promptType">
+                            <option value="system" data-i18n="prompts.systemType">系统提示词 (system)</option>
+                            <option value="user" data-i18n="prompts.userType">用户提示词 (user)</option>
+                        </select>
+                        <div class="form-help-text" data-i18n="prompts.typeHelp">
+                            系统提示词(System)用于设定AI的行为和角色，用户提示词(User)可用于提供特定指令或上下文
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="promptContent">提示词内容</label>
+                        <textarea id="promptContent" name="promptContent" rows="5"
+                            placeholder="输入提示词内容，将根据类型作为system或user消息发送给大模型"></textarea>
+                    </div>
+                </form>
+
+                <!-- 提示词按钮 -->
+                <div class="form-buttons" id="prompt-buttons">
+                    <button class="delete-btn hidden" id="deletePromptBtn">删除</button>
+                    <button class="copy-btn hidden" id="copyPromptBtn">复制</button>
+                    <button class="cancel-btn" id="cancelPromptBtn">取消</button>
+                    <button class="save-btn" id="savePromptBtn">保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- JavaScript引用 -->
+    <script src="../../locales/i18n.js"></script>
+    <script src="config.js"></script>
+</body>
+
+</html>

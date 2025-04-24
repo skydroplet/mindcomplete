@@ -1,0 +1,557 @@
+.config-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    /* 防止整体出现滚动 */
+}
+
+.tab-nav {
+    padding: 10px;
+    background: var(--header-bg);
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    gap: 5px;
+    flex-shrink: 0;
+    /* 确保导航栏不会收缩 */
+}
+
+.tab-link {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px 4px 0 0;
+    background: var(--session-hover-bg);
+    cursor: pointer;
+    color: var(--text-color);
+}
+
+.tab-link.active {
+    background: var(--container-bg);
+    border-bottom: 2px solid var(--button-bg);
+}
+
+.tab-content {
+    flex: 1;
+    display: none;
+    overflow: hidden;
+    flex-direction: row;
+    height: calc(100vh - 60px);
+    /* 只减去导航栏高度 */
+}
+
+.tab-content.active {
+    display: flex;
+}
+
+.model-list {
+    width: 250px;
+    background-color: var(--sidebar-bg);
+    border-right: 1px solid var(--border-color);
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    /* 确保不会收缩 */
+}
+
+.model-form {
+    flex: 1;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--container-bg);
+    color: var(--text-color);
+    overflow-y: auto;
+    max-height: 100%;
+    position: relative;
+    /* 为按钮定位提供参考 */
+}
+
+.model-form::-webkit-scrollbar {
+    width: 8px;
+}
+
+.model-form::-webkit-scrollbar-track {
+    background: var(--sidebar-bg);
+    border-radius: 4px;
+}
+
+.model-form::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 4px;
+}
+
+.model-form::-webkit-scrollbar-thumb:hover {
+    background: var(--button-bg);
+}
+
+#modelList {
+    flex: 1;
+    overflow-y: auto;
+    margin-top: 10px;
+}
+
+#modelList::-webkit-scrollbar {
+    width: 8px;
+}
+
+#modelList::-webkit-scrollbar-track {
+    background: var(--sidebar-bg);
+    border-radius: 4px;
+}
+
+#modelList::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 4px;
+}
+
+#modelList::-webkit-scrollbar-thumb:hover {
+    background: var(--button-bg);
+}
+
+.model-item {
+    padding: 10px;
+    margin-bottom: 5px;
+    cursor: pointer;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    background-color: var(--container-bg);
+    color: var(--text-color);
+}
+
+.model-item:hover {
+    background-color: var(--session-hover-bg);
+}
+
+.model-item.active {
+    background-color: var(--session-active-bg);
+    color: var(--session-active-color);
+}
+
+/* MCP服务相关样式 */
+.model-item.active-mcp {
+    border-left: 3px solid var(--button-bg);
+    background-color: var(--session-hover-bg);
+}
+
+.mcp-active-checkbox {
+    margin-right: 8px;
+    cursor: pointer;
+}
+
+.server-name {
+    flex: 1;
+}
+
+/* 添加环境变量和添加参数按钮样式 */
+.add-env-btn,
+.add-arg-btn {
+    padding: 6px 12px;
+    background-color: var(--button-bg);
+    color: var(--button-text);
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    margin-top: 5px;
+}
+
+.add-env-btn:hover,
+.add-arg-btn:hover {
+    background-color: var(--button-hover);
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.key-value-container {
+    margin-bottom: 10px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.key-value-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.key-value-row input {
+    flex: 1;
+    padding: 6px;
+    border: 1px solid var(--input-border);
+    border-radius: 4px;
+    background-color: var(--input-bg);
+    color: var(--text-color);
+}
+
+.key-value-row button {
+    padding: 2px 8px;
+    background: #ff6666;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.key-value-row button:hover {
+    background: #ff4444;
+}
+
+label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: var(--text-color);
+}
+
+input[type="text"],
+input[type="number"],
+textarea,
+select {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid var(--input-border);
+    border-radius: 4px;
+    font-size: 14px;
+    background-color: var(--input-bg);
+    color: var(--text-color);
+}
+
+/* 修改表单区域样式，增加按钮区域占位 */
+form {
+    margin-bottom: 30px;
+    /* 确保表单内容与底部按钮有足够间距 */
+}
+
+/* 全局按钮容器，固定在底部 */
+.global-buttons-container {
+    display: none;
+}
+
+/* 修改现有按钮容器样式 */
+.buttons {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    /* 移除绝对定位相关样式 */
+}
+
+button {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    min-width: 80px;
+    text-align: center;
+}
+
+.save-btn {
+    background-color: var(--button-bg);
+    color: var(--button-text);
+}
+
+.save-btn:hover {
+    background-color: var(--button-hover);
+}
+
+.cancel-btn {
+    background-color: #f44336;
+    color: white;
+}
+
+.add-btn {
+    background-color: #2196F3;
+    color: white;
+    margin-bottom: 10px;
+    width: 100%;
+}
+
+.delete-btn {
+    background-color: #f44336;
+    color: white;
+}
+
+.delete-btn.hidden {
+    display: none;
+}
+
+.copy-btn {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.copy-btn.hidden {
+    display: none;
+}
+
+.test-btn {
+    background-color: #9C27B0;
+    color: white;
+    margin-right: auto;
+    /* Push other buttons to the right */
+}
+
+.test-btn:disabled {
+    background-color: #9C27B0;
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* 提示词文本域样式 */
+textarea {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid var(--input-border);
+    border-radius: 4px;
+    font-size: 14px;
+    resize: vertical;
+    min-height: 120px;
+    font-family: inherit;
+    background-color: var(--input-bg);
+    color: var(--text-color);
+}
+
+/* 工具列表样式 */
+#toolsListContainer {
+    margin-top: 20px;
+    border-top: 1px solid var(--border-color);
+    padding-top: 15px;
+    margin-bottom: 20px;
+    /* 减少底部间距 */
+}
+
+#toolsListContainer.hidden {
+    display: none;
+}
+
+#toolsListContainer h3 {
+    color: var(--text-color);
+    margin-bottom: 10px;
+}
+
+.tools-list-container {
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    margin-top: 10px;
+    background-color: var(--container-bg);
+}
+
+.tools-list-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+.tools-list-container::-webkit-scrollbar-track {
+    background: var(--sidebar-bg);
+    border-radius: 4px;
+}
+
+.tools-list-container::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 4px;
+}
+
+.tools-list-container::-webkit-scrollbar-thumb:hover {
+    background: var(--button-bg);
+}
+
+/* 工具表格样式 */
+.tools-table {
+    width: 100%;
+    border-collapse: collapse;
+    border-spacing: 0;
+    color: var(--text-color);
+    table-layout: fixed;
+    /* 固定表格布局，防止列宽变形 */
+}
+
+.tools-table th,
+.tools-table td {
+    word-break: break-word;
+    /* 允许长文本自动换行 */
+    overflow-wrap: break-word;
+    /* 确保长单词也能换行 */
+}
+
+.tools-table th {
+    background-color: var(--sidebar-bg);
+    padding: 10px;
+    text-align: left;
+    font-weight: 600;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.tools-table td {
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border-color);
+    vertical-align: top;
+}
+
+.tools-table tr:last-child td {
+    border-bottom: none;
+}
+
+.tools-table tr:hover {
+    background-color: var(--session-hover-bg);
+}
+
+.tools-table th:first-child,
+.tools-table td:first-child {
+    width: 60px;
+    text-align: center;
+    min-width: 2em;
+    /* 确保至少有2个中文字符的宽度 */
+}
+
+.tools-table th:nth-child(2),
+.tools-table td:nth-child(2) {
+    width: 200px;
+    min-width: 4em;
+    /* 确保至少有2个中文字符的宽度，名称列需要更多空间 */
+}
+
+.tools-table th:nth-child(3),
+.tools-table td:nth-child(3) {
+    min-width: 4em;
+    /* 确保至少有2个中文字符的宽度，描述列 */
+}
+
+.tools-table th:nth-child(4),
+.tools-table td:nth-child(4) {
+    min-width: 4em;
+    /* 确保至少有2个中文字符的宽度，自动授权列 */
+    text-align: center;
+}
+
+.tool-name {
+    font-weight: bold;
+}
+
+.tool-description {
+    color: var(--secondary-text-color);
+    font-size: 0.9em;
+}
+
+.tool-item {
+    padding: 10px;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-color);
+}
+
+.tool-item:last-child {
+    border-bottom: none;
+}
+
+/* 自动授权复选框样式 */
+.auto-approve-checkbox {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    margin: 0;
+    position: relative;
+    top: 1px;
+}
+
+/* 创建漂亮的复选框效果 */
+.auto-approve-checkbox:checked {
+    accent-color: var(--button-bg);
+}
+
+.auto-approve-checkbox:hover {
+    opacity: 0.8;
+}
+
+#mcpServersList,
+#promptList {
+    flex: 1;
+    overflow-y: auto;
+    margin-top: 10px;
+}
+
+#mcpServersList::-webkit-scrollbar,
+#promptList::-webkit-scrollbar {
+    width: 8px;
+}
+
+#mcpServersList::-webkit-scrollbar-track,
+#promptList::-webkit-scrollbar-track {
+    background: var(--sidebar-bg);
+    border-radius: 4px;
+}
+
+#mcpServersList::-webkit-scrollbar-thumb,
+#promptList::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 4px;
+}
+
+#mcpServersList::-webkit-scrollbar-thumb:hover,
+#promptList::-webkit-scrollbar-thumb:hover {
+    background: var(--button-bg);
+}
+
+/* 提示词类型标签样式 */
+.prompt-type-badge {
+    display: inline-block;
+    font-size: 0.8em;
+    padding: 2px 6px;
+    margin-left: 8px;
+    border-radius: 3px;
+    background-color: var(--button-bg);
+    color: var(--button-text);
+}
+
+/* 环境变量和参数容器滚动样式 */
+.key-value-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+.key-value-container::-webkit-scrollbar-track {
+    background: var(--sidebar-bg);
+    border-radius: 4px;
+}
+
+.key-value-container::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 4px;
+}
+
+.key-value-container::-webkit-scrollbar-thumb:hover {
+    background: var(--button-bg);
+}
+
+/* 添加额外的底部间距，防止内容重叠 */
+#modelForm,
+#mcpServerForm,
+#promptForm {
+    margin-bottom: 0;
+    /* 移除底部边距，因为已经有全局按钮区域 */
+}
+
+/* 添加新的表单按钮样式 */
+.form-buttons {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 10px;
+    padding: 15px 0;
+    margin-top: 20px;
+    border-top: 1px solid var(--border-color);
+    background-color: var(--container-bg);
+}
+
+.form-help-text {
+    font-size: 0.8em;
+    color: var(--secondary-text-color);
+    margin-top: 5px;
+}

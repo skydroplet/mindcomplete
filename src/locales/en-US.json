@@ -1,7 +1,7 @@
 {
     "app": {
         "title": "MindComplete",
-        "description": "Rebuild the personalized interaction entrance with the digital world"
+        "description": "A large model client, MCP client.\nLet everyone can freely interact with the digital world."
     },
     "ui": {
         "inputPlaceholder": "Enter your question...",
@@ -186,7 +186,13 @@
         "tabs": {
             "models": "Models",
             "prompts": "Prompts",
-            "mcp": "MCP Servers"
+            "mcp": "MCP Servers",
+            "newSession": "New Session",
+            "close": "Close Tab",
+            "newTab": "New Tab",
+            "loadingSession": "Loading...",
+            "dropdown": "More Tabs",
+            "noTabs": "No Tabs"
         },
         "labels": {
             "modelName": "Model Name",
@@ -214,15 +220,18 @@
         },
         "buttons": {
             "addModel": "+ Add Model",
-            "saveModelBtn": "Save Model",
+            "saveModelBtn": "Save",
             "resetModelBtn": "Reset",
-            "deleteModelBtn": "Delete Model",
-            "savePromptBtn": "Save Prompt",
+            "deleteModelBtn": "Delete",
+            "copyModelBtn": "Copy",
+            "savePromptBtn": "Save",
             "resetPromptBtn": "Reset",
-            "deletePromptBtn": "Delete Prompt",
-            "saveMcpBtn": "Save MCP Server",
-            "deleteMcpServerBtn": "Delete MCP Server",
-            "test-mcp-button": "Test MCP Tool",
+            "deletePromptBtn": "Delete",
+            "copyPromptBtn": "Copy",
+            "saveMcpBtn": "Save",
+            "deleteMcpServerBtn": "Delete",
+            "copyMcpServerBtn": "Copy",
+            "test-mcp-button": "Test",
             "cancelBtn": "Cancel",
             "saveBtn": "Save",
             "cancelPromptBtn": "Cancel",
@@ -285,6 +294,7 @@
             "deleteServer": "Delete",
             "cancel": "Cancel",
             "save": "Save",
+            "copy": "Copy",
             "addEnvVar": "Add Environment Variable",
             "addParam": "Add Parameter"
         },
@@ -296,9 +306,9 @@
         },
         "authorization": {
             "title": "Tool Authorization Request",
-            "message": "Application is requesting to use tool \"{name}\" which is not in the auto-approve list.",
+            "message": "**AI is requesting to use \"{serverName}\" tool \"{name}\" which is not in the auto-approve list.**",
             "onetime": "Authorize Once",
-            "auto": "Auto-approve in Future",
+            "auto": "Authorize Always",
             "deny": "Deny",
             "success": "Tool authorization status updated",
             "error": "Failed to update authorization status: {error}",

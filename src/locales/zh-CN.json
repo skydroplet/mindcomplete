@@ -1,7 +1,7 @@
 {
     "app": {
         "title": "心至 - MindComplete",
-        "description": "重新构建与数字世界的个性化交互入口"
+        "description": "大模型客户端，MCP客户端。\n让每个人都能自由地和数字世界交互。"
     },
     "ui": {
         "inputPlaceholder": "请输入您的问题...",
@@ -186,7 +186,13 @@
         "tabs": {
             "models": "模型",
             "prompts": "提示词",
-            "mcp": "MCP服务"
+            "mcp": "MCP服务",
+            "newSession": "新会话",
+            "close": "关闭标签",
+            "newTab": "新建标签页",
+            "loadingSession": "加载中...",
+            "dropdown": "更多标签",
+            "noTabs": "没有标签"
         },
         "labels": {
             "modelName": "模型名称",
@@ -218,11 +224,14 @@
             "saveModelBtn": "保存模型",
             "resetModelBtn": "重置",
             "deleteModelBtn": "删除",
+            "copyModelBtn": "复制",
             "savePromptBtn": "保存",
             "resetPromptBtn": "重置",
             "deletePromptBtn": "删除",
+            "copyPromptBtn": "复制",
             "saveMcpBtn": "保存",
             "deleteMcpServerBtn": "删除",
+            "copyMcpServerBtn": "复制",
             "test-mcp-button": "测试",
             "cancelBtn": "取消",
             "saveBtn": "保存",
@@ -283,6 +292,7 @@
         },
         "buttons": {
             "addServer": "添加",
+            "copy": "复制",
             "deleteServer": "删除",
             "cancel": "取消",
             "save": "保存",
@@ -297,9 +307,9 @@
         },
         "authorization": {
             "title": "工具授权请求",
-            "message": "应用请求使用工具 \"{name}\"，该工具不在自动授权列表中。",
+            "message": "\n**AI请求使用 \"{serverName}\" 的工具 `{name}`，该工具不在自动授权列表中。**\n",
             "onetime": "本次授权",
-            "auto": "后续自动授权",
+            "auto": "永久授权",
             "deny": "拒绝",
             "success": "已更新工具授权状态",
             "error": "更新授权状态失败: {error}",

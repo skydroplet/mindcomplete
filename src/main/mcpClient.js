@@ -4,7 +4,7 @@ const Logger = require('./logger');
 const log = new Logger('mcp');
 const path = require('path');
 const fs = require('fs');
-const { mcpConfigManager } = require('./config');
+const { mcpConfig: mcpConfigManager } = require('./config');
 const EventEmitter = require('events');
 
 /**
@@ -65,9 +65,9 @@ class MCPClientManager extends EventEmitter {
         const mcpConfig = mcpConfigManager.getMcpConfig();
         this.activeServers = mcpConfig.activeMcps || [];
 
-        log.info("初始化MCP管理器, 活跃MCP列表:", this.activeServers);
+        log.info("初始化MCP Clients, 活跃MCP列表:", this.activeServers);
 
-        // 连接所有活跃的MCP服务
+        // 连接上次对话使用的mcp
         this.connectToActiveServers();
 
         // 监听配置变更事件
@@ -80,38 +80,26 @@ class MCPClientManager extends EventEmitter {
 
     // 连接到所有活跃的MCP服务
     async connectToActiveServers() {
-        // 获取配置中的MCP服务列表
         const mcpConfig = mcpConfigManager.getMcpConfig();
         const servers = mcpConfig.servers || {};
 
-        // 关闭所有不再活跃的连接
-        for (const [serverId, client] of this.mcpClients.entries()) {
-            if (!this.activeServers.includes(serverId)) {
-                log.info(`关闭非活跃MCP连接: ${serverId}`);
-                try {
-                    // 尝试断开连接
-                    if (client.client && client.isConnected) {
-                        await client.client.disconnect();
-                    }
-                } catch (error) {
-                    log.error(`断开MCP连接时出错: ${serverId}`, error);
-                }
-                this.mcpClients.delete(serverId);
-            }
-        }
-
-        // 连接到所有活跃的MCP服务
         for (const serverId of this.activeServers) {
-            if (!this.mcpClients.has(serverId) && servers[serverId]) {
-                log.info(`连接到活跃MCP服务: ${serverId}`);
-                await this.connectToServer(serverId, servers[serverId]);
-            }
+            log.info(`连接到MCP: ${serverId}`);
+            await this.connectToServer(serverId, servers[serverId]);
         }
 
         // 如果没有活跃的MCP，也要触发事件通知
         if (this.activeServers.length === 0) {
             this.emit('mcp-status-changed', { connected: false, message: "没有活跃的MCP服务" });
         }
+    }
+
+    /**
+     * 获取当前活跃的MCP服务器ID列表
+     * @returns {Array} 活跃MCP服务器ID数组
+     */
+    getActiveMcpServerIds() {
+        return this.activeServers || [];
     }
 
     async connectToServer(serverId, serverConfig) {
@@ -168,10 +156,13 @@ class MCPClientManager extends EventEmitter {
 
             // 获取工具列表
             const toolsResult = await client.listTools();
-            log.info(`服务 ${serverName} 工具列表:`, JSON.stringify(toolsResult, null, 2));
+            let toolNames = [];
+
 
             // 处理工具列表，转换为特定格式
             const tools = toolsResult.tools.map((tool) => {
+                toolNames.push(tool.name);
+
                 // 确保工具有合法的JSON Schema
                 let parameters = tool.inputSchema;
 
@@ -205,6 +196,7 @@ class MCPClientManager extends EventEmitter {
                     }
                 };
             });
+            log.info(`服务 ${serverName} 工具数量:`, toolsResult.tools.length);
 
             // 保存客户端实例
             this.mcpClients.set(serverId, {
@@ -216,7 +208,7 @@ class MCPClientManager extends EventEmitter {
                 serverName
             });
 
-            log.info(`成功连接到MCP服务 ${serverName}，获取到 ${tools.length} 个工具`);
+            log.info(`成功连接到MCP服务 ${serverName}，获取到 ${tools.length} 个工具: ${toolNames.join(', ')}`);
 
             // 发送连接状态变更事件
             this.emit('mcp-status-changed', {
@@ -256,6 +248,36 @@ class MCPClientManager extends EventEmitter {
         }
     }
 
+    getToolsForServer(serverIds) {
+        let tools = [];
+
+        const mcpConfig = mcpConfigManager.getMcpConfig();
+        const servers = mcpConfig.servers || {};
+
+        for (const serverId of serverIds) {
+            const serverName = servers[serverId].name;
+
+            let client = this.mcpClients.get(serverId);
+            if (!client || !client.isConnected) {
+                this.connectToServer(serverId, servers[serverId])
+            }
+
+            client = this.mcpClients.get(serverId);
+            if (!client || !client.isConnected) {
+                log.error(`MCP服务连接失败 ${serverId} ${serverName}`);
+                continue;
+            }
+
+            if (client.tools && client.tools.length > 0) {
+                tools.push(...client.tools);
+            }
+
+            log.info(`${serverId} 共 ${client.tools.length} 个工具`);
+        }
+
+        return tools;
+    }
+
     // 获取所有可用工具，合并来自不同MCP服务的工具
     getTools() {
         const allTools = [];
@@ -274,7 +296,7 @@ class MCPClientManager extends EventEmitter {
     isToolAuthorized(toolName, serverId) {
         const config = mcpConfigManager.getMcpConfig();
         if (!config || !config.servers || !config.servers[serverId]) {
-            log.error(`无法获取服务 ${serverId} 的配置，无法检查工具授权状态`);
+            log.error(`无法获取MCP服务 ${serverId} 的配置，无法检查工具授权状态`);
             return false;
         }
 
@@ -289,33 +311,9 @@ class MCPClientManager extends EventEmitter {
         return isAuthorized;
     }
 
-    // 请求工具授权
-    async requestToolAuthorization(toolName, serverId) {
-        if (!this.mcpManager) {
-            log.error('无法获取mcpManager，无法请求工具授权');
-            return { authorized: false, error: '无法获取MCP配置管理器' };
-        }
-
-        try {
-            // 发送授权请求信号，包含工具名称和服务ID
-            this.emit('tool-authorization-request', { toolName, serverId });
-
-            // 此处我们只是发送信号，实际授权处理会在main.js中处理
-            return { authorized: true, permanent: false };
-        } catch (error) {
-            log.error(`请求工具 ${toolName} 授权时出错:`, error);
-            return { authorized: false, error: error.message };
-        }
-    }
-
     async updateToolAuthorizationStatus(toolName, serverId, isAuthorized) {
-        if (!this.mcpManager) {
-            log.error('无法获取mcpManager，无法更新工具授权状态');
-            return false;
-        }
-
         try {
-            const config = this.mcpManager.getConfig();
+            const config = mcpConfigManager.getMcpConfig();
             if (!config || !config.servers || !config.servers[serverId]) {
                 log.error(`无法获取服务 ${serverId} 的配置，无法更新工具授权状态`);
                 return false;
@@ -333,9 +331,9 @@ class MCPClientManager extends EventEmitter {
             }
 
             // 保存配置
-            return this.mcpManager.saveConfig();
+            return mcpConfigManager.saveConfig();
         } catch (error) {
-            log.error(`更新工具 ${toolName} 授权状态时出错:`, error);
+            log.error(`更新工具 ${toolName} 授权状态时出错:`, error.message);
             return false;
         }
     }

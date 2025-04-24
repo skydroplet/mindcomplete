@@ -4,18 +4,18 @@
  */
 
 const configManager = require('./configManager');
-const modelConfigManager = require('./modelManager');
-const mcpConfigManager = require('./mcpManager');
-const promptConfigManager = require('./promptManager');
+const modelConfig = require('./modelConfig');
+const mcpConfig = require('./mcpConfig');
+const promptConfig = require('./promptConfig');
 const { createConfigWindow, registerConfigIPC, openConfigWindowWithTab } = require('./configWindow');
 
 module.exports = {
     configManager,
-    modelConfigManager,
-    mcpConfigManager,
+    modelConfig,
+    mcpConfig,
     createConfigWindow,
     registerConfigIPC,
-    promptConfigManager,
+    promptConfig,
     openConfigWindowWithTab
 };
 

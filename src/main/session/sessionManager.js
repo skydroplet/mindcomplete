@@ -1,12 +1,10 @@
 const fs = require('fs');
 const path = require('path');
-const os = require('os');
-const crypto = require('crypto');
 const Logger = require('../logger');
 const log = new Logger('session');
 const EventEmitter = require('events');
 const { app } = require('electron');
-const i18n = require('../../locales/i18n');
+const ChatSession = require('./session');
 
 /**
  * 会话管理器
@@ -15,6 +13,7 @@ const i18n = require('../../locales/i18n');
 class SessionManager extends EventEmitter {
     constructor() {
         super();
+
         // 获取 Electron 的 userData 路径
         const userDataPath = app.getPath('userData');
         this.sessionDir = path.join(userDataPath, 'user-data', 'sessions');
@@ -23,35 +22,31 @@ class SessionManager extends EventEmitter {
         // 当前活动会话ID
         this.activeSessionId = null;
 
-        // 会话列表缓存
-        this.sessionsCache = null;
+        // map[sessionId]Session
+        this.sessionMap = {};
 
-        // 当前会话的消息历史
-        this.currentSession = {
-            id: null,
-            name: '',
-            messages: [],
-            createdAt: null,
-            updatedAt: null,
-            messageCount: 0 // 用于跟踪消息ID
-        };
-
-        // 初始化
         this.loadSessions();
-    }
 
-    /**
-     * 生成不重复的随机会话ID
-     */
-    generateSessionId() {
-        return 'session-' + crypto.randomBytes(5).toString('hex');
+        if (this.sessionMap.size === 0) {
+            this.createSession();
+        }
     }
 
     /**
      * 获取所有会话列表
      */
     getSessions() {
-        return this.loadSessions();
+        const sessionInfoList = [];
+
+        for (const sessionId in this.sessionMap) {
+            const session = this.sessionMap[sessionId];
+            const sessionInfo = session.getSummary();
+            sessionInfoList.push(sessionInfo);
+        }
+
+        sessionInfoList.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+
+        return sessionInfoList;
     }
 
     /**
@@ -59,103 +54,64 @@ class SessionManager extends EventEmitter {
      */
     loadSessions() {
         try {
-            if (this.sessionsCache) {
-                return this.sessionsCache;
-            }
+            const sessionDates = fs.readdirSync(this.sessionDir);
 
-            const sessions = [];
-            const files = fs.readdirSync(this.sessionDir);
+            sessionDates.forEach(sessionDates => {
+                const sessionDateDir = path.join(this.sessionDir, sessionDates);
+                const stats = fs.statSync(sessionDateDir);
 
-            for (const file of files) {
-                if (file.endsWith('.json')) {
-                    try {
-                        const filePath = path.join(this.sessionDir, file);
-                        const data = fs.readFileSync(filePath, 'utf8');
-                        const session = JSON.parse(data);
-                        sessions.push({
-                            id: session.id,
-                            name: session.name,
-                            createdAt: session.createdAt,
-                            updatedAt: session.updatedAt,
-                            messageCount: session.messages.length
-                        });
-                    } catch (err) {
-                        log.error(`解析会话文件 ${file} 失败:`, err);
-                    }
+                if (stats.isDirectory()) {
+                    const sessionFiles = fs.readdirSync(sessionDateDir);
+
+                    sessionFiles.forEach(sessionFile => {
+                        if (sessionFile.endsWith('.json')) {
+                            const sessionFilePath = path.join(sessionDateDir, sessionFile);
+                            const session = new ChatSession(sessionFilePath);
+                            this.sessionMap[session.data.id] = session;
+                        }
+                    })
                 }
+            })
+
+            const sessionInfoList = [];
+
+            for (const sessionId in this.sessionMap) {
+                const session = this.sessionMap[sessionId];
+                const sessionInfo = session.getSummary();
+                sessionInfoList.push(sessionInfo);
             }
 
-            // 按更新时间排序，最新的在前面
-            sessions.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
-            this.sessionsCache = sessions;
-            return sessions;
+            sessionInfoList.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+            this.sessionInfoList = sessionInfoList;
         } catch (err) {
-            log.error('加载会话列表失败:', err);
-            return [];
+            log.error('加载会话列表失败:', err.message);
         }
     }
 
     /**
      * 创建新会话
-     * @param {string} name 会话名称
      */
-    createSession(name = '') {
-        // 保存当前会话
-        if (this.activeSessionId) {
-            this.saveCurrentSession();
-        }
-
-        const sessionId = this.generateSessionId();
-        const now = new Date().toLocaleString();
-
-        this.currentSession = {
-            id: sessionId,
-            name: name || i18n.t('session.defaultNewName', { date: new Date().toLocaleString() }),
-            messages: [],
-            createdAt: now.toLocaleString(),
-            updatedAt: now.toLocaleString(),
-            lastMessageId: 1 // 初始化消息ID计数器
-        };
-
-        this.activeSessionId = sessionId;
-        this.saveCurrentSession();
-
-        // 清除缓存
-        this.sessionsCache = null;
-
-        // 通知会话创建
-        this.emit('session-created', this.currentSession);
-
-        return this.currentSession;
+    createSession() {
+        const session = new ChatSession();
+        this.sessionMap[session.data.id] = session;
+        return session.data;
     }
 
     /**
      * 加载指定会话
      * @param {string} sessionId 会话ID
+     * @returns {Promise<Session>} 加载的会话对象
      */
     loadSession(sessionId) {
         try {
-            // 保存当前会话
-            if (this.activeSessionId) {
-                this.saveCurrentSession();
+            const session = this.sessionMap[sessionId];
+            if (!session) {
+                throw new Error(`未找到会话 ${sessionId}`);
             }
 
-            const filePath = path.join(this.sessionDir, `${sessionId}.json`);
-            if (!fs.existsSync(filePath)) {
-                log.error(`会话 ${sessionId} 不存在`);
-                return null;
-            }
-
-            const data = fs.readFileSync(filePath, 'utf8');
-            this.currentSession = JSON.parse(data);
-            this.activeSessionId = sessionId;
-
-            // 通知会话加载
-            this.emit('session-loaded', this.currentSession);
-
-            return this.currentSession;
+            return session;
         } catch (err) {
-            log.error(`加载会话 ${sessionId} 失败:`, err);
+            log.error(`加载会话 ${sessionId} 失败:`, err.message);
             return null;
         }
     }
@@ -165,24 +121,10 @@ class SessionManager extends EventEmitter {
      */
     saveCurrentSession() {
         try {
-            if (!this.activeSessionId || !this.currentSession.id) {
-                return false;
-            }
-
-            this.currentSession.updatedAt = new Date().toLocaleString();
-            const filePath = path.join(this.sessionDir, `${this.currentSession.id}.json`);
-
-            fs.writeFileSync(filePath, JSON.stringify(this.currentSession, null, 2));
-
-            // 清除缓存
-            this.sessionsCache = null;
-
-            // 通知会话保存
-            this.emit('session-saved', this.currentSession);
-
+            this.currentSession.saveToFile();
             return true;
         } catch (err) {
-            log.error('保存当前会话失败:', err);
+            log.error('保存当前会话失败:', err.message);
             return false;
         }
     }
@@ -194,35 +136,11 @@ class SessionManager extends EventEmitter {
      */
     renameSession(sessionId, newName) {
         try {
-            const filePath = path.join(this.sessionDir, `${sessionId}.json`);
-            if (!fs.existsSync(filePath)) {
-                return false;
-            }
-
-            let session;
-            if (sessionId === this.activeSessionId) {
-                // 如果是当前会话，直接修改内存中的数据
-                this.currentSession.name = newName;
-                session = this.currentSession;
-            } else {
-                // 否则从文件加载
-                const data = fs.readFileSync(filePath, 'utf8');
-                session = JSON.parse(data);
-                session.name = newName;
-            }
-
-            session.updatedAt = new Date().toLocaleString();
-            fs.writeFileSync(filePath, JSON.stringify(session, null, 2));
-
-            // 清除缓存
-            this.sessionsCache = null;
-
-            // 通知会话更新
-            this.emit('session-renamed', sessionId, newName);
-
+            const session = this.sessionMap[sessionId];
+            session.rename(newName);
             return true;
         } catch (err) {
-            log.error(`重命名会话 ${sessionId} 失败:`, err);
+            log.error(`重命名会话 ${sessionId} 失败:`, err.message);
             return false;
         }
     }
@@ -233,105 +151,101 @@ class SessionManager extends EventEmitter {
      */
     deleteSession(sessionId) {
         try {
-            const filePath = path.join(this.sessionDir, `${sessionId}.json`);
-            if (!fs.existsSync(filePath)) {
+            const session = this.sessionMap[sessionId];
+            if (!session) {
                 return false;
             }
 
-            fs.unlinkSync(filePath);
-
-            // 如果删除的是当前会话，清空当前会话
-            if (sessionId === this.activeSessionId) {
-                this.activeSessionId = null;
-                this.currentSession = {
-                    id: null,
-                    name: '',
-                    messages: [],
-                    createdAt: null,
-                    updatedAt: null,
-                    lastMessageId: 0
-                };
-            }
-
-            // 清除缓存
-            this.sessionsCache = null;
-
-            // 通知会话删除
-            this.emit('session-deleted', sessionId);
-
+            session.remove();
+            delete this.sessionMap[sessionId];
             return true;
         } catch (err) {
-            log.error(`删除会话 ${sessionId} 失败:`, err);
+            log.error(`删除会话 ${sessionId} 失败:`, err.message);
             return false;
         }
     }
 
     /**
-     * 获取当前活动会话
+     * 设置会话的模型ID
+     * @param {string} sessionId 会话ID
+     * @param {string} modelId 模型ID
+     * @returns {boolean} 设置是否成功
      */
-    getCurrentSession() {
-        return this.currentSession;
-    }
-
-    /**
-     * 获取当前活动会话ID
-     */
-    getActiveSessionId() {
-        return this.activeSessionId;
-    }
-
-    /**
-     * 添加消息到当前会话
-     * @param {Object} message 消息对象 {role, content}
-     */
-    addMessage(message) {
-        // 如果没有活动会话，创建一个
-        if (!this.activeSessionId) {
-            this.createSession();
+    setSessionModelId(sessionId, modelId) {
+        const session = this.sessionMap[sessionId];
+        if (!session) {
+            log.error("未找到会话:", sessionId)
+            return false;
         }
 
-        // 确保 lastMessageId 字段存在
-        if (this.currentSession.messageCount === undefined) {
-            this.currentSession.messageCount = 0;
-        }
-
-        if (this.currentSession.messageCount === 0 && message.role === 'user') {
-            this.currentSession.name = message.content;
-        }
-
-        // 递增消息ID
-        const messageId = ++this.currentSession.messageCount;
-        this.currentSession.messageCount = messageId;
-
-        // 添加消息及其ID
-        this.currentSession.messages.push({
-            id: messageId,
-            ...message,
-            timestamp: new Date().toLocaleString()
-        });
-
-        // 保存会话
-        this.saveCurrentSession();
-
+        session.setModelId(modelId);
         return true;
     }
 
     /**
-     * 清空当前会话的消息
+     * 设置会话的提示词ID
+     * @param {string} sessionId 会话ID
+     * @param {string} promptId 提示词ID
+     * @returns {boolean} 设置是否成功
      */
-    clearMessages() {
-        if (this.activeSessionId) {
-            this.currentSession.messages = [];
-            // 重置消息ID计数器
-            this.currentSession.messageCount = 0;
-            this.saveCurrentSession();
-
-            // 通知会话消息已清空
-            this.emit('session-messages-cleared', this.activeSessionId);
-
-            return true;
+    setSessionPromptId(sessionId, promptId) {
+        const session = this.sessionMap[sessionId];
+        if (!session) {
+            log.error("未找到会话", sessionId)
+            return false;
         }
-        return false;
+
+        session.setPromptId(promptId);
+        return true;
+    }
+
+    /**
+     * 设置会话的对话模式
+     * @param {string} sessionId 会话ID
+     * @param {string} mode 对话模式 'single-turn' 或 'multi-turn'
+     * @returns {boolean} 设置是否成功
+     */
+    setSessionConversationMode(sessionId, mode) {
+        const session = this.sessionMap[sessionId];
+        if (!session) {
+            log.error("未找到会话", sessionId);
+            return false;
+        }
+
+        session.setConversationMode(mode);
+        return true;
+    }
+
+    /**
+     * 设置会话使用的MCP服务器列表
+     * @param {string} sessionId 会话ID
+     * @param {Array} mcpServers MCP服务器ID数组
+     * @returns {boolean} 设置是否成功
+     */
+    setSessionMcpServers(sessionId, mcpServers) {
+        const session = this.sessionMap[sessionId];
+        if (!session) {
+            log.error("未找到会话", sessionId)
+            return false;
+        }
+
+        session.setMcpServers(mcpServers);
+        return true;
+    }
+
+    /**
+     * 获取会话使用的MCP服务器列表
+     * @param {string} sessionId 会话ID
+     * @returns {Array} MCP服务器ID数组
+     */
+    getSessionMcpServers(sessionId) {
+        const session = this.sessionMap[sessionId];
+        if (!session) {
+            log.error("未找到会话", sessionId)
+            return [];
+        }
+
+        return session.getMcpServers();
     }
 }
 

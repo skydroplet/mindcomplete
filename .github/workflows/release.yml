@@ -1,0 +1,67 @@
+name: Release Build
+
+on:
+  push:
+    tags:
+    - "v*"
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    permissions:
+        contents: write
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+        node-version: [22]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
+
+    - name: Install dependencies
+      run: npm install
+
+    - name: Build Electron app
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Required for private repository access
+      run: npm run build --verbose
+
+    - name: Debug build output
+      run: ls -R dist
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: artifact-${{ matrix.os }}-${{ github.run_id }}
+        path: |
+          dist/mindcomplete-*.exe
+          dist/mindcomplete-*.AppImage
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+        contents: write
+    steps:
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: artifact
+        
+    - name: Display structure of downloaded files
+      run: ls -R artifact
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v2
+      with:
+        files: |
+          artifact/artifact-ubuntu-latest-*/mindcomplete-*.AppImage
+          artifact/artifact-windows-latest-*/mindcomplete-*.exe
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
