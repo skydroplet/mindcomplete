@@ -6,8 +6,8 @@
 const Logger = require('../logger');
 const log = new Logger('config');
 const EventEmitter = require('events');
-const modelManager = require('./modelManager');
-const mcpManager = require('./mcpManager');
+const modelManager = require('./modelConfig');
+const mcpManager = require('./mcpConfig');
 const fs = require('fs');
 const path = require('path');
 const { app } = require('electron');
@@ -26,6 +26,15 @@ class ConfigManager extends EventEmitter {
         const configDir = path.join(userDataPath, 'user-data', 'config');
         fs.mkdirSync(configDir, { recursive: true });
         this.configPath = path.join(configDir, 'config.json');
+
+        // 默认配置
+        this.defaultConfig = {
+            language: 'zh-CN',
+            theme: 'auto',
+            updateUrl: "https://api.mindcomplete.me/v1/latest",
+            lastUpdateCheck: null,
+            latestVersion: null
+        };
 
         // 加载通用配置
         this.generalConfig = this.loadGeneralConfig();
@@ -47,21 +56,14 @@ class ConfigManager extends EventEmitter {
     loadGeneralConfig() {
         try {
             if (!fs.existsSync(this.configPath)) {
-                // 默认配置
-                const defaultConfig = {
-                    language: 'zh-CN',
-                    theme: 'auto',
-                    lastUpdateCheck: null,
-                    latestVersion: null
-                };
-                fs.writeFileSync(this.configPath, JSON.stringify(defaultConfig, null, 2));
-                return defaultConfig;
+                fs.writeFileSync(this.configPath, JSON.stringify(this.defaultConfig, null, 2));
+                return this.defaultConfig;
             }
             const data = fs.readFileSync(this.configPath, 'utf8');
             return JSON.parse(data);
         } catch (error) {
-            log.error('加载通用配置失败:', error);
-            return { language: 'zh-CN', theme: 'auto', lastUpdateCheck: null, latestVersion: null };
+            log.error('加载通用配置失败:', error.message);
+            return this.defaultConfig;
         }
     }
 
@@ -73,7 +75,7 @@ class ConfigManager extends EventEmitter {
             this.emit('general-config-updated', this.generalConfig);
             return true;
         } catch (error) {
-            log.error('保存通用配置失败:', error);
+            log.error('保存通用配置失败:', error.message);
             return false;
         }
     }
@@ -85,6 +87,7 @@ class ConfigManager extends EventEmitter {
 
     // 更新语言设置
     setLanguage(language) {
+        this.generalConfig = this.loadGeneralConfig();
         this.generalConfig.language = language;
         return this.saveGeneralConfig();
     }
@@ -96,6 +99,7 @@ class ConfigManager extends EventEmitter {
 
     // 更新主题设置
     setTheme(theme) {
+        this.generalConfig = this.loadGeneralConfig();
         this.generalConfig.theme = theme;
         return this.saveGeneralConfig();
     }
@@ -151,7 +155,7 @@ class ConfigManager extends EventEmitter {
 
             // 发起请求获取最新版本信息
             log.info('正在检查更新...');
-            const response = await axios.get('https://api.mindcomplete.me/v1/latest');
+            const response = await axios.get(this.generalConfig.updateUrl);
             const { data } = response;
 
             if (data.code === 0) {
@@ -181,7 +185,7 @@ class ConfigManager extends EventEmitter {
                 throw new Error(`检查更新失败: ${data.message}`);
             }
         } catch (error) {
-            log.error('检查更新失败:', error);
+            log.error('检查更新失败:', error.message);
             throw error;
         }
     }

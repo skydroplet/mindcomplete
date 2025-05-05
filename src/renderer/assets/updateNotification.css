@@ -1,0 +1,129 @@
+.update-notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    width: 400px;
+    background: var(--vscode-editor-background);
+    background-color: var(--vscode-editor-background);
+    opacity: 1;
+    border: 1px solid var(--vscode-panel-border);
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+    z-index: 10000;
+    font-family: var(--vscode-font-family);
+    color: var(--vscode-editor-foreground);
+    animation: slideIn 0.3s ease-out;
+    overflow: hidden;
+}
+
+.update-notification-content {
+    padding: 16px;
+}
+
+.update-notification-title {
+    display: flex;
+    align-items: center;
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: var(--vscode-editor-foreground);
+}
+
+.update-notification-title i {
+    margin-right: 8px;
+    color: var(--vscode-gitDecoration-untrackedResourceForeground);
+}
+
+.update-notification-details {
+    margin-bottom: 16px;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.update-notification-details p {
+    margin: 8px 0;
+}
+
+.update-notification-details strong {
+    color: var(--vscode-editor-foreground);
+    font-weight: 600;
+}
+
+.update-notification-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.update-notification-btn {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.update-notification-btn.close-btn {
+    background: var(--vscode-button-secondaryBackground);
+    color: var(--vscode-button-secondaryForeground);
+}
+
+.update-notification-btn.close-btn:hover {
+    background: var(--vscode-button-secondaryHoverBackground);
+}
+
+.update-notification-btn.download-btn {
+    background: var(--vscode-button-background);
+    color: var(--vscode-button-foreground);
+}
+
+.update-notification-btn.download-btn:hover {
+    background: var(--vscode-button-hoverBackground);
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Dark theme specific styles */
+.vscode-dark .update-notification,
+[data-theme="dark"].update-notification {
+    background: #1e1e1e;
+    background-color: #1e1e1e;
+    opacity: 1;
+    border-color: #444444;
+}
+
+.vscode-dark .update-notification-title {
+    color: var(--vscode-editor-foreground);
+}
+
+.vscode-dark .update-notification-details strong {
+    color: var(--vscode-editor-foreground);
+}
+
+/* Light theme specific styles */
+.vscode-light .update-notification,
+[data-theme="light"].update-notification {
+    background: #f3f3f3;
+    background-color: #f3f3f3;
+    opacity: 1;
+    border-color: #e0e0e0;
+}
+
+.vscode-light .update-notification-title {
+    color: var(--vscode-editor-foreground);
+}
+
+.vscode-light .update-notification-details strong {
+    color: var(--vscode-editor-foreground);
+}

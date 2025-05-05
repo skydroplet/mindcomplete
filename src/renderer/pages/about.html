@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title id="app-title">心至 - MindComplete</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            padding: 20px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        p {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+
+        .version {
+            color: #999;
+            font-size: 12px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1 id="app-title">心至 - MindComplete</h1>
+    <p id="app-description">大模型客户端，MCP客户端。\n让每个人都能自由地和数字世界交互。</p>
+    <div class="version" id="version-info">版本 0.0.1</div>
+
+    <!-- JavaScript引用 -->
+    <script>
+        const { ipcRenderer } = require('electron');
+
+        // 页面加载完成后设置多语言文本
+        document.addEventListener('DOMContentLoaded', () => {
+            // 设置页面标题
+            document.getElementById('title').textContent = i18n.t('about.title');
+            document.getElementById('app-title').textContent = i18n.t('app.title');
+            document.getElementById('app-description').textContent = i18n.t('app.description');
+            document.getElementById('version-info').textContent = i18n.t('about.version', { version: '0.0.1' });
+
+            // 添加链接点击事件委托，使链接在外部浏览器中打开
+            document.body.addEventListener('click', (event) => {
+                // 检查点击的是否是链接
+                if (event.target.tagName === 'A' && event.target.href) {
+                    // 阻止默认行为（在当前窗口打开链接）
+                    event.preventDefault();
+
+                    // 使用主进程的open-external-url方法在外部浏览器中打开链接
+                    ipcRenderer.invoke('open-external-url', event.target.href)
+                        .catch(error => {
+                            console.error('打开外部链接失败:', error.message);
+                        });
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>

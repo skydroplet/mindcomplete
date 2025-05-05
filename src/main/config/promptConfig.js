@@ -19,16 +19,15 @@ class PromptConfigManager extends EventEmitter {
             currentPrompt: null
         };
         this.configPath = '';
-        this.initialized = false;
         this.windows = [];
+
+        this.init();
     }
 
     /**
      * 初始化提示词配置
      */
     init() {
-        if (this.initialized) return;
-
         try {
             // 使用app.getPath('userData')目录
             const userDataPath = app.getPath('userData');
@@ -47,20 +46,6 @@ class PromptConfigManager extends EventEmitter {
                 const data = fs.readFileSync(this.configPath, 'utf8');
                 this.config = JSON.parse(data);
 
-                // 为现有提示词添加默认类型
-                let needsSave = false;
-                Object.keys(this.config.prompts).forEach(promptId => {
-                    if (!this.config.prompts[promptId].type) {
-                        this.config.prompts[promptId].type = 'system';
-                        needsSave = true;
-                    }
-                });
-
-                if (needsSave) {
-                    this.save();
-                    log.info('已为现有提示词添加默认类型');
-                }
-
                 log.info('已加载提示词配置');
             } else {
                 // 初始化默认配置
@@ -74,7 +59,7 @@ class PromptConfigManager extends EventEmitter {
 
             this.initialized = true;
         } catch (error) {
-            log.error('初始化提示词配置出错:', error);
+            log.error('初始化提示词配置出错:', error.message);
         }
     }
 
@@ -88,7 +73,7 @@ class PromptConfigManager extends EventEmitter {
             this.emit('prompts-updated', this.config);
             this.notifyWindows();
         } catch (error) {
-            log.error('保存提示词配置出错:', error);
+            log.error('保存提示词配置出错:', error.message);
             throw error;
         }
     }
@@ -117,7 +102,7 @@ class PromptConfigManager extends EventEmitter {
                 window.send('prompts-updated', this.config);
                 log.info('已向窗口发送提示词配置更新通知');
             } catch (error) {
-                log.error('向窗口发送提示词配置更新通知失败:', error);
+                log.error('向窗口发送提示词配置更新通知失败:', error.message);
             }
         }
     }
@@ -128,6 +113,10 @@ class PromptConfigManager extends EventEmitter {
      */
     getPrompts() {
         return this.config.prompts;
+    }
+
+    getCurrentPromptId() {
+        return this.config.currentPrompt;
     }
 
     /**
@@ -163,6 +152,18 @@ class PromptConfigManager extends EventEmitter {
             };
         }
         return null;
+    }
+
+    getPromptById(promptId) {
+        return this.config.prompts[promptId];
+    }
+
+    /**
+     * 获取当前选中的提示词ID
+     * @returns {string|null} 当前提示词ID或null
+     */
+    getCurrentPromptId() {
+        return this.config.currentPrompt;
     }
 
     /**
@@ -204,7 +205,7 @@ class PromptConfigManager extends EventEmitter {
             this.save();
             return promptId;
         } catch (error) {
-            log.error('添加提示词失败:', error);
+            log.error('添加提示词失败:', error.message);
             throw error;
         }
     }
@@ -224,7 +225,7 @@ class PromptConfigManager extends EventEmitter {
             }
             return false;
         } catch (error) {
-            log.error('更新提示词失败:', error);
+            log.error('更新提示词失败:', error.message);
             throw error;
         }
     }
@@ -249,7 +250,7 @@ class PromptConfigManager extends EventEmitter {
             }
             return false;
         } catch (error) {
-            log.error('删除提示词失败:', error);
+            log.error('删除提示词失败:', error.message);
             throw error;
         }
     }

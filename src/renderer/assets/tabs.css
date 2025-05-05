@@ -1,0 +1,251 @@
+/* 标签样式 */
+.tabs-container {
+    display: flex;
+    flex-direction: row;
+    background-color: var(--tab-bg-color, #f1f1f1);
+    border-bottom: none;
+    /* Remove border when in header */
+    overflow-x: auto;
+    white-space: nowrap;
+    height: 40px;
+    align-items: center;
+    padding-left: 5px;
+    position: relative;
+    flex: 1;
+    /* Take available space in the header */
+    min-width: 0;
+    /* Allow container to shrink */
+}
+
+.tab {
+    display: inline-flex;
+    align-items: center;
+    padding: 8px 15px;
+    cursor: pointer;
+    border: 1px solid var(--border-color, #ddd);
+    border-bottom: none;
+    margin-right: 2px;
+    border-radius: 4px 4px 0 0;
+    background-color: var(--tab-inactive-bg, #e6e6e6);
+    position: relative;
+    min-width: 128px;
+    /* 最小宽度：约8个字符 */
+    max-width: 512px;
+    /* 最大宽度：约32个字符 */
+    height: 32px;
+    user-select: none;
+    color: var(--text-color, #333);
+}
+
+.tab.active {
+    background-color: var(--tab-active-bg, #fff);
+    border-bottom: 1px solid var(--tab-active-bg, #fff);
+    margin-bottom: -1px;
+    color: var(--text-color-active, #000);
+}
+
+.tab-name {
+    flex: 1;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+    margin-right: 5px;
+}
+
+.tab-close {
+    width: 16px;
+    height: 16px;
+    line-height: 16px;
+    text-align: center;
+    border-radius: 50%;
+    font-size: 14px;
+    margin-left: 5px;
+    color: var(--text-color-secondary, #666);
+}
+
+.tab-close:hover {
+    background-color: var(--tab-close-hover-bg, #ccc);
+    color: var(--text-color, #000);
+}
+
+.new-tab-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    background-color: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 20px;
+    margin-left: 5px;
+    color: var(--text-color-secondary, #666);
+    flex-shrink: 0;
+    /* Prevent shrinking */
+}
+
+.new-tab-button:hover {
+    color: var(--text-color, #000);
+}
+
+/* 标签下拉菜单按钮 */
+.tabs-dropdown-button {
+    display: none;
+    /* 默认隐藏，JavaScript根据标签数量显示 */
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    background-color: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    margin-left: 4px;
+    margin-right: 4px;
+    color: var(--text-color-secondary, #666);
+    flex-shrink: 0;
+    /* Prevent shrinking */
+}
+
+.tabs-dropdown-button:hover {
+    color: var(--text-color, #000);
+}
+
+/* 标签下拉菜单 */
+.tabs-dropdown-menu {
+    position: absolute;
+    top: 100%;
+    /* 从标签栏底部开始 */
+    right: 0;
+    z-index: 1000;
+    display: none;
+    min-width: 200px;
+    max-width: 350px;
+    max-height: 400px;
+    overflow-y: auto;
+    background-color: var(--container-bg, #fff);
+    border: 1px solid var(--border-color, #ddd);
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    padding: 8px 0;
+    margin-top: 2px;
+    /* 添加一点顶部间距 */
+}
+
+.tabs-dropdown-menu.show {
+    display: block !important;
+}
+
+.tabs-dropdown-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--text-color, #333);
+    min-height: 20px;
+}
+
+/* 空状态样式 */
+.tabs-dropdown-empty {
+    color: var(--text-color-secondary, #888);
+    justify-content: center;
+    font-style: italic;
+    cursor: default;
+}
+
+.tabs-dropdown-item:hover {
+    background-color: var(--tab-inactive-bg, #e6e6e6);
+}
+
+.tabs-dropdown-item.active {
+    background-color: var(--tab-active-bg, #fff);
+    color: var(--text-color-active, #000);
+    font-weight: bold;
+}
+
+.tabs-dropdown-item-close {
+    margin-left: 8px;
+    opacity: 0.6;
+    width: 18px;
+    height: 18px;
+    line-height: 18px;
+    text-align: center;
+    border-radius: 50%;
+}
+
+.tabs-dropdown-item-close:hover {
+    opacity: 1;
+    background-color: var(--tab-close-hover-bg, #ccc);
+}
+
+/* 标签内容区域样式 */
+.tab-content {
+    display: none;
+    height: 100%;
+    background-color: var(--container-bg, #fff);
+    color: var(--text-color, #333);
+}
+
+.tab-content.active {
+    display: flex;
+    flex-direction: column;
+}
+
+/* 暗黑模式适配 */
+:root {
+    --tab-bg-color: #f1f1f1;
+    --tab-active-bg: #fff;
+    --tab-inactive-bg: #e6e6e6;
+    --tab-close-hover-bg: #ccc;
+    --text-color-active: #000;
+}
+
+[data-theme="dark"] {
+    --tab-bg-color: #2c2c2c;
+    --tab-active-bg: #2a2a2a;
+    --tab-inactive-bg: #3c3c3c;
+    --tab-close-hover-bg: #555;
+    --text-color-active: #fff;
+}
+
+/* 确保深色模式下的输入框、按钮等元素样式一致 */
+[data-theme="dark"] .tab .input-group input,
+[data-theme="dark"] .tab .model-selector select,
+[data-theme="dark"] .tab .mcp-dropdown-btn {
+    background-color: var(--input-bg);
+    color: var(--input-text);
+    border-color: var(--input-border);
+}
+
+/* 深色模式下拉菜单样式 */
+[data-theme="dark"] .tabs-dropdown-menu {
+    background-color: var(--container-bg, #2a2a2a);
+    border-color: var(--border-color, #444);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .tabs-dropdown-item:hover {
+    background-color: var(--tab-inactive-bg, #3c3c3c);
+}
+
+[data-theme="dark"] .tabs-dropdown-item.active {
+    background-color: var(--tab-active-bg, #2a2a2a);
+}
+
+[data-theme="dark"] .tabs-dropdown-item-close:hover {
+    background-color: var(--tab-close-hover-bg, #555);
+}
+
+[data-theme="dark"] .tab-close:hover {
+    background-color: var(--tab-close-hover-bg);
+    color: var(--text-color);
+}
+
+[data-theme="dark"] .new-tab-button:hover,
+[data-theme="dark"] .tabs-dropdown-button:hover {
+    color: var(--text-color);
+}

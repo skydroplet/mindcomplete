@@ -12,8 +12,15 @@
     "build:linux": "electron-builder --linux",
     "postinstall": "electron-builder install-app-deps"
   },
-  "author": "skydroplet",
-  "license": "MIT",
+  "author": {
+    "name": "skydroplet",
+    "email": "skydroplet@qq.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/skydroplet/mindcomplete.git"
+  },
+  "license": "GPL-3.0",
   "devDependencies": {
     "electron": "^35.1.5",
     "electron-builder": "^26.0.12",
@@ -28,15 +35,24 @@
     "directories": {
       "output": "dist"
     },
-    "artifactName": "mindcomplete-${os}-${arch}-${version}.${ext}",
+    "files": [
+      "src/**/*",
+      "assets/**/*",
+      "package.json"
+    ],
+    "artifactName": "${productName}-${version}.${ext}",
     "win": {
-      "target": "nsis"
+      "target": "nsis",
+      "icon": "assets/icons/icon.ico",
+      "requestedExecutionLevel": "asInvoker"
     },
     "mac": {
-      "target": "dmg"
+      "target": "dmg",
+      "icon": "assets/icons/icon.png"
     },
     "linux": {
-      "target": "AppImage"
+      "target": "AppImage",
+      "icon": "assets/icons/icon.png"
     }
   },
   "dependencies": {

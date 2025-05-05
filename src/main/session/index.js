@@ -13,18 +13,14 @@ function registerSessionIPC(ipcMain) {
     });
 
     // 创建新会话
-    ipcMain.handle('create-session', (event, name) => {
-        return sessionManager.createSession(name);
+    ipcMain.handle('create-session', (event) => {
+        return sessionManager.createSession();
     });
 
     // 加载会话
     ipcMain.handle('load-session', (event, sessionId) => {
-        return sessionManager.loadSession(sessionId);
-    });
-
-    // 保存当前会话
-    ipcMain.handle('save-current-session', () => {
-        return sessionManager.saveCurrentSession();
+        const session = sessionManager.loadSession(sessionId);
+        return session.data;
     });
 
     // 重命名会话
@@ -37,19 +33,21 @@ function registerSessionIPC(ipcMain) {
         return sessionManager.deleteSession(sessionId);
     });
 
-    // 获取当前会话
-    ipcMain.handle('get-current-session', () => {
-        return sessionManager.getCurrentSession();
+    // 配置变更
+    ipcMain.handle('select-session-model', (event, sessionId, modelId) => {
+        return sessionManager.setSessionModelId(sessionId, modelId);
     });
 
-    // 获取当前活动会话ID
-    ipcMain.handle('get-active-session-id', () => {
-        return sessionManager.getActiveSessionId();
+    ipcMain.handle('select-session-prompt', (event, sessionId, promptId) => {
+        return sessionManager.setSessionPromptId(sessionId, promptId);
     });
 
-    // 清空当前会话消息
-    ipcMain.handle('clear-session-messages', () => {
-        return sessionManager.clearMessages();
+    ipcMain.handle('select-session-mcp-servers', (event, sessionId, servers) => {
+        return sessionManager.setSessionMcpServers(sessionId, servers);
+    });
+
+    ipcMain.handle('select-session-conversation-mode', (event, sessionId, mode) => {
+        return sessionManager.setSessionConversationMode(sessionId, mode);
     });
 }
 

@@ -1,14 +1,32 @@
+/**
+ * configWindow.js
+ * 配置窗口管理模块
+ *
+ * 负责创建和管理应用程序的配置窗口，处理配置相关的IPC通信
+ * 包括模型配置、MCP服务配置和提示词配置的界面交互
+ */
+
 const { BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const Logger = require('../logger');
 const log = new Logger('config');
 const configManager = require('./configManager');
-const modelManager = require('./modelManager');
-const mcpManager = require('./mcpManager');
-const promptManager = require('./promptManager');
+const modelManager = require('./modelConfig');
+const mcpManager = require('./mcpConfig');
+const promptManager = require('./promptConfig');
 
+// 配置窗口实例引用
 let configWindow;
 
+/**
+ * 创建配置窗口
+ *
+ * 创建一个新的配置窗口，并加载配置界面
+ * 支持指定初始激活的标签页
+ *
+ * @param {string} activeTab - 可选，初始激活的标签页名称
+ * @returns {BrowserWindow} 创建的配置窗口实例
+ */
 function createConfigWindow(activeTab) {
     configWindow = new BrowserWindow({
         width: 800,
@@ -19,7 +37,7 @@ function createConfigWindow(activeTab) {
         }
     });
 
-    configWindow.loadFile('src/renderer/config.html');
+    configWindow.loadFile('src/renderer/pages/config.html');
 
     // 隐藏菜单栏，但保留快捷键功能
     configWindow.setMenuBarVisibility(false);
@@ -37,6 +55,7 @@ function createConfigWindow(activeTab) {
         });
     }
 
+    // 窗口关闭时清除引用
     configWindow.on('closed', () => {
         configWindow = null;
     });
@@ -44,20 +63,51 @@ function createConfigWindow(activeTab) {
     return configWindow;
 }
 
-// 打开配置窗口并切换到特定标签页
+/**
+ * 打开配置窗口并切换到特定标签页
+ *
+ * 如果配置窗口已存在，则聚焦并切换到指定标签页
+ * 如果配置窗口不存在，则创建新窗口并初始化为指定标签页
+ *
+ * @param {string} tabName - 要切换到的标签页名称
+ * @returns {boolean} 操作是否成功
+ */
 function openConfigWindowWithTab(tabName) {
-    log.info('打开指定标签页配置窗口:', tabName);
-
     if (configWindow) {
+        log.info('重新加载指定标签页配置窗口:', tabName);
         configWindow.focus();
         configWindow.webContents.send('switch-tab', tabName);
     } else {
+        log.info('打开指定标签页配置窗口:', tabName);
         createConfigWindow(tabName);
     }
 
     return true;
 }
 
+/**
+ * 关闭配置窗口
+ *
+ * 清除配置窗口引用，允许垃圾回收
+ *
+ * @returns {boolean} 操作是否成功
+ */
+function closeConfigWindow() {
+    if (configWindow) {
+        configWindow = null
+    }
+
+    return true;
+}
+
+/**
+ * 注册配置相关的IPC处理函数
+ *
+ * 设置所有与配置相关的IPC通信处理程序，包括：
+ * - 模型配置管理
+ * - MCP服务配置管理
+ * - 提示词配置管理
+ */
 function registerConfigIPC() {
     // 配置相关IPC处理
     ipcMain.handle('get-models', () => {
@@ -200,5 +250,6 @@ function registerConfigIPC() {
 module.exports = {
     createConfigWindow,
     registerConfigIPC,
-    openConfigWindowWithTab
-}; 
+    openConfigWindowWithTab,
+    closeConfigWindow,
+};
