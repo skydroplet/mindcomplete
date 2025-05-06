@@ -14,6 +14,7 @@ const Logger = require('../main/logger');
 const log = new Logger('tabManager');
 const i18n = require('../locales/i18n');
 const ChatSessionService = require('./chatSession');
+const InputManagerService = require('./inputManager');
 
 /**
  * 标签管理服务类
@@ -1028,10 +1029,7 @@ class TabManagerService {
                     <button id="new-session-btn-${tabId}" class="test-button" title="创建新会话">新建会话</button>
                 </div>
                 
-                <div class="input-group">
-                    <input type="text" id="message-input-${tabId}" placeholder="输入消息，AI回复支持Markdown格式...">
-                    <button id="send-button-${tabId}">发送</button>
-                </div>
+                ${InputManagerService.createInputHTML(tabId)}
             `;
             contentElement.appendChild(inputContainer);
 
@@ -1079,15 +1077,10 @@ class TabManagerService {
                 newSessionBtn.id = `new-session-btn-${tabId}`;
             }
 
-            const messageInput = contentElement.querySelector('#message-input');
-            if (messageInput) {
-                messageInput.id = `message-input-${tabId}`;
-                messageInput.value = '';
-            }
-
-            const sendButton = contentElement.querySelector('#send-button');
-            if (sendButton) {
-                sendButton.id = `send-button-${tabId}`;
+            // 替换输入区域
+            const inputGroup = contentElement.querySelector('.input-group');
+            if (inputGroup) {
+                inputGroup.outerHTML = InputManagerService.createInputHTML(tabId);
             }
 
             return contentElement;

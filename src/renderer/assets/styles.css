@@ -383,6 +383,41 @@ body {
     background-color: #0056b3;
 }
 
+.input-group textarea {
+    resize: none;
+    min-height: 36px;
+    max-height: 180px;
+    overflow-y: auto;
+    padding: 8px 12px;
+    border: 1px solid var(--border-color, #ddd);
+    border-radius: 4px;
+    font-size: 14px;
+    line-height: 1.5;
+    width: 100%;
+    box-sizing: border-box;
+    background-color: var(--input-bg, #fff);
+    color: var(--text-color, #333);
+}
+
+/* 输入框滚动条样式 */
+.input-group textarea::-webkit-scrollbar {
+    width: 8px;
+}
+
+.input-group textarea::-webkit-scrollbar-track {
+    background: var(--sidebar-bg);
+    border-radius: 4px;
+}
+
+.input-group textarea::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 4px;
+}
+
+.input-group textarea::-webkit-scrollbar-thumb:hover {
+    background: var(--button-bg);
+}
+
 .status {
     padding: 10px;
     font-size: 12px;

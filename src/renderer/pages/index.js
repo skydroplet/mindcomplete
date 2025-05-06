@@ -35,7 +35,6 @@ const ChatSessionService = require('../chatSession');
 let chatSession = null; // 全局会话变量移除，使用tabManager管理
 
 const messageInput = document.getElementById('message-input');
-const sendButton = document.getElementById('send-button');
 const statusElement = document.getElementById('status');
 const languageSelect = document.getElementById('language-select');
 
@@ -45,7 +44,6 @@ const languageSelect = document.getElementById('language-select');
  *
  * 根据当前语言设置，初始化界面上的文本内容，包括：
  * - 输入框占位符
- * - 发送按钮文本
  * - 状态栏文本
  */
 function initUI() {
@@ -55,7 +53,6 @@ function initUI() {
 
     // 设置界面元素的文本内容
     messageInput.placeholder = i18n.t('ui.inputPlaceholder');
-    sendButton.textContent = i18n.t('ui.sendButton');
     statusElement.textContent = i18n.t('ui.status.ready');
 }
 
@@ -274,14 +271,7 @@ function setupEventListeners() {
         });
     }
 
-    // 为每个标签内的输入框和发送按钮添加事件
-    document.addEventListener('click', (e) => {
-        // 通过事件委托处理动态创建的元素
-        if (e.target && e.target.id && e.target.id.startsWith('send-button-')) {
-            sendMessage();
-        }
-    });
-
+    // 为每个标签内的输入框添加事件
     document.addEventListener('keypress', (e) => {
         // 找到当前活动的输入框
         const activeTabId = tabManager.activeTabId;
@@ -300,10 +290,6 @@ function setupEventListeners() {
                 sendMessage();
             }
         });
-    }
-
-    if (sendButton) {
-        sendButton.addEventListener('click', sendMessage);
     }
 
     // 修改：所有"新建会话"按钮使用标签管理器
