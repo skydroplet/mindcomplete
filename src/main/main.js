@@ -16,18 +16,9 @@ const Logger = require('./logger');
 const log = new Logger('main');
 const path = require('path');
 
-// OpenAI API客户端实例
-let modelClient = null;
-
 // 全局MCP实例
 const mcp = require('./mcpClient');
 const { closeConfigWindow } = require('./config/configWindow');
-
-// 监听配置更新事件，当模型配置变更时，重置Client
-modelConfig.on('model-config-updated', (config) => {
-    log.info(i18n.t('logs.modelConfigUpdated'));
-    modelClient = createModelClient();
-});
 
 /**
  * 创建应用程序菜单
@@ -218,12 +209,6 @@ app.whenReady().then(() => {
         // 对每个新创建的窗口隐藏菜单栏，但保留快捷键功能
         window.setMenuBarVisibility(false);
     });
-
-    // 添加UI组件选择更新事件监听
-
-
-
-
 
     ipcMain.on('model-selection-changed', (event, modelId) => {
         modelConfig.selectModel(modelId);
