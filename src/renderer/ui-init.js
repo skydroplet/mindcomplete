@@ -36,8 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('mcp-dropdown-btn').textContent = i18n.t('modelSelector.mcpServer');
     document.getElementById('new-session-btn').textContent = i18n.t('session.newSession');
     document.getElementById('new-session-btn').title = i18n.t('session.newSession');
-    document.getElementById('message-input').placeholder = i18n.t('chat.placeholder');
-    document.getElementById('send-button').textContent = i18n.t('chat.send');
+    document.getElementById('message-input').placeholder = i18n.t('chat.inputPlaceholder');
     document.getElementById('status').textContent = i18n.t('ui.status.ready');
 
     // 设置重命名对话框文本

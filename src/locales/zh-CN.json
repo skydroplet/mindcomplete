@@ -1,7 +1,7 @@
 {
     "app": {
         "title": "心至 - MindComplete",
-        "description": "大模型客户端，MCP客户端。\n让每个人都能自由地和数字世界交互。"
+        "description": "大模型客户端，MCP客户端。<br>让每个人都能自由地和数字世界交互。"
     },
     "ui": {
         "inputPlaceholder": "请输入您的问题...",
