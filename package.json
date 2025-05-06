@@ -4,7 +4,7 @@
   "description": "心至 - MindComplete",
   "main": "src/main/main.js",
   "scripts": {
-    "start": "chcp 65001 && electron .",
+    "start": "node -e \"process.platform === 'win32' ? require('child_process').execSync('chcp 65001') : null\" && electron .",
     "build": "electron-builder",
     "build:all": "electron-builder -mwl",
     "build:win": "electron-builder --win",
@@ -41,6 +41,19 @@
       "package.json"
     ],
     "artifactName": "${productName}-${version}.${ext}",
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "MindComplete",
+      "installerIcon": "assets/icons/icon.ico",
+      "uninstallerIcon": "assets/icons/icon.ico",
+      "installerHeaderIcon": "assets/icons/icon.ico",
+      "menuCategory": true,
+      "displayLanguageSelector": true,
+      "perMachine": false
+    },
     "win": {
       "target": "nsis",
       "icon": "assets/icons/icon.ico",
