@@ -1,3 +1,26 @@
+/* Standardized scrollbar style - applied throughout the application */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(128, 128, 128, 0.5);
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(128, 128, 128, 0.7);
+}
+
+::-webkit-scrollbar-corner {
+    background: transparent;
+}
+
 .config-container {
     display: flex;
     flex-direction: column;
@@ -69,46 +92,10 @@
     /* 为按钮定位提供参考 */
 }
 
-.model-form::-webkit-scrollbar {
-    width: 8px;
-}
-
-.model-form::-webkit-scrollbar-track {
-    background: var(--sidebar-bg);
-    border-radius: 4px;
-}
-
-.model-form::-webkit-scrollbar-thumb {
-    background: var(--border-color);
-    border-radius: 4px;
-}
-
-.model-form::-webkit-scrollbar-thumb:hover {
-    background: var(--button-bg);
-}
-
 #modelList {
     flex: 1;
     overflow-y: auto;
     margin-top: 10px;
-}
-
-#modelList::-webkit-scrollbar {
-    width: 8px;
-}
-
-#modelList::-webkit-scrollbar-track {
-    background: var(--sidebar-bg);
-    border-radius: 4px;
-}
-
-#modelList::-webkit-scrollbar-thumb {
-    background: var(--border-color);
-    border-radius: 4px;
-}
-
-#modelList::-webkit-scrollbar-thumb:hover {
-    background: var(--button-bg);
 }
 
 .model-item {
@@ -347,24 +334,6 @@ textarea {
     background-color: var(--container-bg);
 }
 
-.tools-list-container::-webkit-scrollbar {
-    width: 8px;
-}
-
-.tools-list-container::-webkit-scrollbar-track {
-    background: var(--sidebar-bg);
-    border-radius: 4px;
-}
-
-.tools-list-container::-webkit-scrollbar-thumb {
-    background: var(--border-color);
-    border-radius: 4px;
-}
-
-.tools-list-container::-webkit-scrollbar-thumb:hover {
-    background: var(--button-bg);
-}
-
 /* 工具表格样式 */
 .tools-table {
     width: 100%;
@@ -478,28 +447,6 @@ textarea {
     margin-top: 10px;
 }
 
-#mcpServersList::-webkit-scrollbar,
-#promptList::-webkit-scrollbar {
-    width: 8px;
-}
-
-#mcpServersList::-webkit-scrollbar-track,
-#promptList::-webkit-scrollbar-track {
-    background: var(--sidebar-bg);
-    border-radius: 4px;
-}
-
-#mcpServersList::-webkit-scrollbar-thumb,
-#promptList::-webkit-scrollbar-thumb {
-    background: var(--border-color);
-    border-radius: 4px;
-}
-
-#mcpServersList::-webkit-scrollbar-thumb:hover,
-#promptList::-webkit-scrollbar-thumb:hover {
-    background: var(--button-bg);
-}
-
 /* 提示词类型标签样式 */
 .prompt-type-badge {
     display: inline-block;
@@ -509,25 +456,6 @@ textarea {
     border-radius: 3px;
     background-color: var(--button-bg);
     color: var(--button-text);
-}
-
-/* 环境变量和参数容器滚动样式 */
-.key-value-container::-webkit-scrollbar {
-    width: 8px;
-}
-
-.key-value-container::-webkit-scrollbar-track {
-    background: var(--sidebar-bg);
-    border-radius: 4px;
-}
-
-.key-value-container::-webkit-scrollbar-thumb {
-    background: var(--border-color);
-    border-radius: 4px;
-}
-
-.key-value-container::-webkit-scrollbar-thumb:hover {
-    background: var(--button-bg);
 }
 
 /* 添加额外的底部间距，防止内容重叠 */
@@ -757,25 +685,6 @@ textarea {
 
 .toggle-list-btn.collapsed {
     transform: rotate(-90deg);
-}
-
-/* 导出列表滚动条样式 */
-.export-items-list::-webkit-scrollbar {
-    width: 8px;
-}
-
-.export-items-list::-webkit-scrollbar-track {
-    background: var(--sidebar-bg);
-    border-radius: 4px;
-}
-
-.export-items-list::-webkit-scrollbar-thumb {
-    background: var(--border-color);
-    border-radius: 4px;
-}
-
-.export-items-list::-webkit-scrollbar-thumb:hover {
-    background: var(--button-bg);
 }
 
 .export-category-header .checkbox-group input[type="checkbox"],
