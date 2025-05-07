@@ -75,22 +75,22 @@ class ExportService {
 
         // 确认导出
         confirmBtn.addEventListener('click', async () => {
-            // 获取选中的导出选项
-            const exportModels = document.getElementById('export-models').checked;
-            const exportPrompts = document.getElementById('export-prompts').checked;
-            const exportMcp = document.getElementById('export-mcp').checked;
-
             // 收集选中的具体项目
             this.collectSelectedItems();
 
             // 如果没有选择任何选项，提示用户
-            if (!exportModels && !exportPrompts && !exportMcp) {
+            if (this.selectedItems.models.length === 0 &&
+                this.selectedItems.prompts.length === 0 &&
+                this.selectedItems.mcpServers.length === 0) {
                 alert(i18n.t('export.noOptionSelected', '请至少选择一项配置进行导出'));
                 return;
             }
 
             try {
                 // 调用导出配置函数
+                const exportModels = this.selectedItems.models.length > 0;
+                const exportPrompts = this.selectedItems.prompts.length > 0;
+                const exportMcp = this.selectedItems.mcpServers.length > 0;
                 await this.exportConfig(exportModels, exportPrompts, exportMcp);
                 closeExportDialog();
             } catch (error) {
@@ -136,32 +136,55 @@ class ExportService {
     }
 
     /**
-     * 设置列表折叠/展开按钮事件
+     * 设置列表折叠/展开事件
      */
     setupToggleButtons() {
-        document.querySelectorAll('.toggle-list-btn').forEach(btn => {
-            // 设置初始状态为折叠
-            const targetListId = btn.dataset.target;
-            const list = document.getElementById(targetListId);
+        // 定义所有类别及其列表ID的映射
+        const categoryMapping = {
+            'models-list': 'export-models',
+            'prompts-list': 'export-prompts',
+            'mcp-list': 'export-mcp'
+        };
+
+        // 遍历映射，为每个类别设置折叠/展开功能
+        Object.entries(categoryMapping).forEach(([listId, checkboxId]) => {
+            const list = document.getElementById(listId);
+            if (!list) return;
+
+            // 找到对应的类别标题
+            const header = list.previousElementSibling;
+            if (!header || !header.classList.contains('export-category-header')) return;
+
+            // 创建状态指示器
+            const stateIndicator = document.createElement('span');
+            stateIndicator.className = 'fold-indicator';
+            stateIndicator.textContent = '▼';
+
+            // 添加到标题
+            header.appendChild(stateIndicator);
 
             // 默认设置为折叠状态
             list.style.display = 'none';
-            btn.classList.add('collapsed');
-            btn.textContent = '▶';
+            stateIndicator.classList.add('collapsed');
+            stateIndicator.textContent = '▶';
 
-            btn.addEventListener('click', (e) => {
+            // 为类别标题添加点击事件
+            header.addEventListener('click', (e) => {
+                // 如果点击的是复选框或其标签，不触发折叠/展开
+                if (e.target.type === 'checkbox' || e.target.tagName === 'LABEL') {
+                    return;
+                }
+
                 e.preventDefault();
-                const targetListId = btn.dataset.target;
-                const list = document.getElementById(targetListId);
 
                 if (list.style.display === 'none') {
                     list.style.display = 'block';
-                    btn.classList.remove('collapsed');
-                    btn.textContent = '▼';
+                    stateIndicator.classList.remove('collapsed');
+                    stateIndicator.textContent = '▼';
                 } else {
                     list.style.display = 'none';
-                    btn.classList.add('collapsed');
-                    btn.textContent = '▶';
+                    stateIndicator.classList.add('collapsed');
+                    stateIndicator.textContent = '▶';
                 }
             });
         });
@@ -267,31 +290,25 @@ class ExportService {
         };
 
         // 收集选中的模型
-        if (document.getElementById('export-models').checked) {
-            const modelCheckboxes = document.getElementById('models-list')
-                .querySelectorAll('input[type="checkbox"]:checked');
-            modelCheckboxes.forEach(checkbox => {
-                this.selectedItems.models.push(checkbox.dataset.id);
-            });
-        }
+        const modelCheckboxes = document.getElementById('models-list')
+            .querySelectorAll('input[type="checkbox"]:checked');
+        modelCheckboxes.forEach(checkbox => {
+            this.selectedItems.models.push(checkbox.dataset.id);
+        });
 
         // 收集选中的提示词
-        if (document.getElementById('export-prompts').checked) {
-            const promptCheckboxes = document.getElementById('prompts-list')
-                .querySelectorAll('input[type="checkbox"]:checked');
-            promptCheckboxes.forEach(checkbox => {
-                this.selectedItems.prompts.push(checkbox.dataset.id);
-            });
-        }
+        const promptCheckboxes = document.getElementById('prompts-list')
+            .querySelectorAll('input[type="checkbox"]:checked');
+        promptCheckboxes.forEach(checkbox => {
+            this.selectedItems.prompts.push(checkbox.dataset.id);
+        });
 
         // 收集选中的MCP服务
-        if (document.getElementById('export-mcp').checked) {
-            const mcpCheckboxes = document.getElementById('mcp-list')
-                .querySelectorAll('input[type="checkbox"]:checked');
-            mcpCheckboxes.forEach(checkbox => {
-                this.selectedItems.mcpServers.push(checkbox.dataset.id);
-            });
-        }
+        const mcpCheckboxes = document.getElementById('mcp-list')
+            .querySelectorAll('input[type="checkbox"]:checked');
+        mcpCheckboxes.forEach(checkbox => {
+            this.selectedItems.mcpServers.push(checkbox.dataset.id);
+        });
 
         log.info('已选择的导出项:', {
             models: this.selectedItems.models.length,

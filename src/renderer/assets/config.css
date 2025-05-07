@@ -691,6 +691,20 @@ textarea {
     background-color: var(--sidebar-bg);
     cursor: pointer;
     font-weight: 500;
+    position: relative;
+}
+
+/* Style for the fold indicator */
+.fold-indicator {
+    font-size: 14px;
+    color: var(--text-color);
+    position: absolute;
+    right: 15px;
+    transition: transform 0.2s;
+}
+
+.fold-indicator.collapsed {
+    transform: rotate(-90deg);
 }
 
 .export-items-list {
