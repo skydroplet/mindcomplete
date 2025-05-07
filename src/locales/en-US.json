@@ -326,6 +326,9 @@
         "confirm": "Export",
         "success": "Configuration exported successfully!",
         "error": "Failed to export configuration: {error}",
-        "noOptionSelected": "Please select at least one configuration to export"
+        "noOptionSelected": "Please select at least one configuration to export",
+        "selectAll": "Select All",
+        "deselectAll": "Deselect All",
+        "toggleList": "Show/Hide Items"
     }
 }

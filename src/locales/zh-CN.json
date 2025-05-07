@@ -327,6 +327,9 @@
         "confirm": "导出",
         "success": "配置导出成功！",
         "error": "导出配置失败: {error}",
-        "noOptionSelected": "请至少选择一项配置进行导出"
+        "noOptionSelected": "请至少选择一项配置进行导出",
+        "selectAll": "全选",
+        "deselectAll": "取消全选",
+        "toggleList": "显示/隐藏项目"
     }
 }

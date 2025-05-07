@@ -27,6 +27,22 @@ if (typeof window.ipcRenderer === 'undefined') {
  * 封装所有与配置导出相关的逻辑和UI交互
  */
 class ExportService {
+    constructor() {
+        // 存储所有可导出的配置项
+        this.exportableItems = {
+            models: {},
+            prompts: {},
+            mcpServers: {}
+        };
+
+        // 存储用户选择的配置项
+        this.selectedItems = {
+            models: [],
+            prompts: [],
+            mcpServers: []
+        };
+    }
+
     /**
      * 初始化导出配置功能
      */
@@ -38,7 +54,8 @@ class ExportService {
         const confirmBtn = document.getElementById('confirm-export-btn');
 
         // 显示导出对话框
-        exportBtn.addEventListener('click', () => {
+        exportBtn.addEventListener('click', async () => {
+            await this.loadExportableItems();
             exportDialog.classList.add('active');
         });
 
@@ -50,12 +67,21 @@ class ExportService {
         closeBtn.addEventListener('click', closeExportDialog);
         cancelBtn.addEventListener('click', closeExportDialog);
 
+        // 配置类别选择事件
+        this.setupCategoryCheckboxes();
+
+        // 配置列表折叠/展开事件
+        this.setupToggleButtons();
+
         // 确认导出
         confirmBtn.addEventListener('click', async () => {
             // 获取选中的导出选项
             const exportModels = document.getElementById('export-models').checked;
             const exportPrompts = document.getElementById('export-prompts').checked;
             const exportMcp = document.getElementById('export-mcp').checked;
+
+            // 收集选中的具体项目
+            this.collectSelectedItems();
 
             // 如果没有选择任何选项，提示用户
             if (!exportModels && !exportPrompts && !exportMcp) {
@@ -75,6 +101,206 @@ class ExportService {
     }
 
     /**
+     * 设置类别复选框事件
+     */
+    setupCategoryCheckboxes() {
+        // 模型类别复选框
+        document.getElementById('export-models').addEventListener('change', (e) => {
+            const checked = e.target.checked;
+            const modelsList = document.getElementById('models-list');
+            const modelCheckboxes = modelsList.querySelectorAll('input[type="checkbox"]');
+            modelCheckboxes.forEach(checkbox => {
+                checkbox.checked = checked;
+            });
+        });
+
+        // 提示词类别复选框
+        document.getElementById('export-prompts').addEventListener('change', (e) => {
+            const checked = e.target.checked;
+            const promptsList = document.getElementById('prompts-list');
+            const promptCheckboxes = promptsList.querySelectorAll('input[type="checkbox"]');
+            promptCheckboxes.forEach(checkbox => {
+                checkbox.checked = checked;
+            });
+        });
+
+        // MCP类别复选框
+        document.getElementById('export-mcp').addEventListener('change', (e) => {
+            const checked = e.target.checked;
+            const mcpList = document.getElementById('mcp-list');
+            const mcpCheckboxes = mcpList.querySelectorAll('input[type="checkbox"]');
+            mcpCheckboxes.forEach(checkbox => {
+                checkbox.checked = checked;
+            });
+        });
+    }
+
+    /**
+     * 设置列表折叠/展开按钮事件
+     */
+    setupToggleButtons() {
+        document.querySelectorAll('.toggle-list-btn').forEach(btn => {
+            // 设置初始状态为折叠
+            const targetListId = btn.dataset.target;
+            const list = document.getElementById(targetListId);
+
+            // 默认设置为折叠状态
+            list.style.display = 'none';
+            btn.classList.add('collapsed');
+            btn.textContent = '▶';
+
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const targetListId = btn.dataset.target;
+                const list = document.getElementById(targetListId);
+
+                if (list.style.display === 'none') {
+                    list.style.display = 'block';
+                    btn.classList.remove('collapsed');
+                    btn.textContent = '▼';
+                } else {
+                    list.style.display = 'none';
+                    btn.classList.add('collapsed');
+                    btn.textContent = '▶';
+                }
+            });
+        });
+    }
+
+    /**
+     * 加载可导出的配置项
+     */
+    async loadExportableItems() {
+        try {
+            // 获取模型列表
+            const models = await ipcRenderer.invoke('get-models');
+            this.exportableItems.models = models || {};
+
+            // 获取提示词列表
+            const prompts = await ipcRenderer.invoke('get-all-prompts');
+            this.exportableItems.prompts = prompts || {};
+
+            // 获取MCP服务列表
+            const mcpConfig = await ipcRenderer.invoke('get-mcp-config');
+            this.exportableItems.mcpServers = mcpConfig.servers || {};
+
+            // 渲染导出项目列表
+            this.renderExportableItems();
+
+            log.info('已加载可导出配置项:', {
+                models: Object.keys(this.exportableItems.models).length,
+                prompts: Object.keys(this.exportableItems.prompts).length,
+                mcpServers: Object.keys(this.exportableItems.mcpServers).length
+            });
+        } catch (error) {
+            log.error('加载可导出配置项失败:', error.message);
+        }
+    }
+
+    /**
+     * 渲染可导出的配置项
+     */
+    renderExportableItems() {
+        // 渲染模型列表
+        const modelsList = document.getElementById('models-list');
+        modelsList.innerHTML = '';
+        Object.entries(this.exportableItems.models).forEach(([modelId, model]) => {
+            const item = this.createExportItem(modelId, model.name, 'model');
+            modelsList.appendChild(item);
+        });
+
+        // 渲染提示词列表
+        const promptsList = document.getElementById('prompts-list');
+        promptsList.innerHTML = '';
+        Object.entries(this.exportableItems.prompts).forEach(([promptId, prompt]) => {
+            const item = this.createExportItem(promptId, prompt.name, 'prompt');
+            promptsList.appendChild(item);
+        });
+
+        // 渲染MCP服务列表
+        const mcpList = document.getElementById('mcp-list');
+        mcpList.innerHTML = '';
+        Object.entries(this.exportableItems.mcpServers).forEach(([serverId, server]) => {
+            const item = this.createExportItem(serverId, server.name, 'mcp');
+            mcpList.appendChild(item);
+        });
+    }
+
+    /**
+     * 创建导出项目元素
+     * @param {string} id - 项目ID
+     * @param {string} name - 项目名称
+     * @param {string} type - 项目类型 (model/prompt/mcp)
+     * @returns {HTMLElement} - 导出项目元素
+     */
+    createExportItem(id, name, type) {
+        const item = document.createElement('div');
+        item.className = 'export-item';
+
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.id = `${type}-${id}`;
+        checkbox.dataset.id = id;
+        checkbox.dataset.type = type;
+        checkbox.checked = true;
+
+        const label = document.createElement('label');
+        label.className = 'export-item-name';
+        label.htmlFor = checkbox.id;
+        label.textContent = name;
+
+        item.appendChild(checkbox);
+        item.appendChild(label);
+
+        return item;
+    }
+
+    /**
+     * 收集用户选择的导出项
+     */
+    collectSelectedItems() {
+        // 重置选择
+        this.selectedItems = {
+            models: [],
+            prompts: [],
+            mcpServers: []
+        };
+
+        // 收集选中的模型
+        if (document.getElementById('export-models').checked) {
+            const modelCheckboxes = document.getElementById('models-list')
+                .querySelectorAll('input[type="checkbox"]:checked');
+            modelCheckboxes.forEach(checkbox => {
+                this.selectedItems.models.push(checkbox.dataset.id);
+            });
+        }
+
+        // 收集选中的提示词
+        if (document.getElementById('export-prompts').checked) {
+            const promptCheckboxes = document.getElementById('prompts-list')
+                .querySelectorAll('input[type="checkbox"]:checked');
+            promptCheckboxes.forEach(checkbox => {
+                this.selectedItems.prompts.push(checkbox.dataset.id);
+            });
+        }
+
+        // 收集选中的MCP服务
+        if (document.getElementById('export-mcp').checked) {
+            const mcpCheckboxes = document.getElementById('mcp-list')
+                .querySelectorAll('input[type="checkbox"]:checked');
+            mcpCheckboxes.forEach(checkbox => {
+                this.selectedItems.mcpServers.push(checkbox.dataset.id);
+            });
+        }
+
+        log.info('已选择的导出项:', {
+            models: this.selectedItems.models.length,
+            prompts: this.selectedItems.prompts.length,
+            mcpServers: this.selectedItems.mcpServers.length
+        });
+    }
+
+    /**
      * 导出配置到文件
      * @param {boolean} includeModels - 是否包含模型配置
      * @param {boolean} includePrompts - 是否包含提示词
@@ -84,24 +310,43 @@ class ExportService {
     async exportConfig(includeModels, includePrompts, includeMcp) {
         try {
             log.info('导出配置，选项:', { includeModels, includePrompts, includeMcp });
+            log.info('选择的项目:', this.selectedItems);
 
             // 准备导出数据
             const exportData = {};
 
-            // 获取最新数据
-            if (includeModels) {
+            // 获取最新数据并根据用户选择过滤
+            if (includeModels && this.selectedItems.models.length > 0) {
                 const models = await ipcRenderer.invoke('get-models');
-                exportData.models = models;
+                // 只导出用户选择的模型
+                exportData.models = {};
+                this.selectedItems.models.forEach(modelId => {
+                    if (models[modelId]) {
+                        exportData.models[modelId] = models[modelId];
+                    }
+                });
             }
 
-            if (includePrompts) {
+            if (includePrompts && this.selectedItems.prompts.length > 0) {
                 const prompts = await ipcRenderer.invoke('get-all-prompts');
-                exportData.prompts = prompts;
+                // 只导出用户选择的提示词
+                exportData.prompts = {};
+                this.selectedItems.prompts.forEach(promptId => {
+                    if (prompts[promptId]) {
+                        exportData.prompts[promptId] = prompts[promptId];
+                    }
+                });
             }
 
-            if (includeMcp) {
+            if (includeMcp && this.selectedItems.mcpServers.length > 0) {
                 const mcpConfig = await ipcRenderer.invoke('get-mcp-config');
-                exportData.mcpServers = mcpConfig.servers;
+                // 只导出用户选择的MCP服务
+                exportData.mcpServers = {};
+                this.selectedItems.mcpServers.forEach(serverId => {
+                    if (mcpConfig.servers[serverId]) {
+                        exportData.mcpServers[serverId] = mcpConfig.servers[serverId];
+                    }
+                });
             }
 
             // 创建导出文件名（使用当前日期时间）

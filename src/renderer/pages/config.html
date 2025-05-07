@@ -182,18 +182,46 @@
             </div>
             <div class="modal-body">
                 <p data-i18n="export.description">请选择要导出的配置项：</p>
-                <div class="export-options">
-                    <div class="checkbox-group">
-                        <input type="checkbox" id="export-models" checked>
-                        <label for="export-models" data-i18n="export.models">模型配置</label>
+
+                <!-- 模型配置部分 -->
+                <div class="export-category">
+                    <div class="export-category-header">
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="export-models" checked>
+                            <label for="export-models" data-i18n="export.models">模型配置</label>
+                        </div>
+                        <button class="toggle-list-btn" data-target="models-list">▼</button>
                     </div>
-                    <div class="checkbox-group">
-                        <input type="checkbox" id="export-prompts" checked>
-                        <label for="export-prompts" data-i18n="export.prompts">提示词</label>
+                    <div id="models-list" class="export-items-list">
+                        <!-- 模型项目将在JS中动态添加 -->
                     </div>
-                    <div class="checkbox-group">
-                        <input type="checkbox" id="export-mcp" checked>
-                        <label for="export-mcp" data-i18n="export.mcp">MCP配置</label>
+                </div>
+
+                <!-- 提示词部分 -->
+                <div class="export-category">
+                    <div class="export-category-header">
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="export-prompts" checked>
+                            <label for="export-prompts" data-i18n="export.prompts">提示词</label>
+                        </div>
+                        <button class="toggle-list-btn" data-target="prompts-list">▼</button>
+                    </div>
+                    <div id="prompts-list" class="export-items-list">
+                        <!-- 提示词项目将在JS中动态添加 -->
+                    </div>
+                </div>
+
+                <!-- MCP配置部分 -->
+                <div class="export-category">
+                    <div class="export-category-header">
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="export-mcp" checked>
+                            <label for="export-mcp" data-i18n="export.mcp">MCP配置</label>
+                        </div>
+                        <button class="toggle-list-btn" data-target="mcp-list">▼</button>
+                    </div>
+                    <div id="mcp-list" class="export-items-list">
+                        <!-- MCP服务项目将在JS中动态添加 -->
                     </div>
                 </div>
             </div>
