@@ -271,27 +271,6 @@ function setupEventListeners() {
         });
     }
 
-    // 为每个标签内的输入框添加事件
-    document.addEventListener('keypress', (e) => {
-        // 找到当前活动的输入框
-        const activeTabId = tabManager.activeTabId;
-        const activeInput = document.getElementById(`message-input-${activeTabId}`);
-
-        // 如果按下回车键且焦点在输入框上，发送消息
-        if (e.key === 'Enter' && document.activeElement === activeInput) {
-            sendMessage();
-        }
-    });
-
-    // 全局输入框仍然保留，以兼容旧代码
-    if (messageInput) {
-        messageInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                sendMessage();
-            }
-        });
-    }
-
     // 修改：所有"新建会话"按钮使用标签管理器
     document.addEventListener('click', (e) => {
         if (e.target && e.target.id && e.target.id.startsWith('new-session-btn')) {
@@ -861,6 +840,9 @@ function updateAllMcpServers(servers) {
         log.error('更新MCP服务器选择状态时出错:', error.message);
     }
 }
+
+// 将sendMessage暴露到全局，供inputManager.js使用
+window.sendMessage = sendMessage;
 
 // 导出工具函数到全局，以便从其他模块中调用
 // 确保导出 handleTabClick 函数

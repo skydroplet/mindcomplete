@@ -14,6 +14,7 @@ const log = new Logger('inputManager');
 class InputManagerService {
     constructor() {
         this.initTextareaAutoResize();
+        this.initInputHandlers();
     }
 
     /**
@@ -25,9 +26,16 @@ class InputManagerService {
                 this.adjustTextareaHeight(e.target);
             }
         });
+    }
 
-        // 处理回车键
+    /**
+     * 初始化输入框事件处理器
+     * 处理所有类型的输入框，包括标签特定的和全局的
+     */
+    initInputHandlers() {
+        // 处理回车键 - 使用keydown事件处理所有输入框
         document.addEventListener('keydown', (e) => {
+            // 标签特定的输入框处理
             if (e.target.matches('textarea[id^="message-input-"]')) {
                 if (e.key === 'Enter') {
                     if (e.ctrlKey) {
@@ -41,7 +49,6 @@ class InputManagerService {
                     } else {
                         // Enter 发送消息
                         e.preventDefault();
-                        const tabId = e.target.id.replace('message-input-', '');
                         // 直接调用sendMessage函数
                         if (typeof window.sendMessage === 'function') {
                             window.sendMessage();
