@@ -239,7 +239,8 @@
             "addMcpServerBtn": "Add MCP Server",
             "addPromptBtn": "Add Prompt Generator",
             "add-env-btn": "Add Environment Variable",
-            "add-arg-btn": "Add Parameter"
+            "add-arg-btn": "Add Parameter",
+            "exportConfig": "Export Config"
         }
     },
     "logs": {
@@ -314,5 +315,17 @@
             "error": "Failed to update authorization status: {error}",
             "denied": "Tool execution request was denied"
         }
+    },
+    "export": {
+        "title": "Export Configuration",
+        "description": "Please select the configurations to export:",
+        "models": "Model Configurations",
+        "prompts": "Prompts",
+        "mcp": "MCP Configurations",
+        "cancel": "Cancel",
+        "confirm": "Export",
+        "success": "Configuration exported successfully!",
+        "error": "Failed to export configuration: {error}",
+        "noOptionSelected": "Please select at least one configuration to export"
     }
 }

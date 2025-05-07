@@ -184,8 +184,8 @@
     "settings": {
         "title": "配置",
         "tabs": {
-            "models": "模型",
-            "prompts": "提示词",
+            "models": "模型配置",
+            "prompts": "提示词管理",
             "mcp": "MCP服务",
             "newSession": "新会话",
             "close": "关闭标签",
@@ -219,8 +219,8 @@
             "serverPath": "输入可执行文件路径"
         },
         "buttons": {
-            "addModel": "添加模型",
             "addModelOption": "+ 添加模型",
+            "addModel": "添加模型",
             "saveModelBtn": "保存模型",
             "resetModelBtn": "重置",
             "deleteModelBtn": "删除",
@@ -240,7 +240,8 @@
             "addMcpServerBtn": "添加MCP服务",
             "addPromptBtn": "添加提示词",
             "add-env-btn": "添加环境变量",
-            "add-arg-btn": "添加参数"
+            "add-arg-btn": "添加参数",
+            "exportConfig": "导出配置"
         }
     },
     "logs": {
@@ -315,5 +316,17 @@
             "error": "更新授权状态失败: {error}",
             "denied": "工具执行请求被拒绝"
         }
+    },
+    "export": {
+        "title": "导出配置",
+        "description": "请选择要导出的配置项：",
+        "models": "模型配置",
+        "prompts": "提示词",
+        "mcp": "MCP配置",
+        "cancel": "取消",
+        "confirm": "导出",
+        "success": "配置导出成功！",
+        "error": "导出配置失败: {error}",
+        "noOptionSelected": "请至少选择一项配置进行导出"
     }
 }

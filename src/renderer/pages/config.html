@@ -19,6 +19,9 @@
             <button class="tab-link" data-target="prompts" data-tab="prompts">提示词管理</button>
             <button class="tab-link" data-target="mcp-servers" data-tab="mcp">MCP服务</button>
             <div style="flex: 1;"></div>
+            <button id="export-config-btn" class="export-btn" title="导出配置" data-i18n="settings.buttons.exportConfig">
+                导出配置
+            </button>
             <button id="theme-toggle" class="theme-toggle" title="切换深色/浅色模式">
                 <span id="theme-toggle-icon" class="theme-toggle-icon">🌓</span>
             </button>
@@ -169,6 +172,38 @@
             </div>
         </div>
     </div>
+
+    <!-- 导出配置对话框 -->
+    <div id="export-config-dialog" class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 data-i18n="export.title">导出配置</h3>
+                <button id="close-export-dialog" class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p data-i18n="export.description">请选择要导出的配置项：</p>
+                <div class="export-options">
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="export-models" checked>
+                        <label for="export-models" data-i18n="export.models">模型配置</label>
+                    </div>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="export-prompts" checked>
+                        <label for="export-prompts" data-i18n="export.prompts">提示词</label>
+                    </div>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="export-mcp" checked>
+                        <label for="export-mcp" data-i18n="export.mcp">MCP配置</label>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="cancel-export-btn" class="cancel-btn" data-i18n="export.cancel">取消</button>
+                <button id="confirm-export-btn" class="save-btn" data-i18n="export.confirm">导出</button>
+            </div>
+        </div>
+    </div>
+
     <!-- JavaScript引用 -->
     <script src="../../locales/i18n.js"></script>
     <script src="config.js"></script>

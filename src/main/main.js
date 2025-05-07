@@ -5,7 +5,7 @@
  * 负责应用程序的初始化、窗口管理、IPC通信和AI模型交互
  */
 
-const { app, ipcMain, Menu, BrowserWindow, nativeTheme, shell } = require('electron');
+const { app, ipcMain, Menu, BrowserWindow, nativeTheme, shell, clipboard, dialog } = require('electron');
 require('dotenv').config();
 const i18n = require('../locales/i18n');
 const fs = require('fs');
@@ -547,5 +547,36 @@ mcp.on('tool-authorization-request', async (request) => {
             authorized: false,
             error: error.message
         });
+    }
+});
+
+// 导出配置处理函数
+ipcMain.handle('export-config', async (event, configData, defaultFileName) => {
+    try {
+        log.info('导出配置请求:', Object.keys(configData));
+
+        // 打开保存文件对话框
+        const { canceled, filePath } = await dialog.showSaveDialog({
+            title: '导出配置',
+            defaultPath: path.join(app.getPath('downloads'), defaultFileName),
+            filters: [
+                { name: 'JSON Files', extensions: ['json'] },
+                { name: 'All Files', extensions: ['*'] }
+            ]
+        });
+
+        if (canceled) {
+            log.info('用户取消了导出配置');
+            return false;
+        }
+
+        // 将配置数据写入文件
+        fs.writeFileSync(filePath, JSON.stringify(configData, null, 2), 'utf8');
+        log.info('配置成功导出到:', filePath);
+
+        return true;
+    } catch (error) {
+        log.error('导出配置失败:', error.message);
+        return false;
     }
 });

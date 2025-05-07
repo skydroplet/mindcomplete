@@ -15,6 +15,7 @@ const themeService = require('../themeService');
 const modelService = require('../modelService');
 const promptService = require('../promptService');
 const mcpService = require('../mcpService');
+const exportService = require('../exportService');
 
 // 初始化UI文本的函数
 function initUIText() {
@@ -191,6 +192,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         themeService.initThemeToggle();
         // 初始化主题监听器
         themeService.setupThemeListeners();
+
+        // 初始化导出配置功能
+        exportService.initExportConfig();
 
         // 添加链接点击事件委托，使链接在外部浏览器中打开
         document.body.addEventListener('click', (event) => {
