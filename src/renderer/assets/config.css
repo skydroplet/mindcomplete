@@ -648,6 +648,8 @@ textarea {
     padding: 8px 15px;
     border-bottom: 1px solid var(--border-color);
     transition: background-color 0.2s;
+    justify-content: space-between;
+    /* 修改为两端对齐 */
 }
 
 .export-item:hover {
@@ -659,8 +661,9 @@ textarea {
 }
 
 .export-item-name {
-    margin-left: 10px;
     flex: 1;
+    margin-left: 0;
+    /* 移除左边距 */
 }
 
 .toggle-list-btn {
@@ -687,11 +690,23 @@ textarea {
     transform: rotate(-90deg);
 }
 
+.export-checkbox-container {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    margin-left: 10px;
+}
+
+.export-item-checkbox {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+
 .export-category-header .checkbox-group input[type="checkbox"],
 .export-item input[type="checkbox"] {
     width: 16px;
     height: 16px;
-    margin-right: 10px;
     cursor: pointer;
 }
 
@@ -703,4 +718,70 @@ textarea {
 .export-category-header label {
     font-weight: bold;
     margin-bottom: 0;
+}
+
+/* 导出表格样式 */
+.export-table {
+    width: 100%;
+    border-collapse: collapse;
+    border-spacing: 0;
+    color: var(--text-color);
+}
+
+.export-table thead {
+    background-color: var(--sidebar-bg);
+}
+
+.export-table th {
+    padding: 8px 10px;
+    text-align: center;
+    font-weight: 600;
+    border-bottom: 1px solid var(--border-color);
+    position: relative;
+    vertical-align: middle;
+}
+
+/* 第一列（模型名称）左对齐 */
+.export-table th:first-child {
+    text-align: left;
+}
+
+.export-table th .select-all-checkbox {
+    margin-left: 8px;
+    vertical-align: middle;
+    position: relative;
+    top: -1px;
+}
+
+.export-table td {
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border-color);
+    vertical-align: middle;
+}
+
+.export-table-row:hover {
+    background-color: var(--session-hover-bg);
+}
+
+.export-table-row:last-child td {
+    border-bottom: none;
+}
+
+.export-model-name {
+    font-weight: 500;
+}
+
+.export-checkbox-cell {
+    text-align: center;
+    vertical-align: middle;
+}
+
+/* 确保复选框在单元格中居中对齐 */
+.export-checkbox-cell input[type="checkbox"] {
+    margin: 0 auto;
+    display: block;
+    position: relative;
+    top: 0;
+    left: 0;
+    transform: translateY(0);
 }

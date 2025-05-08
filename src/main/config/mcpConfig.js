@@ -183,7 +183,6 @@ class McpConfigManager extends EventEmitter {
                     if (env.key && env.value) acc[env.key] = env.value;
                     return acc;
                 }, {}) : (serverData.env || {}),
-                disabled: serverData.disabled !== undefined ? serverData.disabled : !serverData.enabled,
                 autoApprove: serverData.autoApprove || [],
                 toolDescriptions: serverData.toolDescriptions || []
             };
@@ -224,7 +223,6 @@ class McpConfigManager extends EventEmitter {
                     path: config.path,
                     args: config.args || [],
                     env: config.env || {},
-                    disabled: config.disabled !== undefined ? config.disabled : this.config.servers[serverId].disabled,
                     autoApprove: config.autoApprove || this.config.servers[serverId].autoApprove || [],
                     toolDescriptions: config.toolDescriptions || this.config.servers[serverId].toolDescriptions || []
                 };

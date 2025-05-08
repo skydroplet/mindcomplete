@@ -329,6 +329,27 @@
         "noOptionSelected": "Please select at least one configuration to export",
         "selectAll": "Select All",
         "deselectAll": "Deselect All",
-        "toggleList": "Show/Hide Items"
+        "toggleList": "Show/Hide Items",
+        "modelName": "Model Name",
+        "baseConfig": "Base Config",
+        "secretKey": "Secret Keys",
+        "name": "Name",
+        "exportOption": "Export",
+        "selectAllBaseConfig": "Select/Deselect all base configurations",
+        "selectAllSecrets": "Select/Deselect all secret keys",
+        "selectBaseConfig": "Select/Deselect base configuration",
+        "selectSecret": "Select/Deselect secret key",
+        "promptName": "Prompt Name",
+        "selectAllPrompts": "Select/Deselect all prompts",
+        "selectPrompt": "Select/Deselect prompt",
+        "mcpServerName": "MCP Server Name",
+        "envVars": "Environment Variables",
+        "cmdArgs": "Command Arguments",
+        "selectAllMcpBaseConfig": "Select/Deselect all MCP server base configs",
+        "selectMcpBaseConfig": "Select/Deselect MCP server base config",
+        "selectAllEnvVars": "Select/Deselect all environment variables",
+        "selectAllArgs": "Select/Deselect all command arguments",
+        "selectEnvVars": "Select/Deselect environment variables",
+        "selectArgs": "Select/Deselect command arguments"
     }
 }

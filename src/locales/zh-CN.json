@@ -330,6 +330,27 @@
         "noOptionSelected": "请至少选择一项配置进行导出",
         "selectAll": "全选",
         "deselectAll": "取消全选",
-        "toggleList": "显示/隐藏项目"
+        "toggleList": "显示/隐藏项目",
+        "modelName": "模型名称",
+        "baseConfig": "基础配置",
+        "secretKey": "秘钥",
+        "name": "名称",
+        "exportOption": "导出",
+        "selectAllBaseConfig": "选择/取消选择所有基础配置",
+        "selectAllSecrets": "选择/取消选择所有秘钥",
+        "selectBaseConfig": "选择/取消选择基础配置",
+        "selectSecret": "选择/取消选择秘钥",
+        "promptName": "提示词名称",
+        "selectAllPrompts": "选择/取消选择所有提示词",
+        "selectPrompt": "选择/取消选择提示词",
+        "mcpServerName": "MCP服务名称",
+        "envVars": "环境变量",
+        "cmdArgs": "参数",
+        "selectAllMcpBaseConfig": "选择/取消选择所有MCP服务基础配置",
+        "selectMcpBaseConfig": "选择/取消选择MCP服务基础配置",
+        "selectAllEnvVars": "选择/取消选择所有环境变量",
+        "selectAllArgs": "选择/取消选择所有参数",
+        "selectEnvVars": "选择/取消选择环境变量",
+        "selectArgs": "选择/取消选择参数"
     }
 }
