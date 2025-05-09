@@ -171,7 +171,9 @@
         "testError": "Error testing MCP tool ❌\n\nError: {error}"
     },
     "buttons": {
-        "testMcpTool": "Test MCP Tool"
+        "testMcpTool": "Test MCP Tool",
+        "cancel": "Cancel",
+        "confirm": "Confirm"
     },
     "prompts": {
         "confirmDelete": "Are you sure you want to delete this prompt?",
@@ -240,7 +242,8 @@
             "addPromptBtn": "Add Prompt Generator",
             "add-env-btn": "Add Environment Variable",
             "add-arg-btn": "Add Parameter",
-            "exportConfig": "Export Config"
+            "exportConfig": "Export Config",
+            "importConfig": "Import Config"
         }
     },
     "logs": {
@@ -351,5 +354,17 @@
         "selectAllArgs": "Select/Deselect all command arguments",
         "selectEnvVars": "Select/Deselect environment variables",
         "selectArgs": "Select/Deselect command arguments"
+    },
+    "import": {
+        "title": "Import Configuration",
+        "description": "Select a configuration file or paste configuration content:",
+        "content": "Configuration Content:",
+        "invalidFileType": "Please select a JSON file",
+        "invalidJson": "The selected file is not a valid JSON file",
+        "emptyContent": "Please enter or select a configuration file",
+        "invalidFormat": "Invalid configuration format",
+        "confirm": "Are you sure you want to import these configurations? All imported configurations will be added as new items and will not overwrite existing ones.",
+        "success": "Configuration imported successfully! Imported {0}.\nAll configurations were added as new items without overwriting existing ones.",
+        "error": "Failed to import configuration: {error}"
     }
 }

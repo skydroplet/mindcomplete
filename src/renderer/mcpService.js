@@ -473,15 +473,15 @@ class McpService {
 
         if (server) {
             document.getElementById('serverName').value = server.name;
-            document.getElementById('serverPath').value = server.path || '';
+            document.getElementById('serverPath').value = server.command || '';
 
             // 清空环境变量和参数容器
             document.getElementById('envVarsContainer').innerHTML = '';
             document.getElementById('argsContainer').innerHTML = '';
 
             // 添加环境变量
-            if (server.env) {
-                Object.entries(server.env).forEach(([key, value]) => {
+            if (server.envs) {
+                Object.entries(server.envs).forEach(([key, value]) => {
                     this.addEnvRow(key, value);
                 });
             }
@@ -706,13 +706,13 @@ class McpService {
                 return;
             }
 
-            let path = pathElement.value.trim();
+            let command = pathElement.value.trim();
 
             // 使用sanitizePath函数规范化路径
-            path = this.sanitizePath(path);
+            command = this.sanitizePath(command);
 
             // 如果路径为空，提前返回错误
-            if (!path) {
+            if (!command) {
                 log.error(i18n.t('errors.serverConfigIncomplete'));
                 return;
             }
@@ -725,8 +725,8 @@ class McpService {
 
             const serverData = {
                 name: serverNameElement.value || i18n.t('mcp.toolsList.title'),
-                path: path,
-                env: {},
+                command: command,
+                envs: {},
                 args: []
             };
 
@@ -739,7 +739,7 @@ class McpService {
                     envVars[key] = value;
                 }
             });
-            serverData.env = envVars;
+            serverData.envs = envVars;
 
             // 获取命令行参数
             serverData.args = Array.from(document.querySelectorAll('#argsContainer .key-value-row')).map(row => {
@@ -1174,8 +1174,8 @@ ${formattedToolList}
 
             const serverData = {
                 name: serverName,
-                path: this.sanitizePath(serverPath),
-                env: envVars,
+                command: this.sanitizePath(serverPath),
+                envs: envVars,
                 args: args,
                 // 保留其他可能的配置字段，使用当前值
                 disabled: this.currentServerId && this.mcpServers[this.currentServerId]?.disabled,
@@ -1224,8 +1224,8 @@ ${formattedToolList}
                     try {
                         const testResult = await ipcRenderer.invoke('direct-test-mcp-tool', {
                             name: serverName,
-                            path: this.sanitizePath(serverPath),
-                            env: envVars,
+                            command: this.sanitizePath(serverPath),
+                            envs: envVars,
                             args: args
                         });
 
@@ -1315,8 +1315,8 @@ ${formattedToolList}
             // 创建一个复制的MCP服务对象
             const copiedServer = {
                 name: `${currentServer.name} (复制)`,
-                path: currentServer.path || '',
-                env: currentServer.env ? { ...currentServer.env } : {},
+                command: currentServer.command || '',
+                envs: currentServer.envs ? { ...currentServer.envs } : {},
                 args: currentServer.args ? [...currentServer.args] : []
             };
 
@@ -1337,15 +1337,15 @@ ${formattedToolList}
 
                 // 填充复制的MCP服务数据
                 document.getElementById('serverName').value = copiedServer.name;
-                document.getElementById('serverPath').value = copiedServer.path || '';
+                document.getElementById('serverPath').value = copiedServer.command || '';
 
                 // 清空环境变量和参数容器
                 document.getElementById('envVarsContainer').innerHTML = '';
                 document.getElementById('argsContainer').innerHTML = '';
 
                 // 添加环境变量
-                if (copiedServer.env) {
-                    Object.entries(copiedServer.env).forEach(([key, value]) => {
+                if (copiedServer.envs) {
+                    Object.entries(copiedServer.envs).forEach(([key, value]) => {
                         this.addEnvRow(key, value);
                     });
                 }

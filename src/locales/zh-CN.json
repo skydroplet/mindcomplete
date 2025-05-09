@@ -171,7 +171,9 @@
         "testError": "测试MCP工具时出错 ❌\n\n错误: {error}"
     },
     "buttons": {
-        "testMcpTool": "测试MCP工具"
+        "testMcpTool": "测试MCP工具",
+        "cancel": "取消",
+        "confirm": "确认"
     },
     "prompts": {
         "confirmDelete": "确定要删除这个提示词吗？",
@@ -241,7 +243,8 @@
             "addPromptBtn": "添加提示词",
             "add-env-btn": "添加环境变量",
             "add-arg-btn": "添加参数",
-            "exportConfig": "导出配置"
+            "exportConfig": "导出配置",
+            "importConfig": "导入配置"
         }
     },
     "logs": {
@@ -352,5 +355,17 @@
         "selectAllArgs": "选择/取消选择所有参数",
         "selectEnvVars": "选择/取消选择环境变量",
         "selectArgs": "选择/取消选择参数"
+    },
+    "import": {
+        "title": "导入配置",
+        "description": "选择配置文件或粘贴配置内容：",
+        "content": "配置内容：",
+        "invalidFileType": "请选择JSON文件",
+        "invalidJson": "所选文件不是有效的JSON文件",
+        "emptyContent": "请输入或选择配置文件",
+        "invalidFormat": "导入的配置格式无效",
+        "confirm": "确定要导入这些配置吗？所有导入的配置项将以新建的方式添加，不会覆盖原有配置。",
+        "success": "配置导入成功！已导入{0}。\n所有配置均以新建方式添加，没有覆盖原有配置。",
+        "error": "导入配置失败: {error}"
     }
 }

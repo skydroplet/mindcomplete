@@ -16,6 +16,10 @@ const modelService = require('../modelService');
 const promptService = require('../promptService');
 const mcpService = require('../mcpService');
 const exportService = require('../exportService');
+const ImportService = require('../importService');
+
+// 创建导入服务实例
+const importService = new ImportService();
 
 // 初始化UI文本的函数
 function initUIText() {
@@ -196,6 +200,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         // 初始化导出配置功能
         exportService.initExportConfig();
 
+        // 初始化导入配置功能
+        importService.initImportConfig();
+
         // 添加链接点击事件委托，使链接在外部浏览器中打开
         document.body.addEventListener('click', (event) => {
             // 检查点击的是否是链接
@@ -211,7 +218,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         });
     } catch (error) {
-        log.error('初始化配置页面时出错:', error.message);
+        log.error('配置页面初始化失败:', error.message);
+        alert(`初始化配置页面失败: ${error.message}`);
     }
 });
 

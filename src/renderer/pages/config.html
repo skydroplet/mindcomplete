@@ -19,6 +19,9 @@
             <button class="tab-link" data-target="prompts" data-tab="prompts">提示词管理</button>
             <button class="tab-link" data-target="mcp-servers" data-tab="mcp">MCP服务</button>
             <div style="flex: 1;"></div>
+            <button id="import-config-btn" class="import-btn" title="导入配置" data-i18n="settings.buttons.importConfig">
+                导入配置
+            </button>
             <button id="export-config-btn" class="export-btn" title="导出配置" data-i18n="settings.buttons.exportConfig">
                 导出配置
             </button>
@@ -223,8 +226,36 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button id="cancel-export-btn" class="cancel-btn" data-i18n="export.cancel">取消</button>
-                <button id="confirm-export-btn" class="save-btn" data-i18n="export.confirm">导出</button>
+                <button id="cancel-export-btn" class="cancel-btn" data-i18n="buttons.cancel">取消</button>
+                <button id="confirm-export-btn" class="save-btn" data-i18n="buttons.confirm">确认</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 导入配置对话框 -->
+    <div id="import-config-dialog" class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 data-i18n="import.title">导入配置</h3>
+                <button id="close-import-dialog" class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p data-i18n="import.description">选择配置文件或粘贴配置内容：</p>
+
+                <div class="import-file-section">
+                    <div class="import-file-row">
+                        <input type="file" id="import-file-selector" accept=".json" />
+                    </div>
+                </div>
+
+                <div class="import-text-section">
+                    <label for="import-config-content" data-i18n="import.content">配置内容：</label>
+                    <textarea id="import-config-content" rows="10" placeholder="粘贴配置JSON内容或通过上面的文件选择器选择文件"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="cancel-import-btn" class="cancel-btn" data-i18n="buttons.cancel">取消</button>
+                <button id="confirm-import-btn" class="save-btn" data-i18n="buttons.confirm">导入</button>
             </div>
         </div>
     </div>

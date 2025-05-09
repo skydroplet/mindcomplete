@@ -19,6 +19,7 @@ const path = require('path');
 // 全局MCP实例
 const mcp = require('./mcpClient');
 const { closeConfigWindow } = require('./config/configWindow');
+const { time } = require('console');
 
 /**
  * 创建应用程序菜单
@@ -365,12 +366,12 @@ ipcMain.handle('direct-test-mcp-tool', async (event, serverConfig) => {
         log.info('接收到测试MCP服务配置:', serverConfig);
 
         // 如果没有传递服务配置或路径为空，则返回错误
-        if (!serverConfig || !serverConfig.path) {
+        if (!serverConfig || !serverConfig.command) {
             return { success: false, error: i18n.t('errors.serverConfigIncomplete') };
         }
 
         // 规范化路径，确保使用系统正确的路径分隔符
-        let execPath = path.normalize(serverConfig.path);
+        let execPath = path.normalize(serverConfig.command);
 
         // 检查是否只有文件名而没有路径
         if (!path.isAbsolute(execPath) && !execPath.includes(path.sep)) {
@@ -401,9 +402,9 @@ ipcMain.handle('direct-test-mcp-tool', async (event, serverConfig) => {
         // 使用临时配置直接测试连接
         try {
             const testResult = await mcp.connectToServer(testServerName, {
-                path: execPath,
+                command: execPath,
                 args: serverConfig.args || [],
-                env: serverConfig.env || {}
+                envs: serverConfig.envs || {}
             });
 
             return {
@@ -578,5 +579,136 @@ ipcMain.handle('export-config', async (event, configData, defaultFileName) => {
     } catch (error) {
         log.error('导出配置失败:', error.message);
         return false;
+    }
+});
+
+// 导入配置处理函数
+ipcMain.handle('import-config', async (event, importData) => {
+    try {
+        log.info('导入配置请求:', Object.keys(importData));
+
+        // 引入各个配置管理器
+        const modelConfig = require('./config/modelConfig');
+        const promptConfig = require('./config/promptConfig');
+        const mcpConfig = require('./config/mcpConfig');
+
+        // 记录导入的项目数量
+        const importCount = {
+            models: 0,
+            prompts: 0,
+            mcpServers: 0
+        };
+
+        const now = new Date();
+        const suffix = now.toLocaleString();
+        let index = 1;
+
+        // 导入模型配置 - 使用addModel方法
+        if (importData.models && typeof importData.models === 'object') {
+            // 为每个导入的模型生成新配置
+            Object.entries(importData.models).forEach(([id, model]) => {
+                if (!model.name) {
+                    model.name = id;
+                }
+
+                if (!model.name) {
+                    model.name = "import-" + suffix + "-" + index;
+                    index++;
+                }
+
+                // 如果模型名称已存在，添加导入标识
+                const existingModels = modelConfig.getModelConfig().models || {};
+                const existingNames = Object.values(existingModels).map(m => m.name);
+                if (existingNames.includes(model.name)) {
+                    model.name = `${model.name} (导入)`;
+                }
+
+                // 使用添加模型方法
+                const result = modelConfig.addModel(model);
+                if (result) {
+                    importCount.models++;
+                }
+            });
+
+            log.info(`导入了 ${importCount.models} 个模型配置`);
+        }
+
+        index = 1;
+        // 导入提示词配置 - 使用addPrompt方法
+        if (importData.prompts && typeof importData.prompts === 'object') {
+            // 获取现有提示词
+            const existingPrompts = promptConfig.getPrompts() || {};
+            const existingNames = Object.values(existingPrompts).map(p => p.name);
+
+            // 为每个导入的提示词生成新ID
+            Object.entries(importData.prompts).forEach(([id, prompt]) => {
+                if (!prompt.name) {
+                    prompt.name = id;
+                }
+
+                if (!prompt.name) {
+                    prompt.name = "import-" + suffix + "-" + index;
+                    index++;
+                }
+
+                // 如果提示词名称已存在，添加导入标识
+                if (existingNames.includes(prompt.name)) {
+                    prompt.name = `${prompt.name} (导入)`;
+                }
+
+                // 使用添加提示词方法
+                const newPromptId = promptConfig.addPrompt(prompt);
+                if (newPromptId) {
+                    importCount.prompts++;
+                }
+            });
+
+            log.info(`导入了 ${importCount.prompts} 个提示词`);
+        }
+
+        // 导入MCP服务配置 - 使用addMcpServer方法
+        index = 1;
+        if (importData.mcpServers && typeof importData.mcpServers === 'object') {
+            // 获取现有MCP服务
+            const mcpConfigs = mcpConfig.getMcpConfig();
+            const existingServers = mcpConfigs.servers || {};
+            const existingNames = Object.values(existingServers).map(s => s.name);
+
+            // 为每个导入的MCP服务生成新的配置
+            Object.entries(importData.mcpServers).forEach(([id, server]) => {
+                if (!server.name) {
+                    server.name = id;
+                }
+
+                if (!server.name) {
+                    server.name = "import-" + suffix + "-" + index;
+                    index++;
+                }
+
+                // 如果服务名称已存在，添加导入标识
+                if (existingNames.includes(server.name)) {
+                    server.name = `${server.name} (导入)`;
+                }
+
+                // 使用添加MCP服务方法
+                const result = mcpConfig.addMcpServer(server.name, server);
+                if (result) {
+                    importCount.mcpServers++;
+                }
+            });
+
+            log.info(`导入了 ${importCount.mcpServers} 个MCP服务配置`);
+        }
+
+        return {
+            success: true,
+            imported: importCount
+        };
+    } catch (error) {
+        log.error('导入配置失败:', error.message);
+        return {
+            success: false,
+            error: error.message
+        };
     }
 });

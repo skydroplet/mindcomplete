@@ -177,9 +177,9 @@ class McpConfigManager extends EventEmitter {
             const serverConfig = {
                 id: serverId,
                 name: name,
-                path: serverData.path,
+                command: serverData.command,
                 args: serverData.args || [],
-                env: serverData.envVars ? serverData.envVars.reduce((acc, env) => {
+                envs: serverData.envVars ? serverData.envVars.reduce((acc, env) => {
                     if (env.key && env.value) acc[env.key] = env.value;
                     return acc;
                 }, {}) : (serverData.env || {}),
@@ -220,9 +220,9 @@ class McpConfigManager extends EventEmitter {
                 const updatedConfig = {
                     id: serverId, // 确保ID保持不变
                     name: config.name,
-                    path: config.path,
+                    command: config.path,
                     args: config.args || [],
-                    env: config.env || {},
+                    envs: config.env || {},
                     autoApprove: config.autoApprove || this.config.servers[serverId].autoApprove || [],
                     toolDescriptions: config.toolDescriptions || this.config.servers[serverId].toolDescriptions || []
                 };

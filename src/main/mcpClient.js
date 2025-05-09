@@ -107,7 +107,7 @@ class MCPClientManager extends EventEmitter {
             log.info(`尝试连接MCP服务: ${serverId}`, JSON.stringify(serverConfig, null, 2));
 
             // 检查配置是否有效
-            if (!serverConfig || !serverConfig.path) {
+            if (!serverConfig || !serverConfig.command) {
                 throw new Error(`MCP服务配置不完整: ${serverId}`);
             }
 
@@ -115,7 +115,7 @@ class MCPClientManager extends EventEmitter {
             const serverName = serverConfig.name || serverId;
 
             // 规范化路径
-            let execPath = path.normalize(serverConfig.path);
+            let execPath = path.normalize(serverConfig.command);
 
             // 检查是否只有文件名而没有路径
             if (!path.isAbsolute(execPath) && !execPath.includes(path.sep)) {
@@ -137,7 +137,7 @@ class MCPClientManager extends EventEmitter {
             const transport = new StdioClientTransport({
                 command: execPath,
                 args: serverConfig.args || [],
-                env: { ...process.env, ...(serverConfig.env || {}) }
+                env: { ...process.env, ...(serverConfig.envs || {}) }
             });
 
             // 创建客户端对象
