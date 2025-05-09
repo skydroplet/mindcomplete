@@ -224,6 +224,7 @@ function setupEventListeners() {
                 }
 
                 // 添加自定义样式，使下拉菜单向上展开且最多显示10个选项
+                // 并添加统一的滚动条样式
                 styleEl.textContent = `
                     #${selectElement.id} option {
                         padding: 8px 12px;
@@ -231,6 +232,23 @@ function setupEventListeners() {
                     #${selectElement.id}:focus option {
                         max-height: calc(10 * 36px);
                         overflow-y: auto;
+                    }
+                    #${selectElement.id}:focus::-webkit-scrollbar {
+                        width: 6px;
+                        height: 6px;
+                    }
+                    #${selectElement.id}:focus::-webkit-scrollbar-track {
+                        background: var(--scrollbar-track, transparent);
+                    }
+                    #${selectElement.id}:focus::-webkit-scrollbar-thumb {
+                        background: var(--scrollbar-thumb, rgba(128, 128, 128, 0.5));
+                        border-radius: 3px;
+                    }
+                    #${selectElement.id}:focus::-webkit-scrollbar-thumb:hover {
+                        background: var(--scrollbar-thumb-hover, rgba(128, 128, 128, 0.7));
+                    }
+                    #${selectElement.id}:focus::-webkit-scrollbar-corner {
+                        background: var(--scrollbar-track, transparent);
                     }
                 `;
             }

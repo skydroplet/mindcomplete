@@ -132,6 +132,29 @@
     /* 添加一点顶部间距 */
 }
 
+/* 统一标签下拉菜单滚动条样式 */
+.tabs-dropdown-menu::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+.tabs-dropdown-menu::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.tabs-dropdown-menu::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb, rgba(128, 128, 128, 0.5));
+    border-radius: 3px;
+}
+
+.tabs-dropdown-menu::-webkit-scrollbar-thumb:hover {
+    background: var(--scrollbar-thumb-hover, rgba(128, 128, 128, 0.7));
+}
+
+.tabs-dropdown-menu::-webkit-scrollbar-corner {
+    background: transparent;
+}
+
 .tabs-dropdown-menu.show {
     display: block !important;
 }

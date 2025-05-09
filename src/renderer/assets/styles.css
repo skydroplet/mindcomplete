@@ -1,5 +1,28 @@
 @import './highlight.js/styles/github.css';
 
+/* 统一所有滚动条样式 - 与配置窗口保持一致，并支持深浅色主题 */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb, rgba(128, 128, 128, 0.5));
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--scrollbar-thumb-hover, rgba(128, 128, 128, 0.7));
+}
+
+::-webkit-scrollbar-corner {
+    background: transparent;
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -83,7 +106,7 @@ body {
     cursor: text;
 }
 
-/* 添加滚动条样式 */
+/* 移除旧的滚动条样式
 .chat-messages::-webkit-scrollbar {
     width: 8px;
 }
@@ -101,6 +124,7 @@ body {
 .chat-messages::-webkit-scrollbar-thumb:hover {
     background: var(--button-bg);
 }
+*/
 
 .message {
     margin-bottom: 15px;
@@ -399,7 +423,7 @@ body {
     color: var(--text-color, #333);
 }
 
-/* 输入框滚动条样式 */
+/* 移除旧的输入框滚动条样式
 .input-group textarea::-webkit-scrollbar {
     width: 8px;
 }
@@ -417,6 +441,7 @@ body {
 .input-group textarea::-webkit-scrollbar-thumb:hover {
     background: var(--button-bg);
 }
+*/
 
 .status {
     padding: 10px;
@@ -1236,35 +1261,4 @@ html select.settings-select:not([size]):not([multiple]) {
     opacity: 0 !important;
     pointer-events: none !important;
     transition: opacity 0.2s ease !important;
-}
-
-/* 统一侧边栏滚动条样式 */
-.sessions-container::-webkit-scrollbar,
-.sidebar-lower::-webkit-scrollbar,
-.system-container::-webkit-scrollbar,
-.system-items-container::-webkit-scrollbar {
-    width: 8px;
-}
-
-.sessions-container::-webkit-scrollbar-track,
-.sidebar-lower::-webkit-scrollbar-track,
-.system-container::-webkit-scrollbar-track,
-.system-items-container::-webkit-scrollbar-track {
-    background: var(--sidebar-bg);
-    border-radius: 4px;
-}
-
-.sessions-container::-webkit-scrollbar-thumb,
-.sidebar-lower::-webkit-scrollbar-thumb,
-.system-container::-webkit-scrollbar-thumb,
-.system-items-container::-webkit-scrollbar-thumb {
-    background: var(--border-color);
-    border-radius: 4px;
-}
-
-.sessions-container::-webkit-scrollbar-thumb:hover,
-.sidebar-lower::-webkit-scrollbar-thumb:hover,
-.system-container::-webkit-scrollbar-thumb:hover,
-.system-items-container::-webkit-scrollbar-thumb:hover {
-    background: var(--button-bg);
 }

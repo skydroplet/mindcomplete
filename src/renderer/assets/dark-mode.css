@@ -33,6 +33,9 @@
     --context-menu-hover: #f0f0f0;
     --context-menu-border: #ddd;
     --context-menu-shadow: rgba(0, 0, 0, 0.2);
+    --scrollbar-thumb: rgba(128, 128, 128, 0.4);
+    --scrollbar-thumb-hover: rgba(128, 128, 128, 0.6);
+    --scrollbar-track: transparent;
 }
 
 [data-theme="dark"] {
@@ -70,6 +73,9 @@
     --context-menu-hover: #3a3a3a;
     --context-menu-border: #444444;
     --context-menu-shadow: rgba(0, 0, 0, 0.4);
+    --scrollbar-thumb: rgba(128, 128, 128, 0.6);
+    --scrollbar-thumb-hover: rgba(128, 128, 128, 0.8);
+    --scrollbar-track: transparent;
 }
 
 /* 应用颜色变量到页面元素 */
