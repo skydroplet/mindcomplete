@@ -220,7 +220,7 @@ class McpConfigManager extends EventEmitter {
                 const updatedConfig = {
                     id: serverId, // 确保ID保持不变
                     name: config.name,
-                    command: config.path,
+                    command: config.command,
                     args: config.args || [],
                     envs: config.env || {},
                     autoApprove: config.autoApprove || this.config.servers[serverId].autoApprove || [],
