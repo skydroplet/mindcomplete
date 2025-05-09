@@ -311,7 +311,7 @@ class McpService {
             this.mcpDropdownContent.style.removeProperty('width');
 
             // 确保其他样式正确设置
-            this.mcpDropdownContent.style.maxHeight = 'calc(10 * 36px)';
+            this.mcpDropdownContent.style.maxHeight = 'calc(10 * 2.5em)'; // 使用em单位，基于文字大小
             this.mcpDropdownContent.style.overflowY = 'auto';
             this.mcpDropdownContent.style.bottom = '100%';
             this.mcpDropdownContent.style.top = 'auto';

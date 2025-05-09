@@ -155,18 +155,23 @@
 }
 
 .mcp-dropdown-btn {
+    position: relative;
     background-color: var(--input-bg);
     border: 1px solid var(--input-border);
     border-radius: 4px;
-    padding: 5px 10px;
+    padding: 0.5em 0.75em;
+    /* 使用em单位，基于文字大小 */
     cursor: pointer;
     font-size: 14px;
     margin-left: 5px;
     margin-right: 5px;
     width: 100%;
     /* Fill available width in container */
-    height: 32px;
-    /* Match settings-select height */
+    height: auto;
+    min-height: 2.2em;
+    /* 使用em单位，基于文字大小 */
+    line-height: 1.2;
+    /* 行高基于文字大小 */
     box-sizing: border-box;
     /* Include padding and border in width/height */
     text-align: left;
@@ -209,8 +214,8 @@
     /* Match button width exactly */
     box-shadow: 0px 8px 16px 0px var(--dropdown-shadow);
     z-index: 1000;
-    max-height: calc(10 * 36px);
-    /* Height for 10 items (each ~36px with padding) */
+    max-height: calc(10 * 2.5em);
+    /* 使用em单位，10项×每项高度 */
     overflow-y: auto;
     border-radius: 4px;
     bottom: 100%;
@@ -248,7 +253,8 @@
 .mcp-server-item {
     display: flex;
     align-items: center;
-    padding: 8px 12px;
+    padding: 0.5em 0.75em;
+    /* 使用em单位，基于文字大小 */
     cursor: pointer;
     color: var(--text-color);
     background-color: var(--dropdown-bg);
@@ -278,7 +284,8 @@
 .mcp-server-item.add-server-item {
     color: var(--text-color);
     font-weight: normal;
-    padding: 5px 10px;
+    padding: 0.5em 0.75em;
+    /* 使用em单位，基于文字大小 */
     font-size: 14px;
     /* Match font size with settings-select */
 }
@@ -293,7 +300,8 @@
 }
 
 .mcp-empty-message {
-    padding: 8px 12px;
+    padding: 0.5em 0.75em;
+    /* 使用em单位，基于文字大小 */
     color: var(--secondary-text-color);
     font-style: italic;
     background-color: var(--dropdown-bg);

@@ -491,9 +491,14 @@ textarea {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 0 8px;
+    padding: 0 0.5em;
+    /* 使用em单位，基于文字大小 */
     margin-right: 5px;
-    height: 32px;
+    height: auto;
+    min-height: 2.2em;
+    /* 使用em单位，基于文字大小 */
+    line-height: 1.2;
+    /* 行高基于文字大小 */
     border: 1px solid var(--border-color);
     border-radius: 4px;
     font-size: 13px;
@@ -511,9 +516,14 @@ textarea {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 0 8px;
+    padding: 0 0.5em;
+    /* 使用em单位，基于文字大小 */
     margin-right: 5px;
-    height: 32px;
+    height: auto;
+    min-height: 2.2em;
+    /* 使用em单位，基于文字大小 */
+    line-height: 1.2;
+    /* 行高基于文字大小 */
     border: 1px solid var(--border-color);
     border-radius: 4px;
     font-size: 13px;
