@@ -40,6 +40,9 @@ class ChatSessionService {
 
         // 配置 marked 使用 highlight.js
         this.configureMarked();
+
+        // 用于跟踪当前是否有AI正在生成回复
+        this.isGenerating = false;
     }
 
     /**
@@ -430,6 +433,51 @@ class ChatSessionService {
     }
 
     /**
+     * 中断当前正在进行的AI回复生成
+     * 
+     * 如果当前有AI正在生成回复，此函数将中断该过程
+     * 
+     * @returns {boolean} 是否成功中断（如果当前没有生成过程，返回false）
+     */
+    async abortCurrentGeneration() {
+        if (!this.isGenerating) {
+            return true
+        }
+        log.info("中断当前AI回复生成", this.sessionId);
+
+        try {
+            // 向主进程发送中断消息并等待结果
+            const abortResult = await ipcRenderer.invoke('abort-message-generation', this.sessionId);
+
+            // 记录中断结果
+            log.info(`中断 ${this.sessionId} : ${abortResult ? '成功' : '失败'}`);
+
+            // 重置生成状态
+            this.isGenerating = false;
+
+            // 清理所有可能的事件监听器
+            ipcRenderer.removeAllListeners('new-ai-message');
+            ipcRenderer.removeAllListeners('ai-message-chunk');
+            ipcRenderer.removeAllListeners('new-mcp-tool-message');
+            ipcRenderer.removeAllListeners('mcp-tool-message-chunk');
+            ipcRenderer.removeAllListeners('tool-authorization-request');
+
+            // 更新状态提示
+            if (abortResult) {
+                this.statusElement.textContent = i18n.t('ui.status.aborted') || "消息生成已中断";
+            } else {
+                this.statusElement.textContent = i18n.t('ui.status.abortFailed') || "中断失败";
+            }
+
+            return true;
+        } catch (error) {
+            log.error("中断消息生成时出错:", error.message);
+            this.statusElement.textContent = i18n.t('ui.status.abortError') || `中断出错: ${error.message}`;
+            return false;
+        }
+    }
+
+    /**
      * 发送消息到AI
      *
      * @param {string} message - 要发送的消息内容
@@ -448,6 +496,23 @@ class ChatSessionService {
             window.openSettingsWindowWithTab('model');
             return;
         }
+
+        try {
+            // 如果已经有正在进行的生成过程，先中断它
+            this.abortCurrentGeneration();
+        } catch (abortError) {
+            log.error(`中断当前消息生成失败，继续发送新消息: ${abortError.message}`);
+            // 强制重置状态
+            this.isGenerating = false;
+            ipcRenderer.removeAllListeners('new-ai-message');
+            ipcRenderer.removeAllListeners('ai-message-chunk');
+            ipcRenderer.removeAllListeners('new-mcp-tool-message');
+            ipcRenderer.removeAllListeners('mcp-tool-message-chunk');
+            ipcRenderer.removeAllListeners('tool-authorization-request');
+        }
+
+        // 标记为正在生成状态
+        this.isGenerating = true;
 
         this.addMessage(message, 'user');
 
@@ -502,7 +567,6 @@ class ChatSessionService {
                 this.addMessage(messageContent, 'tool', authRequest);
             });
 
-            // 获取当前选择的提示词和MCP服务（使用会话特定的配置）
             // 在send-message IPC中传递会话特定的配置
             await ipcRenderer.invoke('send-message', this.data.id, message);
 
@@ -543,6 +607,9 @@ class ChatSessionService {
 
             this.statusElement.textContent = i18n.t('ui.status.error', { error: errorMsg });
         } finally {
+            // 标记生成过程已结束
+            this.isGenerating = false;
+
             // 清理事件监听器
             ipcRenderer.removeAllListeners('new-ai-message');
             ipcRenderer.removeAllListeners('ai-message-chunk');

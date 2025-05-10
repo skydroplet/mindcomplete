@@ -311,23 +311,6 @@ ipcMain.handle('set-locale', (event, locale) => {
     return true;
 });
 
-// 修改send-message处理函数，使用会话特定配置
-ipcMain.handle('send-message', async (event, sessionId, message) => {
-    try {
-        const session = sessionManager.loadSession(sessionId);
-        if (!session) {
-            throw new Error('会话未找到');
-        }
-
-        await session.sendMessage(event, message)
-    } catch (error) {
-        log.error('发送消息失败:', error.message);
-        // 确保在UI中显示错误消息
-        event.sender.send('new-ai-message', `\n\n**❌ 错误:** ${error.message}\n\n`);
-        throw error;
-    }
-});
-
 // 添加文件系统相关的 IPC 处理
 ipcMain.handle('read-file', async (event, path) => {
     try {

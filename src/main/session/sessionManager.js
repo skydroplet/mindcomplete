@@ -130,13 +130,60 @@ class SessionManager extends EventEmitter {
     }
 
     /**
+     * 向指定会话发送消息
+     * @param {Object} event Electron IPC事件对象
+     * @param {string} sessionId 会话ID
+     * @param {string} message 消息内容
+     * @returns {Promise<Object>} 处理结果
+     */
+    async sendMessage(event, sessionId, message) {
+        try {
+            const session = this.sessionMap[sessionId];
+            if (!session) {
+                throw new Error(`未找到会话 ${sessionId}`);
+            }
+
+            return await session.sendMessage(event, message);
+        } catch (err) {
+            log.error(`向会话 ${sessionId} 发送消息失败:`, err.message);
+            throw err;
+        }
+    }
+
+    /**
+     * 中断指定会话的消息生成
+     * @param {string} sessionId 会话ID
+     * @returns {boolean} 是否成功中断
+     */
+    abortMessageGeneration(sessionId) {
+        try {
+            log.info(`中断会话ID: ${sessionId}`);
+
+            const session = this.sessionMap[sessionId];
+            if (!session) {
+                log.error(`尝试中断的会话不存在: ${sessionId}`);
+                return false;
+            }
+
+            return session.abortMessageGeneration();
+        } catch (err) {
+            log.error(`中断会话 ${sessionId} 的消息失败:`, err.message, err.stack);
+            return false;
+        }
+    }
+
+    /**
      * 重命名会话
      * @param {string} sessionId 会话ID
-     * @param {string} newName 新名称
+     * @param {string} newName 新的名称
      */
     renameSession(sessionId, newName) {
         try {
             const session = this.sessionMap[sessionId];
+            if (!session) {
+                return false;
+            }
+
             session.rename(newName);
             return true;
         } catch (err) {
@@ -200,7 +247,24 @@ class SessionManager extends EventEmitter {
     }
 
     /**
-     * 设置会话的对话模式
+     * 设置会话的MCP服务
+     * @param {string} sessionId 会话ID
+     * @param {Array<string>} servers MCP服务ID数组
+     * @returns {boolean} 设置是否成功
+     */
+    setSessionMcpServers(sessionId, servers) {
+        const session = this.sessionMap[sessionId];
+        if (!session) {
+            log.error("未找到会话", sessionId)
+            return false;
+        }
+
+        session.setMcpServers(servers);
+        return true;
+    }
+
+    /**
+     * 设置会话对话模式
      * @param {string} sessionId 会话ID
      * @param {string} mode 对话模式 'single-turn' 或 'multi-turn'
      * @returns {boolean} 设置是否成功
@@ -208,44 +272,12 @@ class SessionManager extends EventEmitter {
     setSessionConversationMode(sessionId, mode) {
         const session = this.sessionMap[sessionId];
         if (!session) {
-            log.error("未找到会话", sessionId);
+            log.error("未找到会话", sessionId)
             return false;
         }
 
         session.setConversationMode(mode);
         return true;
-    }
-
-    /**
-     * 设置会话使用的MCP服务器列表
-     * @param {string} sessionId 会话ID
-     * @param {Array} mcpServers MCP服务器ID数组
-     * @returns {boolean} 设置是否成功
-     */
-    setSessionMcpServers(sessionId, mcpServers) {
-        const session = this.sessionMap[sessionId];
-        if (!session) {
-            log.error("未找到会话", sessionId)
-            return false;
-        }
-
-        session.setMcpServers(mcpServers);
-        return true;
-    }
-
-    /**
-     * 获取会话使用的MCP服务器列表
-     * @param {string} sessionId 会话ID
-     * @returns {Array} MCP服务器ID数组
-     */
-    getSessionMcpServers(sessionId) {
-        const session = this.sessionMap[sessionId];
-        if (!session) {
-            log.error("未找到会话", sessionId)
-            return [];
-        }
-
-        return session.getMcpServers();
     }
 }
 

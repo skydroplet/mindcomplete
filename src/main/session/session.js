@@ -35,6 +35,9 @@ class ChatSession {
                 this.saveToFile();
                 log.info("创建新会话")
             }
+
+            // 用于中断消息生成的控制器
+            this.abortController = null;
         } catch (err) {
             log.error('初始化会话失败:', err.message);
         }
@@ -221,8 +224,39 @@ class ChatSession {
         }
     }
 
+    /**
+     * 中断当前正在进行的消息生成
+     * 
+     * 此函数用于中断当前正在进行的AI模型消息生成流程
+     * @returns {boolean} 是否成功中断消息生成
+     */
+    abortMessageGeneration() {
+        if (!this.abortController) {
+            return false;
+        }
+
+        log.info(`开始会话 ${this.data.id} 响应`);
+        try {
+            this.abortController.abort();
+            this.abortController = null;
+            return true;
+        } catch (error) {
+            log.error(`中断会话 ${this.data.id} 消息生成时出错:`, error.message);
+            this.abortController = null;
+            return false;
+        }
+    }
+
     async sendMessage(event, message) {
         try {
+            // 如果存在旧的中断控制器，先中断它
+            if (this.abortController) {
+                this.abortController.abort();
+            }
+
+            // 创建新的中断控制器
+            this.abortController = new AbortController();
+
             let messages = [];
 
             // 有系统提示词 添加系统提示词
@@ -275,13 +309,26 @@ class ChatSession {
             }
 
             const modelClient = modelConfig.getModelClient(this.data.modelId)
-            const stream = await modelClient.chat.completions.create(requestParams);
+
+            // 添加中断控制器信号
+            const signal = this.abortController.signal;
+
+            const stream = await modelClient.chat.completions.create({
+                ...requestParams,
+                signal
+            });
 
             let fullResponse = '';
             let toolCalls = [];
             let currentToolCallIndexes = {};
 
             for await (const chunk of stream) {
+                // 检查是否已经中断
+                if (signal.aborted) {
+                    log.info(`会话 ${this.data.id} 的消息生成已被中断，停止处理后续消息块`);
+                    break;
+                }
+
                 const content = chunk.choices[0]?.delta?.content || '';
                 if (content) {
                     if (fullResponse === "") {
@@ -332,7 +379,7 @@ class ChatSession {
             // 如果有工具调用，处理它
             if (toolCalls.length > 0) {
                 // 处理工具调用
-                const finalResponse = await this.handleToolCalls(event, messages, toolCalls, modelClient, model);
+                const finalResponse = this.handleToolCalls(event, messages, toolCalls, modelClient, model);
                 this.addMessage({ role: 'assistant', content: finalResponse })
                 return { content: finalResponse, toolCalls };
             } else {
@@ -340,6 +387,12 @@ class ChatSession {
                 return { content: fullResponse };
             }
         } catch (err) {
+            // 确认是否是中断导致的错误
+            if (err.name === 'AbortError') {
+                log.info(`会话 ${this.data.id} 的API调用被用户中断，这是预期的中断`);
+                return { content: '已中断', aborted: true };
+            }
+
             log.error('API调用失败:', err.message);
             // 向用户显示友好的错误消息
             if (err.status === 401) {
@@ -351,8 +404,11 @@ class ChatSession {
             } else {
                 throw new Error(i18n.t('errors.apiCallFailed', { error: err.message }));
             }
+        } finally {
+            this.abortController = null;
         }
     }
+
     /**
      * 处理AI模型生成的工具调用
      *
@@ -378,6 +434,12 @@ class ChatSession {
 
         // 依次处理每个工具调用
         for await (const toolCall of toolCalls) {
+            // 检查是否已经中断
+            if (this.abortController && this.abortController.signal.aborted) {
+                log.info("工具处理已被中断，停止处理剩余工具");
+                return "工具处理已被中断";
+            }
+
             // 确保工具调用包含有效的名称和参数
             if (toolCall.function.name && toolCall.function.arguments) {
                 let toolMessage = "";
@@ -435,11 +497,18 @@ class ChatSession {
         }
 
         try {
+            // 检查是否已经中断
+            if (this.abortController && this.abortController.signal.aborted) {
+                log.info("最终回复生成已被中断，不进行后续API调用");
+                return "最终回复生成已被中断";
+            }
+
             // 创建第二次API请求，将工具调用结果发送给AI模型生成最终回复
             const secondStream = await client.chat.completions.create({
                 model: currentModel.type,
                 messages,
-                stream: true // 启用流式响应，便于逐步显示生成内容
+                stream: true, // 启用流式响应，便于逐步显示生成内容
+                signal: this.abortController ? this.abortController.signal : undefined
             });
 
             // 处理流式响应的每个数据块
@@ -456,6 +525,12 @@ class ChatSession {
                         fullResponse += content;
                         event.sender.send('ai-message-chunk', content);
                     }
+                }
+
+                // 检查是否已经中断
+                if (this.abortController && this.abortController.signal.aborted) {
+                    fullResponse += "!!!消息被中断!!!";
+                    break;
                 }
             }
         } catch (apiError) {
