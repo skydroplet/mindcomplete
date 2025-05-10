@@ -12,6 +12,7 @@ const fs = require('fs');
 const path = require('path');
 const { app } = require('electron');
 const axios = require('axios');
+const os = require('os');
 
 class ConfigManager extends EventEmitter {
     constructor() {
@@ -171,6 +172,22 @@ class ConfigManager extends EventEmitter {
     }
 
     /**
+     * 获取要下载的文件后缀
+     */
+    getDownloadFileSuffix() {
+        const platform = os.platform();
+        if (platform === 'win32') {
+            return '.exe';
+        } else if (platform === 'darwin') {
+            return '.dmg';
+        } else if (platform === 'linux') {
+            return '.AppImage';
+        } else {
+            return '';
+        }
+    }
+
+    /**
      * 检查应用更新
      * 支持多接口查询，第一个不成功时查询第二个
      * @param {boolean} force 是否强制检查，忽略上次检查时间
@@ -227,25 +244,25 @@ class ConfigManager extends EventEmitter {
 
                 try {
                     const response = await axios.get(url);
-                    let updateInfo;
+                    const responseData = response.data;
+                    log.info('获取更新信息:', responseData);
+                    const updateInfo = {
+                        version: responseData.name,
+                        releaseDate: responseData.published_at,
+                        releaseNotes: responseData.body || ''
+                    };
 
-                    // 根据URL判断更新源类型，解析不同的数据格式
-                    if (url.includes('api.github.com')) {
-                        // GitHub API
-                        log.info('从GitHub获取更新信息成功');
-                        updateInfo = this.parseGitHubRelease(response.data);
-                    } else if (url.includes('api.mindcomplete.me')) {
-                        // MindComplete API
-                        log.info('从MindComplete获取更新信息成功');
-                        if (response.data.code === 0) {
-                            updateInfo = this.parseMindCompleteRelease(response.data);
-                        } else {
-                            throw new Error(`获取更新失败: ${response.data.message}`);
+                    // 根据操作系统获取要下载的文件后缀
+                    const fileSuffix = this.getDownloadFileSuffix();
+                    for (const asset of responseData.assets) {
+                        if (asset.name.endsWith(fileSuffix)) {
+                            updateInfo.downloadUrl = asset.browser_download_url;
+                            break;
                         }
-                    } else {
-                        // 其他未知类型的API
-                        log.warn(`未知的更新源类型: ${url}`);
-                        continue;
+                    }
+
+                    if (url.includes('api.mindcomplete.me')) {
+                        updateInfo.downloadUrl = updateInfo.downloadUrl.replace('github.com', 'download.mindcomplete.me');
                     }
 
                     // 判断是否有新版本

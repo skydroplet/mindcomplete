@@ -44,14 +44,6 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('new-name-input').placeholder = i18n.t('session.newNamePlaceholder');
     document.getElementById('rename-cancel-btn').textContent = i18n.t('session.cancel');
     document.getElementById('rename-confirm-btn').textContent = i18n.t('session.confirm');
-
-    // 延迟更新检查，确保UI完全加载
-    setTimeout(() => {
-        // 应用启动时自动检查更新
-        if (window.checkForUpdates) {
-            window.checkForUpdates();
-        }
-    }, 1000);
 });
 
 /**
@@ -77,7 +69,7 @@ function initEventHandlers() {
 
     // 检查更新按钮点击事件
     document.getElementById('check-update-item').addEventListener('click', function () {
-        window.checkForUpdates();
+        window.checkForUpdates(true);
     });
 
     // 点击其他地方时关闭系统菜单

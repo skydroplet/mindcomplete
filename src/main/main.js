@@ -173,7 +173,9 @@ app.whenReady().then(() => {
     mcp.initialize();
 
     // 检查更新
-    checkForUpdates();
+    setTimeout(() => {
+        checkForUpdates();
+    }, 5000);
 
     // 注册主题切换IPC事件
     ipcMain.on('theme-changed', (event, theme) => {
