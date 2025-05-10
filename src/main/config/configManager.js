@@ -31,7 +31,10 @@ class ConfigManager extends EventEmitter {
         this.defaultConfig = {
             language: 'zh-CN',
             theme: 'auto',
-            updateUrl: "https://api.mindcomplete.me/v1/latest",
+            updateUrls: [
+                "https://api.github.com/repos/skydroplet/mindcomplete/releases/latest",
+                "https://api.mindcomplete.me/v1/latest"
+            ],
             lastUpdateCheck: null,
             latestVersion: null
         };
@@ -50,6 +53,22 @@ class ConfigManager extends EventEmitter {
 
         // 当前应用版本
         this.appVersion = app.getVersion();
+
+        // 兼容旧版本配置
+        this.migrateOldConfig();
+    }
+
+    // 兼容旧版本配置
+    migrateOldConfig() {
+        if (this.generalConfig.updateUrl && !this.generalConfig.updateUrls) {
+            this.generalConfig.updateUrls = [
+                "https://api.github.com/repos/skydroplet/mindcomplete/releases/latest",
+                this.generalConfig.updateUrl
+            ];
+            delete this.generalConfig.updateUrl;
+            this.saveGeneralConfig();
+            log.info('已将旧版本updateUrl配置迁移到updateUrls');
+        }
     }
 
     // 加载通用配置
@@ -110,8 +129,50 @@ class ConfigManager extends EventEmitter {
     }
 
     /**
+     * 解析GitHub API返回的数据，转换为应用统一格式
+     * @param {object} githubData GitHub API返回的数据
+     * @returns {object} 统一格式的更新信息
+     */
+    parseGitHubRelease(githubData) {
+        try {
+            const version = githubData.tag_name.replace(/^v/, ''); // 去掉版本号前的'v'
+            const downloadUrl = githubData.assets && githubData.assets.length > 0
+                ? githubData.assets[0].browser_download_url
+                : githubData.html_url;
+
+            return {
+                version: version,
+                downloadUrl: downloadUrl,
+                releaseDate: githubData.published_at,
+                releaseNotes: githubData.body || '',
+                source: 'github'
+            };
+        } catch (error) {
+            log.error('解析GitHub API数据失败:', error.message);
+            throw error;
+        }
+    }
+
+    /**
+     * 解析MindComplete自定义API返回的数据
+     * @param {object} mcData MindComplete API返回的数据
+     * @returns {object} 统一格式的更新信息
+     */
+    parseMindCompleteRelease(mcData) {
+        try {
+            return {
+                ...mcData.data,
+                source: 'mindcomplete'
+            };
+        } catch (error) {
+            log.error('解析MindComplete API数据失败:', error.message);
+            throw error;
+        }
+    }
+
+    /**
      * 检查应用更新
-     * 从api.mindcomplete.me/v1/latest获取最新版本信息
+     * 支持多接口查询，第一个不成功时查询第二个
      * @param {boolean} force 是否强制检查，忽略上次检查时间
      * @returns {Promise<object>} 更新信息对象
      */
@@ -153,37 +214,86 @@ class ConfigManager extends EventEmitter {
                 }
             }
 
-            // 发起请求获取最新版本信息
-            log.info('正在检查更新...');
-            const response = await axios.get(this.generalConfig.updateUrl);
-            const { data } = response;
+            // 获取更新URL列表
+            const updateUrls = this.generalConfig.updateUrls || [
+                "https://api.github.com/repos/skydroplet/mindcomplete/releases/latest",
+                "https://api.mindcomplete.me/v1/latest"
+            ];
 
-            if (data.code === 0) {
-                log.info('获取更新信息成功:', data.data);
+            // 依次尝试每个更新源
+            for (let i = 0; i < updateUrls.length; i++) {
+                const url = updateUrls[i];
+                log.info(`尝试从 ${url} 获取更新信息 (${i + 1}/${updateUrls.length})...`);
 
-                // 更新最后检查时间和最新版本信息
-                this.generalConfig.lastUpdateCheck = now;
-                this.generalConfig.latestVersion = data.data;
-                this.saveGeneralConfig();
+                try {
+                    const response = await axios.get(url);
+                    let updateInfo;
 
-                // 判断是否有新版本
-                const hasUpdate = this.hasNewVersion(this.appVersion, data.data.version);
+                    // 根据URL判断更新源类型，解析不同的数据格式
+                    if (url.includes('api.github.com')) {
+                        // GitHub API
+                        log.info('从GitHub获取更新信息成功');
+                        updateInfo = this.parseGitHubRelease(response.data);
+                    } else if (url.includes('api.mindcomplete.me')) {
+                        // MindComplete API
+                        log.info('从MindComplete获取更新信息成功');
+                        if (response.data.code === 0) {
+                            updateInfo = this.parseMindCompleteRelease(response.data);
+                        } else {
+                            throw new Error(`获取更新失败: ${response.data.message}`);
+                        }
+                    } else {
+                        // 其他未知类型的API
+                        log.warn(`未知的更新源类型: ${url}`);
+                        continue;
+                    }
 
-                // 构建更新信息对象
-                const updateInfo = {
-                    hasUpdate,
-                    ...data.data
-                };
+                    // 判断是否有新版本
+                    const hasUpdate = this.hasNewVersion(this.appVersion, updateInfo.version);
+                    updateInfo.hasUpdate = hasUpdate;
 
-                // 通知所有窗口更新信息
-                if (hasUpdate) {
-                    this.notifyWindowsAboutUpdate(updateInfo);
+                    if (hasUpdate) {
+                        // 找到新版本，更新缓存并通知
+                        log.info(`发现新版本: ${updateInfo.version}，来源: ${updateInfo.source}`);
+
+                        // 更新最后检查时间和最新版本信息
+                        this.generalConfig.lastUpdateCheck = now;
+                        this.generalConfig.latestVersion = updateInfo;
+                        this.saveGeneralConfig();
+
+                        // 通知所有窗口更新信息
+                        this.notifyWindowsAboutUpdate(updateInfo);
+
+                        return updateInfo;
+                    } else {
+                        // 没有新版本，但更新检查成功，缓存结果
+                        log.info(`当前版本 ${this.appVersion} 已是最新版本`);
+
+                        // 更新最后检查时间和最新版本信息
+                        this.generalConfig.lastUpdateCheck = now;
+                        this.generalConfig.latestVersion = updateInfo;
+                        this.saveGeneralConfig();
+
+                        return updateInfo;
+                    }
+                } catch (error) {
+                    // 当前更新源失败，记录错误并继续尝试下一个
+                    log.warn(`从 ${url} 获取更新失败: ${error.message}`);
+
+                    // 如果是最后一个更新源，则抛出错误
+                    if (i === updateUrls.length - 1) {
+                        throw new Error('所有更新源均检查失败');
+                    }
+                    // 否则继续尝试下一个更新源
                 }
-
-                return updateInfo;
-            } else {
-                throw new Error(`检查更新失败: ${data.message}`);
             }
+
+            // 所有更新源都尝试过，但没有找到更新
+            log.info('所有更新源均已检查，未找到新版本');
+            return {
+                hasUpdate: false,
+                version: this.appVersion
+            };
         } catch (error) {
             log.error('检查更新失败:', error.message);
             throw error;
