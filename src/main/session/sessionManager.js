@@ -133,17 +133,18 @@ class SessionManager extends EventEmitter {
      * 向指定会话发送消息
      * @param {Object} event Electron IPC事件对象
      * @param {string} sessionId 会话ID
+     * @param {string} requestId 一组请求响应ID
      * @param {string} message 消息内容
      * @returns {Promise<Object>} 处理结果
      */
-    async sendMessage(event, sessionId, message) {
+    async sendMessage(event, sessionId, requestId, message) {
         try {
             const session = this.sessionMap[sessionId];
             if (!session) {
                 throw new Error(`未找到会话 ${sessionId}`);
             }
 
-            return await session.sendMessage(event, message);
+            return await session.sendMessage(event, requestId, message);
         } catch (err) {
             log.error(`向会话 ${sessionId} 发送消息失败:`, err.message);
             throw err;

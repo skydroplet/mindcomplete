@@ -50,8 +50,8 @@ function registerSessionIPC(ipcMain) {
         return sessionManager.setSessionConversationMode(sessionId, mode);
     });
 
-    ipcMain.handle('send-message', async (event, sessionId, message) => {
-        return sessionManager.sendMessage(event, sessionId, message);
+    ipcMain.handle('send-message', async (event, sessionId, requestId, message) => {
+        return sessionManager.sendMessage(event, sessionId, requestId, message);
     });
 
     ipcMain.handle('abort-message-generation', (event, sessionId) => {

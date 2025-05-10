@@ -43,6 +43,73 @@ class ChatSessionService {
 
         // 用于跟踪当前是否有AI正在生成回复
         this.isGenerating = false;
+
+        this.messageElements = new Map();
+        this.aiMessageContents = new Map();
+        this.mcpMessageContents = new Map();
+        this.setEventListeners();
+    }
+
+    setEventListeners() {
+        // 设置事件监听器
+        // 添加空的AI回复消息，准备接收流式内容
+        ipcRenderer.on('new-ai-message', (event, responseID, chunk) => {
+            const currentAiMessage = this.addMessage('', 'assistant');
+            let currentRawText = chunk;
+
+            const processedText = this.preprocessCodeBlocks(currentRawText);
+            this.updateMessage(currentAiMessage, processedText);
+
+            this.messageElements["ai-" + responseID] = currentAiMessage;
+            this.aiMessageContents["ai-" + responseID] = currentRawText;
+        });
+
+        // 持续接收ai消息
+        ipcRenderer.on('ai-message-chunk', (event, responseID, chunk) => {
+            const currentAiMessage = this.messageElements["ai-" + responseID];
+            if (currentAiMessage) {
+                let currentRawText = this.aiMessageContents["ai-" + responseID] || '';
+                currentRawText += chunk;
+                this.aiMessageContents["ai-" + responseID] = currentRawText;
+
+                const processedText = this.preprocessCodeBlocks(currentRawText);
+                this.updateMessage(currentAiMessage, processedText);
+            }
+        });
+
+        // 创建新的mcp工具响应 准备接收后续消息
+        ipcRenderer.on('new-mcp-tool-message', (event, responseID, chunk) => {
+            const currentToolMessage = this.addMessage('', 'tool');
+            let currentToolRawText = chunk;
+
+            const processedText = this.preprocessCodeBlocks(currentToolRawText);
+            this.updateMessage(currentToolMessage, processedText);
+
+            this.messageElements["tools-" + responseID] = currentToolMessage;
+            this.mcpMessageContents["tools-" + responseID] = currentToolRawText;
+        });
+
+        // 持续接收mcp工具响应消息
+        ipcRenderer.on('mcp-tool-message-chunk', (event, responseID, chunk) => {
+            const currentToolMessage = this.messageElements["tools-" + responseID];
+            if (currentToolMessage) {
+                let currentToolRawText = this.mcpMessageContents["tools-" + responseID] || '';
+                currentToolRawText += chunk;
+                this.mcpMessageContents["tools-" + responseID] = currentToolRawText
+
+
+                const processedText = this.preprocessCodeBlocks(currentToolRawText);
+                this.updateMessage(currentToolMessage, processedText);
+            }
+        });
+
+        // 工具授权请求监听
+        ipcRenderer.on('tool-authorization-request', (event, authRequest) => {
+            // 添加包含授权按钮的工具消息
+            const messageContent = i18n.t('mcp.authorization.message', { serverName: authRequest.serverName, name: authRequest.toolName });
+            this.addMessage(messageContent, 'tool', authRequest);
+        });
+
     }
 
     /**
@@ -455,13 +522,6 @@ class ChatSessionService {
             // 重置生成状态
             this.isGenerating = false;
 
-            // 清理所有可能的事件监听器
-            ipcRenderer.removeAllListeners('new-ai-message');
-            ipcRenderer.removeAllListeners('ai-message-chunk');
-            ipcRenderer.removeAllListeners('new-mcp-tool-message');
-            ipcRenderer.removeAllListeners('mcp-tool-message-chunk');
-            ipcRenderer.removeAllListeners('tool-authorization-request');
-
             // 更新状态提示
             if (abortResult) {
                 this.statusElement.textContent = i18n.t('ui.status.aborted') || "消息生成已中断";
@@ -497,19 +557,8 @@ class ChatSessionService {
             return;
         }
 
-        try {
-            // 如果已经有正在进行的生成过程，先中断它
-            this.abortCurrentGeneration();
-        } catch (abortError) {
-            log.error(`中断当前消息生成失败，继续发送新消息: ${abortError.message}`);
-            // 强制重置状态
-            this.isGenerating = false;
-            ipcRenderer.removeAllListeners('new-ai-message');
-            ipcRenderer.removeAllListeners('ai-message-chunk');
-            ipcRenderer.removeAllListeners('new-mcp-tool-message');
-            ipcRenderer.removeAllListeners('mcp-tool-message-chunk');
-            ipcRenderer.removeAllListeners('tool-authorization-request');
-        }
+        // 如果已经有正在进行的生成过程，先中断它
+        this.abortCurrentGeneration();
 
         // 标记为正在生成状态
         this.isGenerating = true;
@@ -519,56 +568,13 @@ class ChatSessionService {
         this.messageInput.value = '';
         this.statusElement.textContent = i18n.t('ui.status.generating');
 
-        // 跟踪AI消息的原始文本
-        let currentAiMessage = null;
-        let currentRawText = '';
-
-        // 跟踪Mcp工具消息的原始文本
-        let currentToolMessage = null;
-        let currentToolRawText = '';
-
         try {
-            // 设置事件监听器
-            // 添加空的AI回复消息，准备接收流式内容
-            ipcRenderer.on('new-ai-message', (event, chunk) => {
-                currentAiMessage = this.addMessage('', 'assistant');
-                currentRawText = chunk;
-
-                const processedText = this.preprocessCodeBlocks(currentRawText);
-                this.updateMessage(currentAiMessage, processedText);
-            });
-
-            // 持续接收ai消息
-            ipcRenderer.on('ai-message-chunk', (event, chunk) => {
-                currentRawText += chunk;
-                const processedText = this.preprocessCodeBlocks(currentRawText);
-                this.updateMessage(currentAiMessage, processedText);
-            });
-
-            // 创建新的mcp工具响应 准备接收后续消息
-            ipcRenderer.on('new-mcp-tool-message', (event, chunk) => {
-                currentToolMessage = this.addMessage('', 'tool');
-                currentToolRawText = chunk;
-                const processedText = this.preprocessCodeBlocks(currentToolRawText);
-                this.updateMessage(currentToolMessage, processedText);
-            });
-
-            // 持续接收mcp工具响应消息
-            ipcRenderer.on('mcp-tool-message-chunk', (event, chunk) => {
-                currentToolRawText += chunk;
-                const processedText = this.preprocessCodeBlocks(currentToolRawText);
-                this.updateMessage(currentToolMessage, processedText);
-            });
-
-            // 工具授权请求监听
-            ipcRenderer.on('tool-authorization-request', (event, authRequest) => {
-                // 添加包含授权按钮的工具消息
-                const messageContent = i18n.t('mcp.authorization.message', { serverName: authRequest.serverName, name: authRequest.toolName });
-                this.addMessage(messageContent, 'tool', authRequest);
-            });
+            // 生成唯一ID
+            const now = new Date();
+            const requestId = this.data.id + '-' + now.toLocaleString();
 
             // 在send-message IPC中传递会话特定的配置
-            await ipcRenderer.invoke('send-message', this.data.id, message);
+            await ipcRenderer.invoke('send-message', this.data.id, requestId, message);
 
             // 更新标签名称和会话列表
             if (!this.data) {
@@ -593,29 +599,19 @@ class ChatSessionService {
                     <button class="open-settings-btn">${i18n.t('errors.openSettings')}</button>
                 </div>`;
 
-                // 在现有AI消息中添加错误提示
-                if (currentAiMessage) {
-                    currentAiMessage.appendChild(errorWithButton);
-
-                    // 添加设置按钮点击事件
-                    const settingsBtn = errorWithButton.querySelector('.open-settings-btn');
-                    if (settingsBtn) {
-                        settingsBtn.addEventListener('click', openSettingsWindow);
-                    }
+                // 添加设置按钮点击事件
+                const settingsBtn = errorWithButton.querySelector('.open-settings-btn');
+                if (settingsBtn) {
+                    settingsBtn.addEventListener('click', openSettingsWindow);
                 }
             }
 
             this.statusElement.textContent = i18n.t('ui.status.error', { error: errorMsg });
         } finally {
-            // 标记生成过程已结束
             this.isGenerating = false;
-
-            // 清理事件监听器
-            ipcRenderer.removeAllListeners('new-ai-message');
-            ipcRenderer.removeAllListeners('ai-message-chunk');
-            ipcRenderer.removeAllListeners('new-mcp-tool-message');
-            ipcRenderer.removeAllListeners('mcp-tool-message-chunk');
-            ipcRenderer.removeAllListeners('tool-authorization-request');
+            this.messageElements.delete(requestId);
+            this.aiMessageContents.delete(requestId);
+            this.mcpMessageContents.delete(requestId);
         }
     }
 

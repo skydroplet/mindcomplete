@@ -142,6 +142,10 @@ class ChatSession {
      * @param {Object} message 消息对象 {role, content}
      */
     addMessage(message) {
+        if (!message.content) {
+            return;
+        }
+
         // 确保 lastMessageId 字段存在
         if (this.data.messageCount === undefined) {
             this.data.messageCount = 0;
@@ -247,12 +251,15 @@ class ChatSession {
         }
     }
 
-    async sendMessage(event, message) {
+    async sendMessage(event, requestId, message) {
         try {
             // 如果存在旧的中断控制器，先中断它
             if (this.abortController) {
                 this.abortController.abort();
             }
+
+            // 一个请求的后续响应都使用这个ID
+            const resposneId = requestId;
 
             // 创建新的中断控制器
             this.abortController = new AbortController();
@@ -333,10 +340,10 @@ class ChatSession {
                 if (content) {
                     if (fullResponse === "") {
                         fullResponse = content;
-                        event.sender.send('new-ai-message', content);
+                        event.sender.send('new-ai-message', resposneId, content);
                     } else {
                         fullResponse += content;
-                        event.sender.send('ai-message-chunk', content);
+                        event.sender.send('ai-message-chunk', resposneId, content);
                     }
                 }
 
@@ -379,7 +386,7 @@ class ChatSession {
             // 如果有工具调用，处理它
             if (toolCalls.length > 0) {
                 // 处理工具调用
-                const finalResponse = this.handleToolCalls(event, messages, toolCalls, modelClient, model);
+                const finalResponse = await this.handleToolCalls(event, messages, toolCalls, modelClient, model, resposneId);
                 this.addMessage({ role: 'assistant', content: finalResponse })
                 return { content: finalResponse, toolCalls };
             } else {
@@ -426,7 +433,7 @@ class ChatSession {
      * @param {Object} currentModel - 当前使用的AI模型配置
      * @returns {String} 工具处理后生成的完整回复文本
      */
-    async handleToolCalls(event, messages, toolCalls, client, currentModel) {
+    async handleToolCalls(event, messages, toolCalls, client, currentModel, responseID) {
         // 初始化最终回复文本和消息历史数组
         let fullResponse = '';
 
@@ -450,12 +457,12 @@ class ChatSession {
                     let args = JSON.parse(toolCall.function.arguments);
 
                     // 向前端发送当前正在执行的工具信息
-                    event.sender.send('new-mcp-tool-message', `${i18n.t('toolCalls.tool', { name: toolName })}\n\n`);
+                    event.sender.send('new-mcp-tool-message', responseID, `${i18n.t('toolCalls.tool', { name: toolName })}\n\n`);
 
                     toolMessage += `${i18n.t('toolCalls.tool', { name: toolName })}\n\n`;
 
                     // 向前端显示工具参数
-                    event.sender.send('mcp-tool-message-chunk', i18n.t('toolCalls.parameters', { args: JSON.stringify(args, null, 2) }));
+                    event.sender.send('mcp-tool-message-chunk', responseID, i18n.t('toolCalls.parameters', { args: JSON.stringify(args, null, 2) }));
                     toolMessage += i18n.t('toolCalls.parameters', { args: JSON.stringify(args, null, 2) });
 
                     // 调用工具执行器(mcp)执行工具
@@ -465,13 +472,13 @@ class ChatSession {
                     });
 
                     // 通知前端工具正在处理中
-                    event.sender.send('mcp-tool-message-chunk', `${i18n.t('toolCalls.processing')}\n\n`);
+                    event.sender.send('mcp-tool-message-chunk', responseID, `${i18n.t('toolCalls.processing')}\n\n`);
                     toolMessage += i18n.t('toolCalls.processing') + "\n\n";
 
                     // 处理工具执行结果
                     if (result && typeof result === 'object') {
                         // 向前端发送执行结果
-                        event.sender.send('mcp-tool-message-chunk', i18n.t('toolCalls.result', { result: JSON.stringify(result, null, 2) }));
+                        event.sender.send('mcp-tool-message-chunk', responseID, i18n.t('toolCalls.result', { result: JSON.stringify(result, null, 2) }));
                         toolMessage += i18n.t('toolCalls.result', { result: JSON.stringify(result, null, 2) });
 
                         // 设置结果角色并添加到消息列表，稍后发送给AI
@@ -481,7 +488,7 @@ class ChatSession {
                         // 如果结果不是有效对象，记录错误
                         const errorMsg = i18n.t('toolCalls.invalidResult', { type: typeof result });
                         log.error(errorMsg, result);
-                        event.sender.send('mcp-tool-message-chunk', errorMsg);
+                        event.sender.send('mcp-tool-message-chunk', responseID, errorMsg);
                         toolMessage += errorMsg;
                     }
 
@@ -491,7 +498,7 @@ class ChatSession {
                     // 捕获并处理工具执行过程中的错误
                     const errorMsg = i18n.t('toolCalls.error', { message: toolError.message });
                     log.error('工具执行错误:', toolError);
-                    event.sender.send('mcp-tool-message-chunk', errorMsg);
+                    event.sender.send('mcp-tool-message-chunk', responseID, errorMsg);
                 }
             }
         }
@@ -519,11 +526,11 @@ class ChatSession {
                     // 如果是第一个内容块，创建新消息
                     if (fullResponse === "") {
                         fullResponse = content;
-                        event.sender.send('new-ai-message', content);
+                        event.sender.send('new-ai-message', responseID, content);
                     } else {
                         // 否则追加到现有消息
                         fullResponse += content;
-                        event.sender.send('ai-message-chunk', content);
+                        event.sender.send('ai-message-chunk', responseID, content);
                     }
                 }
 
@@ -537,7 +544,7 @@ class ChatSession {
             // 处理API调用过程中的错误
             const errorMsg = i18n.t('toolCalls.responseFailed', { message: apiError.message });
             log.error('最终响应生成过程中的API错误:', apiError);
-            event.sender.send('ai-message-chunk', errorMsg);
+            event.sender.send('ai-message-chunk', responseID, errorMsg);
         }
 
         // 返回处理工具调用后AI生成的完整回复文本
