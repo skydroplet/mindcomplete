@@ -42,7 +42,8 @@
     "messages": {
         "user": "User",
         "ai": "AI",
-        "tool": "Tool"
+        "tool": "Tool",
+        "thinking": "Thinking..."
     },
     "errors": {
         "apiKeyMissing": "API key not found, please check .env file",

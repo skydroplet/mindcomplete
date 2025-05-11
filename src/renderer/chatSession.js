@@ -45,62 +45,57 @@ class ChatSessionService {
         this.isGenerating = false;
 
         this.messageElements = new Map();
-        this.aiMessageContents = new Map();
-        this.mcpMessageContents = new Map();
+        this.messageContents = new Map();
         this.setEventListeners();
+    }
+
+    setMessageElement(role, id, chunk) {
+        const msgID = role + "-" + id;
+
+        let msgElement = this.messageElements[msgID];
+        if (!msgElement) {
+            let msgElement = this.addMessage('', role);
+            this.messageElements[msgID] = msgElement;
+        }
+
+        let contentRawText = this.messageContents[msgID] || '';
+        contentRawText += chunk;
+        this.messageContents[msgID] = contentRawText;
+
+        const processedText = this.preprocessCodeBlocks(contentRawText);
+        this.updateMessage(msgElement, processedText);
     }
 
     setEventListeners() {
         // 设置事件监听器
         // 添加空的AI回复消息，准备接收流式内容
         ipcRenderer.on('new-ai-message', (event, responseID, chunk) => {
-            const currentAiMessage = this.addMessage('', 'assistant');
-            let currentRawText = chunk;
-
-            const processedText = this.preprocessCodeBlocks(currentRawText);
-            this.updateMessage(currentAiMessage, processedText);
-
-            this.messageElements["ai-" + responseID] = currentAiMessage;
-            this.aiMessageContents["ai-" + responseID] = currentRawText;
+            this.setMessageElement('assistant', responseID, chunk);
         });
 
         // 持续接收ai消息
         ipcRenderer.on('ai-message-chunk', (event, responseID, chunk) => {
-            const currentAiMessage = this.messageElements["ai-" + responseID];
-            if (currentAiMessage) {
-                let currentRawText = this.aiMessageContents["ai-" + responseID] || '';
-                currentRawText += chunk;
-                this.aiMessageContents["ai-" + responseID] = currentRawText;
+            this.setMessageElement('assistant', responseID, chunk);
+        });
 
-                const processedText = this.preprocessCodeBlocks(currentRawText);
-                this.updateMessage(currentAiMessage, processedText);
-            }
+        // 接收新的思考过程消息
+        ipcRenderer.on('new-thinking-message', (event, responseID, chunk) => {
+            this.setMessageElement('thinking', responseID, chunk);
+        });
+
+        // 持续接收思考过程消息
+        ipcRenderer.on('thinking-message-chunk', (event, responseID, chunk) => {
+            this.setMessageElement('thinking', responseID, chunk);
         });
 
         // 创建新的mcp工具响应 准备接收后续消息
         ipcRenderer.on('new-mcp-tool-message', (event, responseID, chunk) => {
-            const currentToolMessage = this.addMessage('', 'tool');
-            let currentToolRawText = chunk;
-
-            const processedText = this.preprocessCodeBlocks(currentToolRawText);
-            this.updateMessage(currentToolMessage, processedText);
-
-            this.messageElements["tools-" + responseID] = currentToolMessage;
-            this.mcpMessageContents["tools-" + responseID] = currentToolRawText;
+            this.setMessageElement('tool', responseID, chunk);
         });
 
         // 持续接收mcp工具响应消息
         ipcRenderer.on('mcp-tool-message-chunk', (event, responseID, chunk) => {
-            const currentToolMessage = this.messageElements["tools-" + responseID];
-            if (currentToolMessage) {
-                let currentToolRawText = this.mcpMessageContents["tools-" + responseID] || '';
-                currentToolRawText += chunk;
-                this.mcpMessageContents["tools-" + responseID] = currentToolRawText
-
-
-                const processedText = this.preprocessCodeBlocks(currentToolRawText);
-                this.updateMessage(currentToolMessage, processedText);
-            }
+            this.setMessageElement('tool', responseID, chunk);
         });
 
         // 工具授权请求监听
@@ -109,7 +104,6 @@ class ChatSessionService {
             const messageContent = i18n.t('mcp.authorization.message', { serverName: authRequest.serverName, name: authRequest.toolName });
             this.addMessage(messageContent, 'tool', authRequest);
         });
-
     }
 
     /**
@@ -188,7 +182,7 @@ class ChatSessionService {
         // 渲染消息历史
         if (this.data.messages) {
             this.data.messages.forEach(msg => {
-                this.addMessage(msg.content, msg.role);
+                this.addMessage(msg.content, msg.role, null, msg.thinking);
             });
         }
 
@@ -259,12 +253,13 @@ class ChatSessionService {
      * - assistant: AI助手的回复，靠左显示，解析Markdown
      * - tool 工具执行的消息，靠左显示，解析Markdown，有特殊样式
      *
-     * @param {string} content - 消息内容。对于用户消息，直接显示；对于AI和工具消息，将解析Markdown格式
+     * @param {string} content - 消息内容。
+     * @param {string} thinking_content - AI思考消息内容。
      * @param {string} type - 消息类型，可选值为 'user'、'assistant'、'tool'，默认为 'assistant'
      * @param {Object} authRequest - 授权请求对象，包含toolName、serverId等信息
      * @returns {HTMLDivElement} - 消息内容元素，用于后续更新
      */
-    addMessage(content, type = 'assistant', authRequest = null) {
+    addMessage(content, type = 'assistant', authRequest = null, thinking_content = null) {
         if (!this.chatMessages) {
             log.error(`尝试添加消息但未找到消息容器，tabId=${this.tabId}`);
             return null;
@@ -289,15 +284,20 @@ class ChatSessionService {
             sender.textContent = i18n.t('messages.ai');
         }
 
-        // 创建消息内容元素
+        messageDiv.appendChild(sender);
+
+        // 推理过程
+        if (thinking_content) {
+            const thingingDiv = document.createElement('div');
+            thingingDiv.className = 'thinking-message';
+            this.updateMessage(thingingDiv, thinking_content);
+            messageDiv.appendChild(thingingDiv);
+        }
+
+        // 消息内容
         const contentDiv = document.createElement('div');
         contentDiv.className = 'message-content';
-
-        // 更新消息内容
         this.updateMessage(contentDiv, content);
-
-        // 组装消息元素
-        messageDiv.appendChild(sender);
         messageDiv.appendChild(contentDiv);
 
         // 如果是工具消息，并且存在授权元数据，添加授权按钮
@@ -419,30 +419,22 @@ class ChatSessionService {
      * 不断调用此函数更新消息内容，从而实现打字机效果。
      * @param {HTMLDivElement} messageDiv - 要更新的消息容器元素
      * @param {string} content - 新的完整消息内容，将替换当前消息的内容
-     * @param {Object} authRequest - 授权请求对象，包含toolName、serverId等信息
      */
-    updateMessage(messageDiv, content, authRequest = null) {
+    updateMessage(messageDiv, content) {
         if (!messageDiv) {
             return;
         }
 
-        // 解析 Markdown 并更新消息内容
+        // 解析普通消息内容
         messageDiv.innerHTML = marked.parse(content);
 
         // 确保内容可选择
         messageDiv.style.userSelect = 'text';
-        messageDiv.style.webkitUserSelect = 'text';
 
-        // 对新添加的代码块应用语法高亮
-        if (window.applyHighlighting) {
-            // 使用全局高亮函数，如果存在
-            window.applyHighlighting();
-        } else {
-            // 否则使用highlight.js直接处理
-            messageDiv.querySelectorAll('pre code').forEach((block) => {
-                hljs.highlightElement(block);
-            });
-        }
+        // 高亮代码块
+        messageDiv.querySelectorAll('pre code').forEach((block) => {
+            hljs.highlightElement(block);
+        });
 
         // 滚动到最新内容，保持消息可见
         this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
@@ -612,6 +604,7 @@ class ChatSessionService {
             this.messageElements.delete(requestId);
             this.aiMessageContents.delete(requestId);
             this.mcpMessageContents.delete(requestId);
+            this.thinkingMessageContents.delete(requestId); // 清除思考过程内容
         }
     }
 

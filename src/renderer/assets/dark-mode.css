@@ -164,10 +164,6 @@ body {
     box-shadow: 0 0 8px var(--message-box-shadow);
 }
 
-[data-theme="dark"] .tool-message:hover {
-    /* Removed the box-shadow glow effect */
-}
-
 [data-theme="dark"] .tool-message .message-sender {
     color: var(--secondary-text-color);
 }

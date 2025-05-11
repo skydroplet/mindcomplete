@@ -179,7 +179,12 @@ class ChatSession {
             return [];
         }
 
-        return this.data.messages.filter(message => message.role === 'user' || message.role === 'assistant');
+        const messages = this.data.messages.filter(message => message.role === 'user' || message.role === 'assistant');
+        // 删除消息中的thinking
+        return messages.map(message => {
+            const { role, content } = message;
+            return { role, content };
+        });
     }
 
     /**
@@ -309,6 +314,15 @@ class ChatSession {
                 stream: true
             };
 
+            // // 添加思考过程请求参数
+            // requestParams.response_format = { type: "json_object" };
+            requestParams.seed = 123; // 使用固定的种子值保持结果一致性
+            requestParams.extra_body = {
+                max_thinking_length: 2000, // 最大思考长度
+                max_thinking_chunks: 50, // 最大思考块数
+                thinking_depth: 3 // 思考深度
+            };
+
             // 只有当工具列表不为空时，才添加tools参数
             if (tools && tools.length > 0) {
                 requestParams.tools = tools;
@@ -325,7 +339,8 @@ class ChatSession {
                 signal
             });
 
-            let fullResponse = '';
+            let firstResponse = '';
+            let thinkingContent = ''; // 存储思考过程内容
             let toolCalls = [];
             let currentToolCallIndexes = {};
 
@@ -335,14 +350,30 @@ class ChatSession {
                     log.info(`会话 ${this.data.id} 的消息生成已被中断，停止处理后续消息块`);
                     break;
                 }
+                log.info("received chunk", chunk)
+
+                // 处理思考过程内容
+                const thinking = chunk.choices[0]?.delta?.reasoning_content;
+                if (thinking) {
+                    if (thinkingContent === "") {
+                        thinkingContent = thinking;
+                        // 向前端发送新的思考过程消息
+                        event.sender.send('new-thinking-message', resposneId, thinking);
+                    } else {
+                        thinkingContent += thinking;
+                        // 向前端发送思考过程内容增量
+                        event.sender.send('thinking-message-chunk', resposneId, thinking);
+                    }
+                    continue; // 思考过程消息处理后直接进入下一轮循环
+                }
 
                 const content = chunk.choices[0]?.delta?.content || '';
                 if (content) {
-                    if (fullResponse === "") {
-                        fullResponse = content;
+                    if (firstResponse === "") {
+                        firstResponse = content;
                         event.sender.send('new-ai-message', resposneId, content);
                     } else {
-                        fullResponse += content;
+                        firstResponse += content;
                         event.sender.send('ai-message-chunk', resposneId, content);
                     }
                 }
@@ -383,16 +414,23 @@ class ChatSession {
                 }
             }
 
+            // 如果有思考过程，保存到会话历史中
+            const finallMessage = { role: 'assistant' };
+            if (thinkingContent) {
+                finallMessage.thinking = thinkingContent;
+            }
+
             // 如果有工具调用，处理它
             if (toolCalls.length > 0) {
                 // 处理工具调用
                 const finalResponse = await this.handleToolCalls(event, messages, toolCalls, modelClient, model, resposneId);
-                this.addMessage({ role: 'assistant', content: finalResponse })
-                return { content: finalResponse, toolCalls };
+                finallMessage.content = finalResponse;
             } else {
-                this.addMessage({ role: 'assistant', content: fullResponse })
-                return { content: fullResponse };
+                finallMessage.content = firstResponse;
             }
+
+            this.addMessage(finallMessage);
+            return { content: firstResponse };
         } catch (err) {
             // 确认是否是中断导致的错误
             if (err.name === 'AbortError') {

@@ -68,7 +68,7 @@ body {
 }
 
 .header h1 {
-    font-size: 18px;
+    font-size: 1.5em;
     color: #333;
 }
 
@@ -84,7 +84,6 @@ body {
     border: 1px solid #ddd;
     border-radius: 4px;
     background-color: white;
-    font-size: 14px;
 }
 
 .chat-container {
@@ -106,26 +105,6 @@ body {
     cursor: text;
 }
 
-/* 移除旧的滚动条样式
-.chat-messages::-webkit-scrollbar {
-    width: 8px;
-}
-
-.chat-messages::-webkit-scrollbar-track {
-    background: var(--sidebar-bg);
-    border-radius: 4px;
-}
-
-.chat-messages::-webkit-scrollbar-thumb {
-    background: var(--border-color);
-    border-radius: 4px;
-}
-
-.chat-messages::-webkit-scrollbar-thumb:hover {
-    background: var(--button-bg);
-}
-*/
-
 .message {
     margin-bottom: 15px;
     padding: 10px 15px;
@@ -134,13 +113,12 @@ body {
 }
 
 .message-sender {
-    font-size: 12px;
+    font-size: 1em;
     color: #666;
     margin-bottom: 5px;
 }
 
 .message-content {
-    font-size: 14px;
     line-height: 1.6;
     /* 允许选择文本 */
     user-select: text;
@@ -276,6 +254,18 @@ body {
     /* 添加相对定位，用于放置授权按钮 */
 }
 
+/* 思考过程消息样式 */
+.thinking-message {
+    margin-right: auto;
+    border-left: 3px solid #8bc34a;
+    transition: box-shadow 0.3s ease;
+    font-style: italic;
+    font-size: 0.8em;
+    line-height: 2.0;
+    user-select: text;
+    cursor: text;
+}
+
 .tool-message .message-sender {
     color: var(--secondary-text-color);
 }
@@ -302,7 +292,6 @@ body {
 /* 工具授权按钮样式 */
 .tool-auth-btn {
     padding: 4px 8px;
-    font-size: 12px;
     border: none;
     border-radius: 4px;
     cursor: pointer;
@@ -375,7 +364,6 @@ body {
     border-radius: 4px;
     background-color: var(--input-bg);
     color: var(--text-color);
-    font-size: 14px;
     padding: 0.5em 0.75em;
     /* 使用em单位，基于文字大小 */
 }
@@ -396,7 +384,6 @@ body {
     border: none;
     background-color: var(--input-bg);
     color: var(--text-color);
-    font-size: 14px;
     cursor: pointer;
     transition: background-color 0.2s, color 0.2s;
     padding: 0 0.5em;
@@ -513,7 +500,6 @@ body {
     padding: 8px;
     border: 1px solid #ddd;
     border-radius: 4px;
-    font-size: 14px;
 }
 
 .input-group button {
@@ -523,7 +509,6 @@ body {
     border: none;
     border-radius: 4px;
     cursor: pointer;
-    font-size: 14px;
 }
 
 .input-group button:hover {
@@ -538,7 +523,6 @@ body {
     padding: 8px 12px;
     border: 1px solid var(--border-color, #ddd);
     border-radius: 4px;
-    font-size: 14px;
     line-height: 1.5;
     width: 100%;
     box-sizing: border-box;
@@ -568,7 +552,7 @@ body {
 
 .status {
     padding: 10px;
-    font-size: 12px;
+    font-size: 0.8em;
     color: #666;
     text-align: center;
     border-top: 1px solid #eee;
@@ -752,7 +736,6 @@ body {
     display: flex;
     align-items: center;
     justify-content: flex-start;
-    font-size: 14px;
     color: var(--text-color);
     transition: background-color 0.2s ease, width 0.3s ease-in-out;
     /* Add width transition */
@@ -863,7 +846,6 @@ body {
 .sidebar.collapsed .sidebar-lower .system-menu-icon {
     display: block;
     margin-left: 0;
-    font-size: 16px;
 }
 
 /* 折叠状态下的系统菜单和子菜单位置 */
@@ -926,7 +908,6 @@ body {
     border: none;
     cursor: pointer;
     color: #555;
-    font-size: 16px;
     z-index: 10;
     transition: opacity 0.2s ease !important;
     display: block;
@@ -941,7 +922,6 @@ body {
     left: 0;
     top: 0;
     display: none;
-    font-size: 20px;
     color: #4caf50;
     cursor: pointer;
     width: 40px;
@@ -976,7 +956,6 @@ body {
     padding: 5px 10px;
     border-radius: 4px;
     cursor: pointer;
-    font-size: 14px;
     margin-left: 10px;
 }
 
@@ -1015,7 +994,6 @@ body {
 
 .dialog-content h3 {
     margin: 0 0 15px 0;
-    font-size: 16px;
     color: #333;
     transition: color 0.3s ease;
 }
@@ -1026,7 +1004,6 @@ body {
     margin-bottom: 15px;
     border: 1px solid #ddd;
     border-radius: 4px;
-    font-size: 14px;
     transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
 }
 
@@ -1041,7 +1018,6 @@ body {
     border: none;
     border-radius: 4px;
     cursor: pointer;
-    font-size: 14px;
     background-color: #f5f5f5;
     transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }
@@ -1084,7 +1060,6 @@ body {
     overflow: hidden;
     text-overflow: ellipsis;
     padding-right: 5px;
-    font-size: 14px;
     color: #333;
 }
 
@@ -1104,7 +1079,6 @@ body {
     background: none;
     border: none;
     color: #757575;
-    font-size: 14px;
     padding: 2px;
     margin: 0;
     cursor: pointer;
@@ -1224,11 +1198,9 @@ body {
 
 .system-item-icon {
     margin-right: 10px;
-    font-size: 16px;
 }
 
 .system-item-text {
-    font-size: 14px;
     color: var(--text-color);
     white-space: nowrap;
     /* 防止文本换行 */
@@ -1248,7 +1220,6 @@ body {
     padding: 0.5em 0.75em;
     /* 使用em单位，基于文字大小 */
     cursor: pointer;
-    font-size: 14px;
     margin-left: 5px;
     margin-right: 5px;
     width: 160px;

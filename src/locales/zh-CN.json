@@ -42,7 +42,8 @@
     "messages": {
         "user": "用户",
         "ai": "AI",
-        "tool": "工具"
+        "tool": "工具",
+        "thinking": "思考过程"
     },
     "errors": {
         "apiKeyMissing": "未找到 API 密钥，请检查 .env 文件",
