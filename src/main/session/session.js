@@ -381,8 +381,6 @@ class ChatSession {
                 const toolCallChunks = chunk.choices[0]?.delta?.tool_calls || [];
                 if (toolCallChunks.length > 0) {
                     // 添加详细的工具调用日志
-                    log.info("收到工具调用块:", JSON.stringify(toolCallChunks, null, 2));
-
                     for (const toolCallChunk of toolCallChunks) {
                         const index = toolCallChunk.index;
 

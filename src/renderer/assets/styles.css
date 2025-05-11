@@ -523,6 +523,7 @@ body {
     padding: 8px 12px;
     border: 1px solid var(--border-color, #ddd);
     border-radius: 4px;
+    font-size: 1.2em;
     line-height: 1.5;
     width: 100%;
     box-sizing: border-box;

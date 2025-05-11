@@ -57,59 +57,39 @@ function initUI() {
 }
 
 /**
- * 初始化代码高亮功能
- */
-function initializeHighlighting() {
-    function applyHighlighting() {
-        document.querySelectorAll('pre code:not(.hljs)').forEach((block) => {
-            hljs.highlightElement(block);
-        });
-    }
-
-    // 设置为全局函数以便其他模块使用
-    window.applyHighlighting = applyHighlighting;
-
-    // 初始应用高亮
-    applyHighlighting();
-}
-
-/**
  * 应用程序初始化函数
  *
  * 该函数是应用程序启动时的主要入口点，负责初始化所有组件和加载必要的数据
  * 初始化过程按照特定顺序执行，以确保用户界面快速响应并提供良好的用户体验
  */
 async function init() {
-    // 1. 初始化代码高亮
-    initializeHighlighting();
-
-    // 2. 首先初始化主题切换 - 提前到其他初始化前，以避免主题闪烁
+    // 首先初始化主题切换 - 提前到其他初始化前，以避免主题闪烁
     themeService.initThemeToggle();
 
-    // 3. 初始化界面文本
-    initUI();
-
-    // 4. 设置当前语言
+    // 设置当前语言
     if (languageSelect) {
         languageSelect.value = i18n.getLocale();
     }
 
-    // 5. 初始化侧边栏状态 - 提前到模型加载前，使界面更快可用
+    // 初始化界面文本
+    initUI();
+
+    // 初始化侧边栏状态 - 提前到模型加载前，使界面更快可用
     sidebarService.loadSidebarState();
 
-    // 6. 初始化侧边栏调整功能
+    // 初始化侧边栏调整功能
     sidebarService.setupSidebarResizing();
 
-    // 7. 初始化侧边栏上下区域拖动
+    // 初始化侧边栏上下区域拖动
     sidebarService.initSidebarVerticalResize();
 
-    // 8. 确保下拉选择框样式一致性
+    // 确保下拉选择框样式一致性
     ensureConsistentDropdownStyles();
 
-    // 9. 设置事件监听器
+    // 设置事件监听器
     setupEventListeners();
 
-    // 10. 并行加载数据以提高性能
+    // 9. 并行加载数据以提高性能
     // 创建一个并行加载函数，同时执行多个异步任务
     const loadPromise = Promise.all([
         // 加载模型列表
@@ -168,20 +148,17 @@ async function init() {
         })()
     ]);
 
-    // 11. 等待所有并行任务完成
+    // 等待所有并行任务完成
     await loadPromise;
 
-    // 12. 更新状态栏，表示应用程序已准备就绪
+    // 更新状态栏，表示应用程序已准备就绪
     statusElement.textContent = i18n.t('ui.status.ready');
 
-    // 13. 设置MCP下拉菜单监听器
+    // 设置MCP下拉菜单监听器
     mcpService.setupMcpDropdownListeners(openSettingsWindowWithTab);
 
-    // 14. 设置主题相关监听器
+    // 设置主题相关监听器
     themeService.setupThemeListeners();
-
-    // 15. 记录初始化完成
-    log.info('应用初始化完成，各阶段耗时已记录');
 }
 
 // 打开带有特定标签页的设置窗口
@@ -865,7 +842,6 @@ window.sendMessage = sendMessage;
 // 导出工具函数到全局，以便从其他模块中调用
 // 确保导出 handleTabClick 函数
 window.handleTabClick = handleTabClick;
-window.applyHighlighting = applyHighlighting;
 window.tabManager = tabManager;
 window.mcpService = mcpService;
 window.openSettingsWindowWithTab = openSettingsWindowWithTab;
