@@ -560,11 +560,11 @@ class ChatSessionService {
         this.messageInput.value = '';
         this.statusElement.textContent = i18n.t('ui.status.generating');
 
-        try {
-            // 生成唯一ID
-            const now = new Date();
-            const requestId = this.data.id + '-' + now.toLocaleString();
+        // 生成唯一ID
+        const now = new Date();
+        const requestId = this.data.id + '-' + now.toLocaleString();
 
+        try {
             // 在send-message IPC中传递会话特定的配置
             await ipcRenderer.invoke('send-message', this.data.id, requestId, message);
 
@@ -602,9 +602,7 @@ class ChatSessionService {
         } finally {
             this.isGenerating = false;
             this.messageElements.delete(requestId);
-            this.aiMessageContents.delete(requestId);
-            this.mcpMessageContents.delete(requestId);
-            this.thinkingMessageContents.delete(requestId); // 清除思考过程内容
+            this.messageContents.delete(requestId);
         }
     }
 
