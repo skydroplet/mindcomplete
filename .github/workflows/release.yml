@@ -41,7 +41,7 @@ jobs:
     - name: Generate changelog and bump version
       run: |
         npx standard-version
-        git push --follow-tags origin main && npm publish
+        git push --follow-tags
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
