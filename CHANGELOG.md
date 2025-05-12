@@ -2,6 +2,14 @@
 
 ## 所有版本变更记录
 
+### [0.0.6](https://github.com/skydroplet/mindcomplete/compare/v0.0.5...v0.0.6) (2025-05-12)
+
+
+### 🐛 修复
+
+* 一次对话结束后清理数据失败 ([4404e88](https://github.com/skydroplet/mindcomplete/commit/4404e883a74253d5f95eef5f279b529a48df4a02))
+* github action自动创建Release失败 ([8052d98](https://github.com/skydroplet/mindcomplete/commit/8052d98f8f6503aac205c7ded5f1624b018745fe))
+
 ### [0.0.5](https://github.com/skydroplet/mindcomplete/compare/v0.0.1...v0.0.5) (2025-05-12)
 
 ### 🐛 修复

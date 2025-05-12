@@ -1,6 +1,6 @@
 {
   "name": "mindcomplete",
-  "version": null,
+  "version": "0.0.6",
   "description": "心至 - MindComplete",
   "main": "src/main/main.js",
   "scripts": {
