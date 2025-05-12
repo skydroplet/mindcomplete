@@ -1,6 +1,6 @@
 {
   "name": "mindcomplete",
-  "version": "0.0.3",
+  "version": null,
   "description": "心至 - MindComplete",
   "main": "src/main/main.js",
   "scripts": {
@@ -22,6 +22,7 @@
   },
   "license": "GPL-3.0",
   "devDependencies": {
+    "conventional-changelog-conventionalcommits": "^8.0.0",
     "electron": "^35.1.5",
     "electron-builder": "^26.0.12",
     "electron-reloader": "^1.2.3",
