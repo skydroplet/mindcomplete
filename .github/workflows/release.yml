@@ -1,12 +1,52 @@
 name: Release Build
 
 on:
+  workflow_dispatch:
   push:
-    tags:
-    - "v*"
+    branches:
+      - main
+  pull_request:
+    types:
+      - closed
 
 jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '22'
+
+    - name: Install dependencies
+      run: npm install
+
+    - name: Install standard-version
+      run: npm install --save-dev standard-version conventional-changelog-conventionalcommits
+
+    - name: Get latest commit user and email
+      run: |
+        COMMIT_USER=$(git log -1 --pretty=format:'%an')
+        COMMIT_EMAIL=$(git log -1 --pretty=format:'%ae')
+        echo "Latest commit user: $COMMIT_USER"
+        echo "Latest commit email: $COMMIT_EMAIL"
+        git config --local user.email $COMMIT_EMAIL
+        git config --local user.name  $COMMIT_USER
+
+    - name: Generate changelog and bump version
+      run: |
+        npx standard-version --no-git-tag --release-as ${{ github.ref_name }}
+        git push
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   build:
+    needs: prepare
     runs-on: ${{ matrix.os }}
     permissions:
         contents: write
@@ -29,7 +69,7 @@ jobs:
 
     - name: Build Electron app
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Required for private repository access
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: npm run build --verbose
 
     - name: Debug build output
@@ -63,5 +103,6 @@ jobs:
         files: |
           artifact/artifact-ubuntu-latest-*/mindcomplete-*.AppImage
           artifact/artifact-windows-latest-*/mindcomplete-*.exe
+        body_path: CHANGELOG.md
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
