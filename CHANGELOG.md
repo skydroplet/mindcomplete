@@ -1,6 +1,8 @@
 # Changelog
 
-## 所有版本变更记录
+所有版本变更记录
+
+### [0.0.9](https://github.com/skydroplet/mindcomplete/compare/v0.0.8...v0.0.9) (2025-05-13)
 
 ### [0.0.8](https://github.com/skydroplet/mindcomplete/compare/v0.0.3...v0.0.8) (2025-05-12)
 
