@@ -12,6 +12,11 @@
     "build:linux": "electron-builder --linux",
     "postinstall": "electron-builder install-app-deps"
   },
+  "standard-version": {
+    "skip": {
+      "tag": true
+    }
+  },
   "author": {
     "name": "skydroplet",
     "email": "skydroplet@qq.com"
