@@ -1,5 +1,5 @@
 {
-    "header": "# Changelog\n\n## 所有版本变更记录\n",
+    "header": "# Changelog\n\n所有版本变更记录\n",
     "types": [
         {
             "type": "feat",
@@ -22,6 +22,7 @@
             "section": "⚡️ 性能"
         }
     ],
+    "releaseCommitMessageFormat": "Release: {{currentTag}}",
     "commitUrlFormat": "https://github.com/skydroplet/mindcomplete/commit/{{hash}}",
     "compareUrlFormat": "https://github.com/skydroplet/mindcomplete/compare/{{previousTag}}...{{currentTag}}",
     "issueUrlFormat": "https://github.com/skydroplet/mindcomplete/issues/{{id}}"
