@@ -80,8 +80,8 @@ jobs:
       with:
         name: ${{ matrix.os }}
         path: |
-          mindcomplete-*.exe
-          mindcomplete-*.AppImage
+          dist/mindcomplete-*.exe
+          dist/mindcomplete-*.AppImage
           CHANGELOG.md
 
   release:
@@ -102,8 +102,8 @@ jobs:
       uses: softprops/action-gh-release@v2
       with:
         files: |
-          artifact/ubuntu-latest/mindcomplete-*.AppImage
-          artifact/windows-latest/mindcomplete-*.exe
+          artifact/ubuntu-latest/dist/mindcomplete-*.AppImage
+          artifact/windows-latest/dist/mindcomplete-*.exe
         body_path:  artifact/windows-latest/CHANGELOG.md
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
