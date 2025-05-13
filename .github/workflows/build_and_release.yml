@@ -38,7 +38,6 @@ jobs:
 
     - name: Generate changelog and bump version
       run: |
-        git checkout main
         npx standard-version
         git push origin main
       env:
