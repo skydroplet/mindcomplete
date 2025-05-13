@@ -78,10 +78,10 @@ jobs:
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: artifact-${{ matrix.os }}-${{ github.run_id }}
+        name: ${{ matrix.os }}
         path: |
-          dist/mindcomplete-*.exe
-          dist/mindcomplete-*.AppImage
+          mindcomplete-*.exe
+          mindcomplete-*.AppImage
           CHANGELOG.md
 
   release:
@@ -102,8 +102,8 @@ jobs:
       uses: softprops/action-gh-release@v2
       with:
         files: |
-          artifact/artifact-ubuntu-latest-*/dist/mindcomplete-*.AppImage
-          artifact/artifact-windows-latest-*/dist/mindcomplete-*.exe
-        body_path:  artifact/artifact-windows-latest-*/CHANGELOG.md
+          artifact/ubuntu-latest/mindcomplete-*.AppImage
+          artifact/windows-latest/mindcomplete-*.exe
+        body_path:  artifact/windows-latest/CHANGELOG.md
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
