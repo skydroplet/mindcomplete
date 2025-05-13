@@ -38,8 +38,9 @@ jobs:
 
     - name: Generate changelog and bump version
       run: |
+        git checkout main
         npx standard-version
-        git push
+        git push origin main
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
