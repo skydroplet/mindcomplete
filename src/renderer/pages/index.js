@@ -258,14 +258,6 @@ function setupEventListeners() {
 
     sidebarService.setupEventListeners();
 
-    // 添加标签相关事件监听器
-    const newTabButton = document.getElementById('new-tab-button');
-    if (newTabButton) {
-        newTabButton.addEventListener('click', () => {
-            tabManager.createNewTab();
-        });
-    }
-
     // 修改：所有"新建会话"按钮使用标签管理器
     document.addEventListener('click', (e) => {
         if (e.target && e.target.id && e.target.id.startsWith('new-session-btn')) {
