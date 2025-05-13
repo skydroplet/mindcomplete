@@ -4,52 +4,14 @@
 
 ### 0.0.11 (2025-05-13)
 
-### [0.0.10](https://github.com/skydroplet/mindcomplete/compare/v0.0.9...v0.0.10) (2025-05-13)
-
-
-### 🐛 修复
-
-* 修复新建tab重复执行问题 ([ebd568e](https://github.com/skydroplet/mindcomplete/commit/ebd568ef3c6625434be5069d110e793ad351f48d))
-
-### [0.0.9](https://github.com/skydroplet/mindcomplete/compare/v0.0.8...v0.0.9) (2025-05-13)
-
-### [0.0.8](https://github.com/skydroplet/mindcomplete/compare/v0.0.3...v0.0.8) (2025-05-12)
-
 ### ✨ 新功能
 
+* 增加版本说明自动化创建 ([cf0c7d5](https://github.com/skydroplet/mindcomplete/commit/cf0c7d52bc0a27fd13af59927c13261374fe9ee6))
+* 增加版本说明自动化创建 ([cf0c7d5](https://github.com/skydroplet/mindcomplete/commit/cf0c7d52bc0a27fd13af59927c13261374fe9ee6))
 * 增加版本说明自动化创建 ([cf0c7d5](https://github.com/skydroplet/mindcomplete/commit/cf0c7d52bc0a27fd13af59927c13261374fe9ee6))
 
 ### 🐛 修复
 
-* 一次对话结束后清理数据失败 ([4404e88](https://github.com/skydroplet/mindcomplete/commit/4404e883a74253d5f95eef5f279b529a48df4a02))
-
-### [0.0.7](https://github.com/skydroplet/mindcomplete/compare/v0.0.3...v0.0.7) (2025-05-12)
-
-
-### ✨ 新功能
-
-* 增加版本说明自动化创建 ([cf0c7d5](https://github.com/skydroplet/mindcomplete/commit/cf0c7d52bc0a27fd13af59927c13261374fe9ee6))
-
-
-### 🐛 修复
-
-* github action自动创建Release失败 ([d3aff6b](https://github.com/skydroplet/mindcomplete/commit/d3aff6bf4ee46199ae2b895821667e0c5e0a95ec))
-* github action自动创建Release失败 ([8384fda](https://github.com/skydroplet/mindcomplete/commit/8384fda4362cf83ca110c629d5d62d21ef4474cb))
-* github action自动创建Release失败 ([8052d98](https://github.com/skydroplet/mindcomplete/commit/8052d98f8f6503aac205c7ded5f1624b018745fe))
-* 一次对话结束后清理数据失败 ([4404e88](https://github.com/skydroplet/mindcomplete/commit/4404e883a74253d5f95eef5f279b529a48df4a02))
-
-### [0.0.6](https://github.com/skydroplet/mindcomplete/compare/v0.0.3...v0.0.6) (2025-05-12)
-
-
-### ✨ 新功能
-
-* 增加版本说明自动化创建 ([cf0c7d5](https://github.com/skydroplet/mindcomplete/commit/cf0c7d52bc0a27fd13af59927c13261374fe9ee6))
-
-
-### 🐛 修复
-
-* github action自动创建Release失败 ([8384fda](https://github.com/skydroplet/mindcomplete/commit/8384fda4362cf83ca110c629d5d62d21ef4474cb))
-* github action自动创建Release失败 ([8052d98](https://github.com/skydroplet/mindcomplete/commit/8052d98f8f6503aac205c7ded5f1624b018745fe))
 * 一次对话结束后清理数据失败 ([4404e88](https://github.com/skydroplet/mindcomplete/commit/4404e883a74253d5f95eef5f279b529a48df4a02))
 
 ### [0.0.5](https://github.com/skydroplet/mindcomplete/compare/v0.0.1...v0.0.5) (2025-05-12)
