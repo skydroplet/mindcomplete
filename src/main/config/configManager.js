@@ -234,7 +234,7 @@ class ConfigManager extends EventEmitter {
             // 获取更新URL列表
             const updateUrls = this.generalConfig.updateUrls || [
                 "https://api.github.com/repos/skydroplet/mindcomplete/releases/latest",
-                "https://api.mindcomplete.me/v1/latest"
+                "https://api.mindcomplete.me/v1/releases/latest"
             ];
 
             // 依次尝试每个更新源
@@ -248,7 +248,7 @@ class ConfigManager extends EventEmitter {
                     log.info('获取更新信息:', responseData);
                     const updateInfo = {
                         version: responseData.name,
-                        releaseDate: responseData.published_at,
+                        releaseDate: new Date(responseData.published_at).toLocaleString(),
                         releaseNotes: responseData.body || ''
                     };
 

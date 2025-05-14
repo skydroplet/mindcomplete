@@ -5,6 +5,7 @@ const i18n = require('../locales/i18n');
 const themeService = require('./themeService');
 const fs = require('fs');
 const path = require('path');
+const marked = require('marked');
 
 class UpdateService {
     constructor() {
@@ -179,8 +180,8 @@ class UpdateService {
     // 填充通知数据
     populateNotificationData(notification, updateInfo) {
         notification.querySelector('#update-version').textContent = updateInfo.version;
-        notification.querySelector('#update-date').textContent = updateInfo.date;
-        notification.querySelector('#update-desc').textContent = updateInfo.desc;
+        notification.querySelector('#update-date').textContent = updateInfo.releaseDate;
+        notification.querySelector('#update-desc').innerHTML = marked.parse(updateInfo.releaseNotes);
     }
 
     // 翻译通知内容
