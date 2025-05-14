@@ -40,7 +40,7 @@ jobs:
 
     - name: Generate changelog and bump version
       run: |
-        npx standard-version
+        npx standard-version --release-as ${{ github.ref_name }}
         git push
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

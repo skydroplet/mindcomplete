@@ -27,7 +27,6 @@
   },
   "license": "GPL-3.0",
   "devDependencies": {
-    "conventional-changelog-conventionalcommits": "^8.0.0",
     "electron": "^35.1.5",
     "electron-builder": "^26.0.12",
     "electron-reloader": "^1.2.3",

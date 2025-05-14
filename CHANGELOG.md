@@ -1,24 +1,16 @@
 # Changelog
 
-所有版本变更记录
-
-### 0.0.11 (2025-05-13)
-
-### 0.0.12 (2025-05-13)
-
-### 0.0.11 (2025-05-13)
+## [0.0.11](https://github.com/skydroplet/mindcomplete/compare/v0.0.5...v0.0.11) (2025-05-14)
 
 ### ✨ 新功能
 
-* 增加版本说明自动化创建 ([cf0c7d5](https://github.com/skydroplet/mindcomplete/commit/cf0c7d52bc0a27fd13af59927c13261374fe9ee6))
-* 增加版本说明自动化创建 ([cf0c7d5](https://github.com/skydroplet/mindcomplete/commit/cf0c7d52bc0a27fd13af59927c13261374fe9ee6))
 * 增加版本说明自动化创建 ([cf0c7d5](https://github.com/skydroplet/mindcomplete/commit/cf0c7d52bc0a27fd13af59927c13261374fe9ee6))
 
 ### 🐛 修复
 
 * 一次对话结束后清理数据失败 ([4404e88](https://github.com/skydroplet/mindcomplete/commit/4404e883a74253d5f95eef5f279b529a48df4a02))
 
-### [0.0.5](https://github.com/skydroplet/mindcomplete/compare/v0.0.1...v0.0.5) (2025-05-12)
+## [0.0.5](https://github.com/skydroplet/mindcomplete/compare/v0.0.1...v0.0.5) (2025-05-12)
 
 ### 🐛 修复
 
@@ -35,13 +27,14 @@
 * 统一配置窗口滚动条样式 ([773a80b](https://github.com/skydroplet/mindcomplete/commit/773a80b53b9d3bdfbd4ded541f38311d648b2e03))
 * 优化导出项展开折叠逻辑 ([15667ec](https://github.com/skydroplet/mindcomplete/commit/15667ec5dcc5e967937ec89491c4049eeaf3d461))
 * 增加版本说明自动化创建 ([fb8588e](https://github.com/skydroplet/mindcomplete/commit/fb8588ecfc1475322e1bc73332da39b33134b693))
-* 增加版本说明自动化创建 ([68aebbb](https://github.com/skydroplet/mindcomplete/commit/68aebbb5b21c27df5dc0024393ccf3b45a69e5fe))
-* 增加版本说明自动化创建 ([a94d0a1](https://github.com/skydroplet/mindcomplete/commit/a94d0a1acd840f23bff9012dd65a601e94eed4e6))
-* 增加版本说明自动化创建 ([cf0c7d5](https://github.com/skydroplet/mindcomplete/commit/cf0c7d52bc0a27fd13af59927c13261374fe9ee6))
 * 增加配置导出功能 ([1139a11](https://github.com/skydroplet/mindcomplete/commit/1139a11e51fe28ed0e9a275cd6b9e87c8784835b))
-* 增加配置导入功能 ([c5a0962](https://github.com/skydroplet/mindcomplete/commit/c5a0962ea9b9561cc24076db1e38b80a92f45c84))
 * 增加请求响应ID 避免不同的消息之间互相影响 ([09ffd1e](https://github.com/skydroplet/mindcomplete/commit/09ffd1e13a511fa6ccff7bf6b98aef0292b3f938))
 * 增加推理模型思考过程展示 ([8065ae2](https://github.com/skydroplet/mindcomplete/commit/8065ae22382f9aa434693447449c4d53f8f774a5))
 * 支持多个url检查更新 ([8f013f8](https://github.com/skydroplet/mindcomplete/commit/8f013f8da085128c934102a474155e751a9e1abb))
-* 支持多个url检查更新 ([dc5ed06](https://github.com/skydroplet/mindcomplete/commit/dc5ed0677a6719475ebce66c3f9bb357c0840194))
 * 支持AI回复中收到新消息自动中断 ([a6bef59](https://github.com/skydroplet/mindcomplete/commit/a6bef5991c642e2ea9807298da4440d04c65e276))
+
+## [0.0.1]
+
+### ✨ 新功能
+
+* 初始版本，支持大模型流式对话和MCP工具调用
