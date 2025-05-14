@@ -36,7 +36,8 @@
             "date": "发布日期",
             "description": "更新内容",
             "later": "稍后提醒",
-            "download": "前往下载"
+            "download": "前往下载",
+            "ignore": "忽略此版本"
         }
     },
     "messages": {

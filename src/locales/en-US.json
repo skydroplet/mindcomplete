@@ -36,7 +36,8 @@
             "date": "Release Date",
             "description": "What's New",
             "later": "Remind Me Later",
-            "download": "Download Now"
+            "download": "Download Now",
+            "ignore": "Skip"
         }
     },
     "messages": {
