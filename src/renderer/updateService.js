@@ -5,6 +5,7 @@ const i18n = require('../locales/i18n');
 const themeService = require('./themeService');
 const fs = require('fs');
 const path = require('path');
+const marked = require('marked');
 
 class UpdateService {
     constructor() {
@@ -12,6 +13,7 @@ class UpdateService {
         this.setupUpdateListeners();
         this.notificationTemplate = null;
         this.notificationStyles = null;
+        this.ignoredVersions = new Set(this.loadIgnoredVersions());
 
         // 等待DOM准备就绪后再获取状态元素
         if (document.readyState === 'loading') {
@@ -118,7 +120,44 @@ class UpdateService {
             });
     }
 
+    // 保存被忽略的版本
+    saveIgnoredVersions() {
+        try {
+            localStorage.setItem('ignoredVersions', JSON.stringify(Array.from(this.ignoredVersions)));
+        } catch (error) {
+            log.error('保存忽略版本失败:', error);
+        }
+    }
+
+    // 加载被忽略的版本
+    loadIgnoredVersions() {
+        try {
+            const versions = localStorage.getItem('ignoredVersions');
+            return versions ? new Set(JSON.parse(versions)) : new Set();
+        } catch (error) {
+            log.error('加载忽略版本失败:', error);
+            return new Set();
+        }
+    }
+
+    // 忽略指定版本
+    ignoreVersion(version) {
+        this.ignoredVersions.add(version);
+        this.saveIgnoredVersions();
+    }
+
+    // 检查版本是否被忽略
+    isVersionIgnored(version) {
+        return this.ignoredVersions.has(version);
+    }
+
     showUpdateNotification(updateInfo) {
+        // 检查版本是否被忽略
+        if (this.isVersionIgnored(updateInfo.version)) {
+            log.info('版本已被忽略:', updateInfo.version);
+            return;
+        }
+
         // 检查通知是否已存在
         const existingNotification = document.querySelector('.update-notification');
         if (existingNotification) {
@@ -155,6 +194,7 @@ class UpdateService {
         // 添加事件监听器
         const closeBtn = notification.querySelector('.close-btn');
         const downloadBtn = notification.querySelector('.download-btn');
+        const ignoreBtn = notification.querySelector('.ignore-btn');
 
         closeBtn.addEventListener('click', () => {
             notification.remove();
@@ -163,6 +203,12 @@ class UpdateService {
 
         downloadBtn.addEventListener('click', () => {
             ipcRenderer.send('download-update');
+            notification.remove();
+            style.remove();
+        });
+
+        ignoreBtn.addEventListener('click', () => {
+            this.ignoreVersion(updateInfo.version);
             notification.remove();
             style.remove();
         });
@@ -179,8 +225,8 @@ class UpdateService {
     // 填充通知数据
     populateNotificationData(notification, updateInfo) {
         notification.querySelector('#update-version').textContent = updateInfo.version;
-        notification.querySelector('#update-date').textContent = updateInfo.date;
-        notification.querySelector('#update-desc').textContent = updateInfo.desc;
+        notification.querySelector('#update-date').textContent = updateInfo.releaseDate;
+        notification.querySelector('#update-desc').innerHTML = marked.parse(updateInfo.releaseNotes);
     }
 
     // 翻译通知内容
