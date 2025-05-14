@@ -56,44 +56,32 @@
     margin-top: 16px;
 }
 
+/* 按钮基础样式 */
 .update-notification-btn {
     padding: 6px 12px;
     border: 1px solid var(--vscode-button-border);
     border-radius: 3px;
-    background: var(--vscode-button-background);
-    color: var(--vscode-button-foreground);
     font-size: 13px;
     cursor: pointer;
     transition: background-color 0.2s;
+    background: var(--vscode-button-background);
+    color: var(--vscode-button-foreground);
 }
 
 .update-notification-btn:hover {
     background: var(--vscode-button-hoverBackground);
 }
 
-.update-notification-btn.close-btn {
-    background: var(--vscode-button-secondaryBackground);
-    color: var(--vscode-button-secondaryForeground);
-}
-
-.update-notification-btn.close-btn:hover {
-    background: var(--vscode-button-secondaryHoverBackground);
-}
-
+/* 普通按钮的额外样式 */
+.update-notification-btn.close-btn,
 .update-notification-btn.ignore-btn {
-    background: transparent;
-    border-color: var(--vscode-button-border);
-    color: var(--vscode-editor-foreground);
+    opacity: 0.8;
 }
 
-.update-notification-btn.ignore-btn:hover {
-    background: var(--vscode-button-secondaryHoverBackground);
-}
-
+/* 下载按钮的额外样式 */
 .update-notification-btn.download-btn {
-    background: var(--vscode-button-background);
-    color: var(--vscode-button-foreground);
     font-weight: 600;
+    opacity: 1;
 }
 
 .update-notification-btn.download-btn:hover {
