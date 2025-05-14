@@ -31,21 +31,19 @@
 </head>
 
 <body>
-    <h1 id="app-title">心至 - MindComplete</h1>
-    <p id="app-description">大模型客户端，MCP客户端。\n让每个人都能自由地和数字世界交互。</p>
-    <div class="version" id="version-info">版本 0.0.1</div>
+    <h1 id="title"></h1>
+    <p id="description"></p>
 
     <!-- JavaScript引用 -->
     <script>
         const { ipcRenderer } = require('electron');
+        const i18n = require('../../locales/i18n');
 
         // 页面加载完成后设置多语言文本
         document.addEventListener('DOMContentLoaded', () => {
             // 设置页面标题
-            document.getElementById('title').textContent = i18n.t('about.title');
-            document.getElementById('app-title').textContent = i18n.t('app.title');
-            document.getElementById('app-description').textContent = i18n.t('app.description');
-            document.getElementById('version-info').textContent = i18n.t('about.version', { version: '0.0.1' });
+            document.getElementById('title').textContent = i18n.t('app.title');
+            document.getElementById('description').textContent = i18n.t('app.description');
 
             // 添加链接点击事件委托，使链接在外部浏览器中打开
             document.body.addEventListener('click', (event) => {
