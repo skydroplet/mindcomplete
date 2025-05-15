@@ -514,8 +514,12 @@ class ChatSession {
                     // 处理工具执行结果
                     if (result && typeof result === 'object') {
                         // 向前端发送执行结果
-                        event.sender.send('mcp-tool-message-chunk', responseID, i18n.t('toolCalls.result', { result: JSON.stringify(result, null, 2) }));
-                        toolMessage += i18n.t('toolCalls.result', { result: JSON.stringify(result, null, 2) });
+                        let toolContents = "";
+                        for (const toolContent of result.content) {
+                            toolContents += toolContent.text + "\n\n";
+                        }
+                        event.sender.send('mcp-tool-message-chunk', responseID, i18n.t('toolCalls.result', { result: toolContents }));
+                        toolMessage += i18n.t('toolCalls.result', { result: toolContents });
 
                         // 设置结果角色并添加到消息列表，稍后发送给AI
                         result.role = "tool";
