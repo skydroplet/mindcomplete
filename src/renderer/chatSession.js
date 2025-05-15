@@ -44,58 +44,36 @@ class ChatSessionService {
         // 用于跟踪当前是否有AI正在生成回复
         this.isGenerating = false;
 
-        this.messageElements = new Map();
-        this.messageContents = new Map();
+        /**
+         * 单个请求的响应消息
+         * @type {Map<string, { id: string, { msgId: string, element: HTMLElement } } }>}
+         */
+        this.responses = new Map();
+
         this.setEventListeners();
     }
 
-    setMessageElement(role, id, chunk) {
-        const msgID = role + "-" + id;
-
-        let msgElement = this.messageElements[msgID];
-        if (!msgElement) {
-            let msgElement = this.addMessage('', role);
-            this.messageElements[msgID] = msgElement;
+    setResponseMessages(rspId, msgId, role, content) {
+        let rsp = this.responses[rspId];
+        if (!rsp) {
+            rsp = { id: rspId, messages: {} };
+            this.responses[rspId] = rsp;
         }
 
-        let contentRawText = this.messageContents[msgID] || '';
-        contentRawText += chunk;
-        this.messageContents[msgID] = contentRawText;
+        let msgElement = rsp.messages[msgId]?.element || null;
+        if (!msgElement) {
+            msgElement = this.addMessage('', role);
+            rsp.messages[msgId] = { element: msgElement };
+        }
 
-        const processedText = this.preprocessCodeBlocks(contentRawText);
+        const processedText = this.preprocessCodeBlocks(content);
         this.updateMessage(msgElement, processedText);
     }
 
     setEventListeners() {
-        // 设置事件监听器
-        // 添加空的AI回复消息，准备接收流式内容
-        ipcRenderer.on('new-ai-message', (event, responseID, chunk) => {
-            this.setMessageElement('assistant', responseID, chunk);
-        });
-
-        // 持续接收ai消息
-        ipcRenderer.on('ai-message-chunk', (event, responseID, chunk) => {
-            this.setMessageElement('assistant', responseID, chunk);
-        });
-
-        // 接收新的思考过程消息
-        ipcRenderer.on('new-thinking-message', (event, responseID, chunk) => {
-            this.setMessageElement('thinking', responseID, chunk);
-        });
-
-        // 持续接收思考过程消息
-        ipcRenderer.on('thinking-message-chunk', (event, responseID, chunk) => {
-            this.setMessageElement('thinking', responseID, chunk);
-        });
-
-        // 创建新的mcp工具响应 准备接收后续消息
-        ipcRenderer.on('new-mcp-tool-message', (event, responseID, chunk) => {
-            this.setMessageElement('tool', responseID, chunk);
-        });
-
-        // 持续接收mcp工具响应消息
-        ipcRenderer.on('mcp-tool-message-chunk', (event, responseID, chunk) => {
-            this.setMessageElement('tool', responseID, chunk);
+        // 接收响应消息
+        ipcRenderer.on('response-stream', (event, rspId, msgId, role, content) => {
+            this.setResponseMessages(rspId, msgId, role, content);
         });
 
         // 工具授权请求监听
@@ -182,7 +160,7 @@ class ChatSessionService {
         // 渲染消息历史
         if (this.data.messages) {
             this.data.messages.forEach(msg => {
-                this.addMessage(msg.content, msg.role, null, msg.thinking);
+                this.addMessage(msg.content, msg.role);
             });
         }
 
@@ -254,12 +232,11 @@ class ChatSessionService {
      * - tool 工具执行的消息，靠左显示，解析Markdown，有特殊样式
      *
      * @param {string} content - 消息内容。
-     * @param {string} thinking_content - AI思考消息内容。
-     * @param {string} type - 消息类型，可选值为 'user'、'assistant'、'tool'，默认为 'assistant'
+     * @param {string} type - 消息类型，可选值为 'user'、'assistant'、'thinking'、 'tool'，默认为 'assistant'
      * @param {Object} authRequest - 授权请求对象，包含toolName、serverId等信息
      * @returns {HTMLDivElement} - 消息内容元素，用于后续更新
      */
-    addMessage(content, type = 'assistant', authRequest = null, thinking_content = null) {
+    addMessage(content, type = 'assistant', authRequest = null) {
         if (!this.chatMessages) {
             log.error(`尝试添加消息但未找到消息容器，tabId=${this.tabId}`);
             return null;
@@ -279,20 +256,15 @@ class ChatSessionService {
         } else if (type === 'tool') {
             messageDiv.className = 'message tool-message';
             sender.textContent = i18n.t('messages.tool');
+        } else if (type === 'thinking') {
+            messageDiv.className = 'message thinking-message';
+            sender.textContent = i18n.t('messages.ai');
         } else {
             messageDiv.className = 'message ai-message';
             sender.textContent = i18n.t('messages.ai');
         }
 
         messageDiv.appendChild(sender);
-
-        // 推理过程
-        if (thinking_content) {
-            const thingingDiv = document.createElement('div');
-            thingingDiv.className = 'thinking-message';
-            this.updateMessage(thingingDiv, thinking_content);
-            messageDiv.appendChild(thingingDiv);
-        }
 
         // 消息内容
         const contentDiv = document.createElement('div');
@@ -567,11 +539,6 @@ class ChatSessionService {
         try {
             // 在send-message IPC中传递会话特定的配置
             await ipcRenderer.invoke('send-message', this.data.id, requestId, message);
-
-            // 更新标签名称和会话列表
-            if (!this.data) {
-                sidebarSessionService.loadSessions();
-            }
             this.statusElement.textContent = i18n.t('ui.status.ready');
         } catch (error) {
             log.error('发送消息失败:', {
@@ -600,9 +567,10 @@ class ChatSessionService {
 
             this.statusElement.textContent = i18n.t('ui.status.error', { error: errorMsg });
         } finally {
-            this.isGenerating = false;
-            this.messageElements.delete(requestId);
-            this.messageContents.delete(requestId);
+            setTimeout(() => {
+                this.isGenerating = false;
+                this.responses.delete(requestId);
+            }, 100);
         }
     }
 
