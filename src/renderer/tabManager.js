@@ -898,49 +898,26 @@ class TabManagerService {
         const tabElement = this.createTabElement(tabId, tabName);
 
         // 添加到标签容器
-        if (this.newTabButton) {
-            this.tabsContainer.insertBefore(tabElement, this.newTabButton);
-        } else {
-            this.tabsContainer.appendChild(tabElement);
-        }
+        this.tabsContainer.insertBefore(tabElement, this.newTabButton);
 
         // 创建内容区域
         const contentElement = this.createTabContentElement(tabId);
         this.tabsContent.appendChild(contentElement);
 
-        // 创建新的会话服务实例
+        // 创建/加载会话信息
         const chatSession = new ChatSessionService(sessionId);
-        // 设置标签ID，关联到该标签的消息容器
-        chatSession.setTabId(tabId);
+        if (sessionId) {
+            await chatSession.loadSession();
+        } else {
+            await chatSession.createNewSession();
+        }
 
-        // 保存标签和会话的关联
+        chatSession.setTabId(tabId);
         this.tabSessions.set(tabId, chatSession);
+        this.updateTabName(tabId, chatSession.data.name)
 
         // 初始化标签特定的下拉菜单
         await this.initTabSpecificDropdowns(tabId);
-
-        // 如果提供了会话ID，加载会话
-        if (sessionId) {
-            try {
-                const session = await chatSession.loadSession();
-                if (session) {
-                    // 更新标签名称
-                    this.updateTabName(tabId, session.name);
-                    this.tabSessionIds.set(tabId, sessionId);
-                }
-            } catch (error) {
-                log.error('加载会话失败:', error.message);
-                // 如果加载失败，创建新会话
-                await chatSession.createNewSession();
-            }
-        } else {
-            // 创建新会话
-            const session = await chatSession.createNewSession();
-            if (session) {
-                this.updateTabName(tabId, session.name);
-                this.tabSessionIds.set(tabId, session.id);
-            }
-        }
 
         // 激活新标签
         this.activateTab(tabId);
