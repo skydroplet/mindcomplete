@@ -153,10 +153,6 @@ class ChatSession {
             this.data.messageCount++;
         }
 
-        if (this.data.messageCount === 1 && message.role === 'user') {
-            this.data.name = message.content.slice(0, 64);
-        }
-
         // 添加消息及其ID
         this.data.messages.push({
             id: this.data.messageCount,
@@ -303,6 +299,10 @@ class ChatSession {
             messages.push({ role: 'user', content: message });
             // 保存到文件
             this.addMessage({ role: 'user', content: message })
+            if (this.data.messageCount === 1) {
+                this.data.name = message.slice(0, 64);
+                event.sender.send("session-name-change", this.data.id, this.data.name);
+            }
 
             const model = modelConfig.getModelById(this.data.modelId)
             // 构建API请求参数

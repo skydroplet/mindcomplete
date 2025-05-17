@@ -912,8 +912,13 @@ class TabManagerService {
             await chatSession.createNewSession();
         }
 
+        chatSession.setSessionNameChangeCallback((sessionId, newSessionName) => {
+            this.updateSessionName(sessionId, newSessionName);
+        });
+
         chatSession.setTabId(tabId);
         this.tabSessions.set(tabId, chatSession);
+        this.tabSessionIds.set(tabId, chatSession.sessionId);
         this.updateTabName(tabId, chatSession.data.name)
 
         // 初始化标签特定的下拉菜单

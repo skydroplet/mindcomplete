@@ -53,6 +53,19 @@ class ChatSessionService {
         this.setEventListeners();
     }
 
+    setSessionNameChangeCallback(callback) {
+        this.sessionNameChangeCallback = callback;
+    }
+
+    sessionNameChange(newSessionName) {
+        log.info(`会话 ${this.sessionId} 重命名: ${newSessionName}`)
+        ipcRenderer.invoke('rename-session', this.sessionId, newSessionName);
+
+        if (this.sessionNameChangeCallback) {
+            this.sessionNameChangeCallback(this.sessionId, newSessionName);
+        }
+    }
+
     setResponseMessages(rspId, msgId, role, content) {
         let rsp = this.responses[rspId];
         if (!rsp) {
@@ -81,6 +94,13 @@ class ChatSessionService {
             // 添加包含授权按钮的工具消息
             const messageContent = i18n.t('mcp.authorization.message', { serverName: authRequest.serverName, name: authRequest.toolName });
             this.addMessage(messageContent, 'tool', authRequest);
+        });
+
+        // 对话触发的会话名称变更
+        ipcRenderer.on('session-name-change', (event, sessionId, newName) => {
+            if (this.sessionId === sessionId) {
+                this.sessionNameChange(newName);
+            }
         });
     }
 
