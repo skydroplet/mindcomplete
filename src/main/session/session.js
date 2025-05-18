@@ -115,7 +115,6 @@ class ChatSession {
             const sessionDir = path.join(app.getPath('userData'), 'user-data', 'sessions', getFormattedDate(this.data.createdAt))
             fs.mkdirSync(sessionDir, { recursive: true });
             this.filePath = path.join(sessionDir, `${this.data.id}.json`);
-            log.info("保存会话：", this.filePath)
 
             fs.writeFileSync(this.filePath, JSON.stringify(this.data, null, 2));
             return true;
@@ -196,7 +195,8 @@ class ChatSession {
             modelId: this.data.modelId,
             promptId: this.data.promptId,
             mcpServers: this.data.mcpServers || [],
-            conversationMode: this.data.conversationMode || 'single-turn'
+            conversationMode: this.data.conversationMode || 'single-turn',
+            dataFile: this.filePath
         };
     }
 
