@@ -1,5 +1,26 @@
 # Changelog
 
+
+### [0.0.12](https://github.com/skydroplet/mindcomplete/compare/v0.0.11...v0.0.12) (2025-05-18)
+
+
+### ✨ 新功能
+
+* 拆分会话信息和会话数据 加速加载流程 ([e4e6700](https://github.com/skydroplet/mindcomplete/commit/e4e67001b947a3a7c370cef74558fdc4e25c9350))
+* 格式化展示工具执行结果 ([36976f6](https://github.com/skydroplet/mindcomplete/commit/36976f6fe2f4d33dfeb110e24d5c260342dbeeda))
+* 更新README ([c168fa4](https://github.com/skydroplet/mindcomplete/commit/c168fa4fa824f2f367bf8ecf9e1dee4baca1b221))
+* 更新README ([92469b7](https://github.com/skydroplet/mindcomplete/commit/92469b776138700e968b5b04144fbde08437386f))
+* 会话变更，自动更新侧边栏列表 ([20cad0f](https://github.com/skydroplet/mindcomplete/commit/20cad0f7ac134fa81b6271dbe4fd16454971491a))
+* 会话名称变更 自动更新标签显示 ([7693bed](https://github.com/skydroplet/mindcomplete/commit/7693bed75ca26a0509430a0e90c88ebb1cdbf24d))
+* 手动创建版本 ([f412554](https://github.com/skydroplet/mindcomplete/commit/f41255486431291c840db767a20f95ae424d1be5))
+* 支持一次请求多轮工具调用和推理 ([529a7a6](https://github.com/skydroplet/mindcomplete/commit/529a7a6e22efc8700445b2bce483876a17d21de9))
+
+
+### 🐛 修复
+
+* 调整描述 ([69496cc](https://github.com/skydroplet/mindcomplete/commit/69496cc2e59ae450e12da5c6ed2e7db6d8d8f2d0))
+* 修复新建标签会话关联失败问题 ([0b299e4](https://github.com/skydroplet/mindcomplete/commit/0b299e43713d6cddbb5b9fc82b91f3b04fb864e5))
+
 ## [0.0.11](https://github.com/skydroplet/mindcomplete/compare/v0.0.5...v0.0.11) (2025-05-14)
 
 ### ✨ 新功能
