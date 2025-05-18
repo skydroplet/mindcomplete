@@ -57,9 +57,9 @@ class ChatSessionService {
         this.sessionNameChangeCallback = callback;
     }
 
-    sessionNameChange(newSessionName) {
+    async sessionNameChange(newSessionName) {
         log.info(`会话 ${this.sessionId} 重命名: ${newSessionName}`)
-        ipcRenderer.invoke('rename-session', this.sessionId, newSessionName);
+        await ipcRenderer.invoke('rename-session', this.sessionId, newSessionName);
 
         if (this.sessionNameChangeCallback) {
             this.sessionNameChangeCallback(this.sessionId, newSessionName);

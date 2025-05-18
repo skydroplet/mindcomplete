@@ -258,23 +258,6 @@ function setupEventListeners() {
 
     sidebarService.setupEventListeners();
 
-    // 修改：所有"新建会话"按钮使用标签管理器
-    document.addEventListener('click', (e) => {
-        if (e.target && e.target.id && e.target.id.startsWith('new-session-btn')) {
-            tabManager.createNewSessionInCurrentTab();
-            sidebarSession.loadSessions();
-        }
-    });
-
-    // 默认的新建会话按钮
-    const newSessionBtn = document.getElementById('new-session-btn');
-    if (newSessionBtn) {
-        newSessionBtn.addEventListener('click', async () => {
-            await tabManager.createNewSessionInCurrentTab();
-            sidebarSession.loadSessions();
-        });
-    }
-
     // 添加上下文菜单功能
     // 为整个应用程序添加自定义上下文菜单
     document.addEventListener('contextmenu', (e) => {
