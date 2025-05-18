@@ -6,47 +6,7 @@ on:
     tags:
     - "v*"
 
-jobs:
-  create_changelog:
-    runs-on: ubuntu-latest
-    permissions:
-        contents: write
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
-      with:
-        ref: main
-
-    - name: Set up Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: '22'
-
-    - name: Install dependencies
-      run: npm install
-
-    - name: Install standard-version
-      run: npm install --save-dev standard-version conventional-changelog-conventionalcommits
-
-    - name: Get latest commit user and email
-      run: |
-        COMMIT_USER=$(git log -1 --pretty=format:'%an')
-        COMMIT_EMAIL=$(git log -1 --pretty=format:'%ae')
-        echo "Latest commit user: $COMMIT_USER"
-        echo "Latest commit email: $COMMIT_EMAIL"
-        git config --local user.email $COMMIT_EMAIL
-        git config --local user.name  $COMMIT_USER
-
-    - name: Generate changelog and bump version
-      run: |
-        npx standard-version --release-as ${{ github.ref_name }}
-        git push
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
   build:
-    needs: create_changelog
     runs-on: ${{ matrix.os }}
     permissions:
         contents: write

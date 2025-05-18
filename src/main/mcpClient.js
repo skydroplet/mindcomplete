@@ -424,7 +424,7 @@ class MCPClientManager extends EventEmitter {
 
         log.info(`使用MCP服务 ${targetServerId} 执行工具: ${name}, 参数:`, JSON.stringify(args, null, 2));
 
-        const timeout = 10000;
+        const timeout = 30000;
 
         try {
             const task = clientInfo.client.callTool({
@@ -433,7 +433,7 @@ class MCPClientManager extends EventEmitter {
             });
 
             const timeoutPromise = new Promise((_, reject) => {
-                setTimeout(() => reject(new Error('执行超时 (10秒)')), timeout);
+                setTimeout(() => reject(new Error('执行超时 (30秒)')), timeout);
             });
 
             const result = await Promise.race([task, timeoutPromise]);

@@ -115,7 +115,6 @@ class ChatSession {
             const sessionDir = path.join(app.getPath('userData'), 'user-data', 'sessions', getFormattedDate(this.data.createdAt))
             fs.mkdirSync(sessionDir, { recursive: true });
             this.filePath = path.join(sessionDir, `${this.data.id}.json`);
-            log.info("保存会话：", this.filePath)
 
             fs.writeFileSync(this.filePath, JSON.stringify(this.data, null, 2));
             return true;
@@ -151,10 +150,6 @@ class ChatSession {
             this.data.messageCount = 0;
         } else {
             this.data.messageCount++;
-        }
-
-        if (this.data.messageCount === 1 && message.role === 'user') {
-            this.data.name = message.content.slice(0, 64);
         }
 
         // 添加消息及其ID
@@ -200,7 +195,8 @@ class ChatSession {
             modelId: this.data.modelId,
             promptId: this.data.promptId,
             mcpServers: this.data.mcpServers || [],
-            conversationMode: this.data.conversationMode || 'single-turn'
+            conversationMode: this.data.conversationMode || 'single-turn',
+            dataFile: this.filePath
         };
     }
 
@@ -264,7 +260,7 @@ class ChatSession {
             }
 
             // 一个请求的后续响应都使用这个ID
-            const resposneId = requestId;
+            const responseId = requestId;
 
             // 创建新的中断控制器
             this.abortController = new AbortController();
@@ -303,6 +299,10 @@ class ChatSession {
             messages.push({ role: 'user', content: message });
             // 保存到文件
             this.addMessage({ role: 'user', content: message })
+            if (this.data.messageCount === 1) {
+                this.data.name = message.slice(0, 64);
+                event.sender.send("session-name-change", this.data.id, this.data.name);
+            }
 
             const model = modelConfig.getModelById(this.data.modelId)
             // 构建API请求参数
@@ -334,101 +334,7 @@ class ChatSession {
             // 添加中断控制器信号
             const signal = this.abortController.signal;
 
-            const stream = await modelClient.chat.completions.create({
-                ...requestParams,
-                signal
-            });
-
-            let firstResponse = '';
-            let thinkingContent = ''; // 存储思考过程内容
-            let toolCalls = [];
-            let currentToolCallIndexes = {};
-
-            for await (const chunk of stream) {
-                // 检查是否已经中断
-                if (signal.aborted) {
-                    log.info(`会话 ${this.data.id} 的消息生成已被中断，停止处理后续消息块`);
-                    break;
-                }
-                log.info("received chunk", chunk)
-
-                // 处理思考过程内容
-                const thinking = chunk.choices[0]?.delta?.reasoning_content;
-                if (thinking) {
-                    if (thinkingContent === "") {
-                        thinkingContent = thinking;
-                        // 向前端发送新的思考过程消息
-                        event.sender.send('new-thinking-message', resposneId, thinking);
-                    } else {
-                        thinkingContent += thinking;
-                        // 向前端发送思考过程内容增量
-                        event.sender.send('thinking-message-chunk', resposneId, thinking);
-                    }
-                    continue; // 思考过程消息处理后直接进入下一轮循环
-                }
-
-                const content = chunk.choices[0]?.delta?.content || '';
-                if (content) {
-                    if (firstResponse === "") {
-                        firstResponse = content;
-                        event.sender.send('new-ai-message', resposneId, content);
-                    } else {
-                        firstResponse += content;
-                        event.sender.send('ai-message-chunk', resposneId, content);
-                    }
-                }
-
-                const toolCallChunks = chunk.choices[0]?.delta?.tool_calls || [];
-                if (toolCallChunks.length > 0) {
-                    // 添加详细的工具调用日志
-                    for (const toolCallChunk of toolCallChunks) {
-                        const index = toolCallChunk.index;
-
-                        // 初始化工具调用对象
-                        if (!currentToolCallIndexes[index]) {
-                            currentToolCallIndexes[index] = true;
-                            toolCalls[index] = {
-                                id: toolCallChunk.id || `call_${index}`,
-                                type: "function",
-                                function: {
-                                    name: "",
-                                    arguments: ""
-                                }
-                            };
-                        }
-
-                        // 更新工具调用名称
-                        if (toolCallChunk.function?.name) {
-                            toolCalls[index].function.name =
-                                (toolCalls[index].function.name || "") + toolCallChunk.function.name;
-                        }
-
-                        // 更新工具调用参数
-                        if (toolCallChunk.function?.arguments) {
-                            toolCalls[index].function.arguments =
-                                (toolCalls[index].function.arguments || "") + toolCallChunk.function.arguments;
-                        }
-                    }
-                }
-            }
-
-            // 如果有思考过程，保存到会话历史中
-            const finallMessage = { role: 'assistant' };
-            if (thinkingContent) {
-                finallMessage.thinking = thinkingContent;
-            }
-
-            // 如果有工具调用，处理它
-            if (toolCalls.length > 0) {
-                // 处理工具调用
-                const finalResponse = await this.handleToolCalls(event, messages, toolCalls, modelClient, model, resposneId);
-                finallMessage.content = finalResponse;
-            } else {
-                finallMessage.content = firstResponse;
-            }
-
-            this.addMessage(finallMessage);
-            return { content: firstResponse };
+            return await this.sendMessageToModel(event, signal, modelClient, requestParams, requestId, messages);
         } catch (err) {
             // 确认是否是中断导致的错误
             if (err.name === 'AbortError') {
@@ -452,6 +358,118 @@ class ChatSession {
         }
     }
 
+    replyMessage(event, rspId, msgId, role, content) {
+        let newMsgId = msgId || crypto.randomUUID();
+        event.sender.send("response-stream", rspId, newMsgId, role, content);
+        return newMsgId;
+    }
+
+    /**
+     * 向模型发送消息并处理流式响应
+     * @param {Object} event - 事件对象，用于发送消息到前端
+     * @param {AbortSignal} signal - 中断信号，用于控制请求中断
+     * @param {Object} modelClient - 模型客户端实例，用于调用模型接口
+     * @param {Object} requestParams - 请求参数对象，包含模型调用配置
+     * @param {string} responseId - 响应唯一标识，用于前端消息关联
+     * @param {Array} messages - 消息历史数组，包含对话上下文
+     * @returns {Promise<Object>} 返回包含响应内容的Promise对象
+     */
+    async sendMessageToModel(event, signal, modelClient, requestParams, responseId, messages) {
+        // 检查是否已经中断
+        if (signal.aborted) {
+            log.info(`会话 ${this.data.id} 的消息生成已被中断, 停止处理`);
+            return;
+        }
+
+        requestParams.messages = messages;
+        const stream = await modelClient.chat.completions.create({
+            ...requestParams,
+            signal
+        });
+
+        let thinkingContent = '';
+        let thinkingMsgId = null;
+        let modelContent = '';
+        let modelMsgId = null;
+        let toolCalls = [];
+
+        try {
+            for await (const chunk of stream) {
+                // 检查是否已经中断
+                if (signal.aborted) {
+                    log.info(`会话 ${this.data.id} 的消息生成已被中断，停止处理后续消息块`);
+                    break;
+                }
+                // log.info("receive chunk", chunk)
+
+                // 推理
+                const thinking = chunk.choices[0]?.delta?.reasoning_content;
+                if (thinking) {
+                    thinkingContent += thinking;
+                    thinkingMsgId = this.replyMessage(event, responseId, thinkingMsgId, 'thinking', thinkingContent);
+                }
+
+                // 工具调用
+                const toolCallChunks = chunk.choices[0]?.delta?.tool_calls || [];
+                if (toolCallChunks.length > 0) {
+                    // 添加详细的工具调用日志
+                    for (const toolCallChunk of toolCallChunks) {
+                        const index = toolCallChunk.index;
+
+                        // 初始化工具调用对象
+                        if (toolCalls[index] === undefined) {
+                            toolCalls[index] = {
+                                id: toolCallChunk.id || `call_${index}`,
+                                type: "function",
+                                function: {
+                                    name: "",
+                                    arguments: ""
+                                }
+                            };
+                        }
+
+                        // 更新工具调用名称
+                        if (toolCallChunk.function?.name) {
+                            toolCalls[index].function.name += toolCallChunk.function.name;
+                        }
+
+                        // 更新工具调用参数
+                        if (toolCallChunk.function?.arguments) {
+                            toolCalls[index].function.arguments += toolCallChunk.function.arguments;
+                        }
+                    }
+                }
+
+                // 回复
+                const content = chunk.choices[0]?.delta?.content || '';
+                if (content) {
+                    modelContent += content;
+                    modelMsgId = this.replyMessage(event, responseId, modelMsgId, 'assistant', modelContent);
+                }
+            }
+
+            // 保存推理消息 只用于显示 不返回给模型
+            if (thinkingContent) {
+                this.addMessage({ role: 'thinking', content: thinkingContent });
+            }
+
+            // 多轮对话时 要返回给模型
+            const responseMsg = { role: 'assistant', content: modelContent, tool_calls: toolCalls };
+            log.info("模型响应: ", responseMsg);
+            this.addMessage(responseMsg);
+
+            // 调用工具
+            if (toolCalls.length > 0) {
+                // 处理工具调用
+                messages = messages.concat(responseMsg);
+                await this.handleToolCalls(event, signal, modelClient, requestParams, responseId, messages, toolCalls);
+            }
+        } catch (err) {
+            log.error('工具调用失败:', err.message);
+        }
+
+    }
+
     /**
      * 处理AI模型生成的工具调用
      *
@@ -463,29 +481,30 @@ class ChatSession {
      * 4. 将结果发送给AI模型生成最终回复
      * 5. 将最终回复流式发送给前端
      *
-     * @param {Object} event - Electron IPC事件对象，用于与前端通信
-     * @param {Array} toolCalls - AI模型生成的工具调用数组，每个元素包含工具名称和参数
-     * @param {Object} client - AI模型客户端，用于发送API请求
-     * @param {Object} currentModel - 当前使用的AI模型配置
-     * @returns {String} 工具处理后生成的完整回复文本
+     * @param {Event} event - 事件通信对象，用于前后端消息传递
+     * @param {AbortSignal} signal - 中断信号，用于控制流程中断
+     * @param {ModelClient} modelClient - 模型客户端实例，用于后续AI交互
+     * @param {Object} requestParams - 请求参数对象，包含模型配置信息
+     * @param {string} responseId - 响应唯一标识，用于消息追踪
+     * @param {Array} messages - 当前会话消息历史数组
+     * @param {Array} toolCalls - 待处理的工具调用对象数组
+     * 
+     * @returns {Promise} 返回最终模型响应结果或中断状态
      */
-    async handleToolCalls(event, messages, toolCalls, client, currentModel, responseID) {
-        // 初始化最终回复文本和消息历史数组
-        let fullResponse = '';
-
-        messages = messages.concat({ role: 'user', tool_calls: toolCalls });
-
+    async handleToolCalls(event, signal, modelClient, requestParams, responseId, messages, toolCalls) {
         // 依次处理每个工具调用
         for await (const toolCall of toolCalls) {
             // 检查是否已经中断
-            if (this.abortController && this.abortController.signal.aborted) {
+            if (signal.aborted) {
                 log.info("工具处理已被中断，停止处理剩余工具");
-                return "工具处理已被中断";
+                return "";
             }
+            log.info("call tool", toolCall)
 
             // 确保工具调用包含有效的名称和参数
             if (toolCall.function.name && toolCall.function.arguments) {
                 let toolMessage = "";
+                let toolMsgId = null;
 
                 try {
                     // 解析工具名称和参数
@@ -493,13 +512,12 @@ class ChatSession {
                     let args = JSON.parse(toolCall.function.arguments);
 
                     // 向前端发送当前正在执行的工具信息
-                    event.sender.send('new-mcp-tool-message', responseID, `${i18n.t('toolCalls.tool', { name: toolName })}\n\n`);
-
                     toolMessage += `${i18n.t('toolCalls.tool', { name: toolName })}\n\n`;
+                    toolMsgId = this.replyMessage(event, responseId, toolMsgId, 'tool', toolMessage);
 
                     // 向前端显示工具参数
-                    event.sender.send('mcp-tool-message-chunk', responseID, i18n.t('toolCalls.parameters', { args: JSON.stringify(args, null, 2) }));
                     toolMessage += i18n.t('toolCalls.parameters', { args: JSON.stringify(args, null, 2) });
+                    this.replyMessage(event, responseId, toolMsgId, 'tool', toolMessage);
 
                     // 调用工具执行器(mcp)执行工具
                     const result = await mcp.executeTool({
@@ -508,83 +526,44 @@ class ChatSession {
                     });
 
                     // 通知前端工具正在处理中
-                    event.sender.send('mcp-tool-message-chunk', responseID, `${i18n.t('toolCalls.processing')}\n\n`);
                     toolMessage += i18n.t('toolCalls.processing') + "\n\n";
+                    this.replyMessage(event, responseId, toolMsgId, 'tool', toolMessage);
 
                     // 处理工具执行结果
                     if (result && typeof result === 'object') {
                         // 向前端发送执行结果
-                        event.sender.send('mcp-tool-message-chunk', responseID, i18n.t('toolCalls.result', { result: JSON.stringify(result, null, 2) }));
-                        toolMessage += i18n.t('toolCalls.result', { result: JSON.stringify(result, null, 2) });
+                        let toolContents = "";
+                        for (const toolContent of result.content) {
+                            toolContents += toolContent.text + "\n\n";
+                        }
+                        toolMessage += i18n.t('toolCalls.result', { result: toolContents });
+                        this.replyMessage(event, responseId, toolMsgId, 'tool', toolMessage);
 
                         // 设置结果角色并添加到消息列表，稍后发送给AI
                         result.role = "tool";
+                        result.tool_call_id = toolCall.id;
                         messages.push(result);
                     } else {
                         // 如果结果不是有效对象，记录错误
                         const errorMsg = i18n.t('toolCalls.invalidResult', { type: typeof result });
                         log.error(errorMsg, result);
-                        event.sender.send('mcp-tool-message-chunk', responseID, errorMsg);
                         toolMessage += errorMsg;
+                        this.replyMessage(event, responseId, toolMsgId, 'tool', toolMessage);
                     }
 
                     // 将工具调用结果添加到会话历史
-                    this.addMessage({ role: 'tool', name: toolName, content: toolMessage });
+                    this.addMessage({ role: 'tool', tool_call_id: toolCall.id, name: toolName, content: toolMessage });
                 } catch (toolError) {
                     // 捕获并处理工具执行过程中的错误
                     const errorMsg = i18n.t('toolCalls.error', { message: toolError.message });
                     log.error('工具执行错误:', toolError);
-                    event.sender.send('mcp-tool-message-chunk', responseID, errorMsg);
+                    toolMessage += errorMsg;
+                    this.replyMessage(event, responseId, toolMsgId, 'tool', toolMessage);
                 }
             }
         }
 
-        try {
-            // 检查是否已经中断
-            if (this.abortController && this.abortController.signal.aborted) {
-                log.info("最终回复生成已被中断，不进行后续API调用");
-                return "最终回复生成已被中断";
-            }
-
-            // 创建第二次API请求，将工具调用结果发送给AI模型生成最终回复
-            const secondStream = await client.chat.completions.create({
-                model: currentModel.type,
-                messages,
-                stream: true, // 启用流式响应，便于逐步显示生成内容
-                signal: this.abortController ? this.abortController.signal : undefined
-            });
-
-            // 处理流式响应的每个数据块
-            for await (const chunk of secondStream) {
-                // 从响应中提取文本内容
-                const content = chunk.choices[0]?.delta?.content || '';
-                if (content) {
-                    // 如果是第一个内容块，创建新消息
-                    if (fullResponse === "") {
-                        fullResponse = content;
-                        event.sender.send('new-ai-message', responseID, content);
-                    } else {
-                        // 否则追加到现有消息
-                        fullResponse += content;
-                        event.sender.send('ai-message-chunk', responseID, content);
-                    }
-                }
-
-                // 检查是否已经中断
-                if (this.abortController && this.abortController.signal.aborted) {
-                    fullResponse += "!!!消息被中断!!!";
-                    break;
-                }
-            }
-        } catch (apiError) {
-            // 处理API调用过程中的错误
-            const errorMsg = i18n.t('toolCalls.responseFailed', { message: apiError.message });
-            log.error('最终响应生成过程中的API错误:', apiError);
-            event.sender.send('ai-message-chunk', responseID, errorMsg);
-        }
-
-        // 返回处理工具调用后AI生成的完整回复文本
-        return fullResponse;
+        return await this.sendMessageToModel(event, signal, modelClient, requestParams, responseId, messages);
     }
 }
 

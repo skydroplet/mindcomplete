@@ -15,6 +15,7 @@ const log = new Logger('tabManager');
 const i18n = require('../locales/i18n');
 const ChatSessionService = require('./chatSession');
 const InputManagerService = require('./inputManager');
+const sidebarSessionService = require('./sidebarSession');
 
 /**
  * 标签管理服务类
@@ -84,9 +85,10 @@ class TabManagerService {
      */
     initEventListeners() {
         // 新建标签按钮点击事件
-        if (this.newTabButton) {
-            this.newTabButton.addEventListener('click', () => this.createNewTab());
-        }
+        this.newTabButton.addEventListener('click', () => {
+            this.createNewTab();
+            sidebarSessionService.loadSessions();
+        });
 
         // 添加全局点击事件，用于关闭下拉菜单
         document.addEventListener('click', (e) => {
@@ -516,6 +518,12 @@ class TabManagerService {
             await this.initMcpDropdown(tabId, session);
             await this.initConversationModeToggle(tabId, session);
 
+            const newSessionBtn = document.getElementById(`new-session-btn-${tabId}`);
+            newSessionBtn.addEventListener('click', () => {
+                this.createNewTab();
+                sidebarSessionService.loadSessions();
+            });
+
             log.info(`标签 ${tabId} 的下拉菜单初始化完成`);
         } catch (error) {
             log.error(`初始化标签 ${tabId} 下拉菜单时出错:`, error.message);
@@ -898,49 +906,32 @@ class TabManagerService {
         const tabElement = this.createTabElement(tabId, tabName);
 
         // 添加到标签容器
-        if (this.newTabButton) {
-            this.tabsContainer.insertBefore(tabElement, this.newTabButton);
-        } else {
-            this.tabsContainer.appendChild(tabElement);
-        }
+        this.tabsContainer.insertBefore(tabElement, this.newTabButton);
 
         // 创建内容区域
         const contentElement = this.createTabContentElement(tabId);
         this.tabsContent.appendChild(contentElement);
 
-        // 创建新的会话服务实例
+        // 创建/加载会话信息
         const chatSession = new ChatSessionService(sessionId);
-        // 设置标签ID，关联到该标签的消息容器
-        chatSession.setTabId(tabId);
+        if (sessionId) {
+            await chatSession.loadSession();
+        } else {
+            await chatSession.createNewSession();
+        }
 
-        // 保存标签和会话的关联
+        chatSession.setSessionNameChangeCallback((sessionId, newSessionName) => {
+            this.updateSessionName(sessionId, newSessionName);
+            sidebarSessionService.loadSessions();
+        });
+
+        chatSession.setTabId(tabId);
         this.tabSessions.set(tabId, chatSession);
+        this.tabSessionIds.set(tabId, chatSession.sessionId);
+        this.updateTabName(tabId, chatSession.data.name)
 
         // 初始化标签特定的下拉菜单
         await this.initTabSpecificDropdowns(tabId);
-
-        // 如果提供了会话ID，加载会话
-        if (sessionId) {
-            try {
-                const session = await chatSession.loadSession();
-                if (session) {
-                    // 更新标签名称
-                    this.updateTabName(tabId, session.name);
-                    this.tabSessionIds.set(tabId, sessionId);
-                }
-            } catch (error) {
-                log.error('加载会话失败:', error.message);
-                // 如果加载失败，创建新会话
-                await chatSession.createNewSession();
-            }
-        } else {
-            // 创建新会话
-            const session = await chatSession.createNewSession();
-            if (session) {
-                this.updateTabName(tabId, session.name);
-                this.tabSessionIds.set(tabId, session.id);
-            }
-        }
 
         // 激活新标签
         this.activateTab(tabId);
@@ -1304,28 +1295,6 @@ class TabManagerService {
                     this.tabSessionIds.set(currentTabId, sessionId);
                     return currentTabId;
                 }
-            }
-        }
-    }
-
-    /**
-     * 在当前活动标签中创建新会话
-     */
-    async createNewSessionInCurrentTab() {
-        const currentTabId = this.activeTabId;
-        const chatSession = this.tabSessions.get(currentTabId);
-
-        if (chatSession) {
-            // 清空当前消息
-            chatSession.clearChatMessages();
-
-            // 创建新会话
-            const session = await chatSession.createNewSession();
-
-            if (session) {
-                // 更新标签名称和会话ID映射
-                this.updateTabName(currentTabId, session.name);
-                this.tabSessionIds.set(currentTabId, session.id);
             }
         }
     }

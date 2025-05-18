@@ -260,8 +260,8 @@ body {
     border-left: 3px solid #8bc34a;
     transition: box-shadow 0.3s ease;
     font-style: italic;
-    font-size: 0.8em;
-    line-height: 2.0;
+    font-size: 0.9em;
+    line-height: 1.5;
     user-select: text;
     cursor: text;
 }

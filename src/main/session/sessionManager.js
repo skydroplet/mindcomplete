@@ -19,15 +19,14 @@ class SessionManager extends EventEmitter {
         this.sessionDir = path.join(userDataPath, 'user-data', 'sessions');
         fs.mkdirSync(this.sessionDir, { recursive: true });
 
-        // 当前活动会话ID
-        this.activeSessionId = null;
-
         // map[sessionId]Session
-        this.sessionMap = {};
+        this.sessionDataMap = {};
+        this.sessionInfoMap = {}; // 除了对话信息的其他信息
+        this.sessionInfoFile = path.join(this.sessionDir, 'session-info-list.json');
 
         this.loadSessions();
 
-        if (this.sessionMap.size === 0) {
+        if (this.sessionDataMap.size === 0) {
             this.createSession();
         }
     }
@@ -38,9 +37,8 @@ class SessionManager extends EventEmitter {
     getSessions() {
         const sessionInfoList = [];
 
-        for (const sessionId in this.sessionMap) {
-            const session = this.sessionMap[sessionId];
-            const sessionInfo = session.getSummary();
+        for (const sessionId in this.sessionInfoMap) {
+            const sessionInfo = this.sessionInfoMap[sessionId];
             sessionInfoList.push(sessionInfo);
         }
 
@@ -54,38 +52,18 @@ class SessionManager extends EventEmitter {
      */
     loadSessions() {
         try {
-            const sessionDates = fs.readdirSync(this.sessionDir);
-
-            sessionDates.forEach(sessionDates => {
-                const sessionDateDir = path.join(this.sessionDir, sessionDates);
-                const stats = fs.statSync(sessionDateDir);
-
-                if (stats.isDirectory()) {
-                    const sessionFiles = fs.readdirSync(sessionDateDir);
-
-                    sessionFiles.forEach(sessionFile => {
-                        if (sessionFile.endsWith('.json')) {
-                            const sessionFilePath = path.join(sessionDateDir, sessionFile);
-                            const session = new ChatSession(sessionFilePath);
-                            this.sessionMap[session.data.id] = session;
-                        }
-                    })
-                }
-            })
-
-            const sessionInfoList = [];
-
-            for (const sessionId in this.sessionMap) {
-                const session = this.sessionMap[sessionId];
-                const sessionInfo = session.getSummary();
-                sessionInfoList.push(sessionInfo);
-            }
-
-            sessionInfoList.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
-            this.sessionInfoList = sessionInfoList;
+            const sessionInfoData = fs.readFileSync(this.sessionInfoFile, 'utf8');
+            this.sessionInfoMap = JSON.parse(sessionInfoData);
+            log.info('加载会话', this.sessionInfoMap.length);
         } catch (err) {
             log.error('加载会话列表失败:', err.message);
         }
+    }
+
+    updateSessionInfo(session) {
+        const sessionInfo = session.getSummary();
+        this.sessionInfoMap[session.data.id] = sessionInfo;
+        fs.writeFileSync(this.sessionInfoFile, JSON.stringify(this.sessionInfoMap, null, 2));
     }
 
     /**
@@ -93,7 +71,9 @@ class SessionManager extends EventEmitter {
      */
     createSession() {
         const session = new ChatSession();
-        this.sessionMap[session.data.id] = session;
+        this.sessionDataMap[session.data.id] = session;
+
+        this.updateSessionInfo(session);
         return session.data;
     }
 
@@ -103,30 +83,26 @@ class SessionManager extends EventEmitter {
      * @returns {Promise<Session>} 加载的会话对象
      */
     loadSession(sessionId) {
-        try {
-            const session = this.sessionMap[sessionId];
-            if (!session) {
-                throw new Error(`未找到会话 ${sessionId}`);
-            }
-
+        let session = this.sessionDataMap[sessionId];
+        if (session) {
             return session;
-        } catch (err) {
-            log.error(`加载会话 ${sessionId} 失败:`, err.message);
+        }
+
+        const sessionInfo = this.sessionInfoMap[sessionId];
+        if (!sessionInfo) {
+            log.error(`加载会话信息 ${sessionId} 失败:`, err.message);
             return null;
         }
-    }
 
-    /**
-     * 保存当前会话
-     */
-    saveCurrentSession() {
-        try {
-            this.currentSession.saveToFile();
-            return true;
-        } catch (err) {
-            log.error('保存当前会话失败:', err.message);
-            return false;
+        session = new ChatSession(sessionInfo.dataFile);
+        if (!session) {
+            log.error(`加载会话数据 ${sessionId} 失败:`, err.message);
+            return null;
         }
+        this.sessionDataMap[sessionId] = session;
+        log.info(`加载会话数据`, sessionInfo);
+
+        return session;
     }
 
     /**
@@ -139,12 +115,15 @@ class SessionManager extends EventEmitter {
      */
     async sendMessage(event, sessionId, requestId, message) {
         try {
-            const session = this.sessionMap[sessionId];
+            const session = this.loadSession(sessionId);
             if (!session) {
                 throw new Error(`未找到会话 ${sessionId}`);
             }
 
-            return await session.sendMessage(event, requestId, message);
+            const response = await session.sendMessage(event, requestId, message);
+            this.updateSessionInfo(session);
+
+            return response;
         } catch (err) {
             log.error(`向会话 ${sessionId} 发送消息失败:`, err.message);
             throw err;
@@ -160,12 +139,13 @@ class SessionManager extends EventEmitter {
         try {
             log.info(`中断会话ID: ${sessionId}`);
 
-            const session = this.sessionMap[sessionId];
+            const session = this.loadSession(sessionId);
             if (!session) {
                 log.error(`尝试中断的会话不存在: ${sessionId}`);
                 return false;
             }
 
+            this.updateSessionInfo(session);
             return session.abortMessageGeneration();
         } catch (err) {
             log.error(`中断会话 ${sessionId} 的消息失败:`, err.message, err.stack);
@@ -180,12 +160,13 @@ class SessionManager extends EventEmitter {
      */
     renameSession(sessionId, newName) {
         try {
-            const session = this.sessionMap[sessionId];
+            const session = this.loadSession(sessionId);
             if (!session) {
                 return false;
             }
 
             session.rename(newName);
+            this.updateSessionInfo(session);
             return true;
         } catch (err) {
             log.error(`重命名会话 ${sessionId} 失败:`, err.message);
@@ -199,13 +180,16 @@ class SessionManager extends EventEmitter {
      */
     deleteSession(sessionId) {
         try {
-            const session = this.sessionMap[sessionId];
+            const session = this.loadSession(sessionId);
             if (!session) {
                 return false;
             }
 
             session.remove();
-            delete this.sessionMap[sessionId];
+            delete this.sessionDataMap[sessionId];
+            delete this.sessionInfoMap[sessionId];
+            fs.writeFileSync(this.sessionInfoFile, JSON.stringify(this.sessionInfoMap, null, 2))
+
             return true;
         } catch (err) {
             log.error(`删除会话 ${sessionId} 失败:`, err.message);
@@ -220,13 +204,14 @@ class SessionManager extends EventEmitter {
      * @returns {boolean} 设置是否成功
      */
     setSessionModelId(sessionId, modelId) {
-        const session = this.sessionMap[sessionId];
+        const session = this.loadSession(sessionId);
         if (!session) {
             log.error("未找到会话:", sessionId)
             return false;
         }
 
         session.setModelId(modelId);
+        this.updateSessionInfo(session);
         return true;
     }
 
@@ -237,13 +222,14 @@ class SessionManager extends EventEmitter {
      * @returns {boolean} 设置是否成功
      */
     setSessionPromptId(sessionId, promptId) {
-        const session = this.sessionMap[sessionId];
+        const session = this.loadSession(sessionId);
         if (!session) {
             log.error("未找到会话", sessionId)
             return false;
         }
 
         session.setPromptId(promptId);
+        this.updateSessionInfo(session);
         return true;
     }
 
@@ -254,13 +240,14 @@ class SessionManager extends EventEmitter {
      * @returns {boolean} 设置是否成功
      */
     setSessionMcpServers(sessionId, servers) {
-        const session = this.sessionMap[sessionId];
+        const session = this.loadSession(sessionId);
         if (!session) {
             log.error("未找到会话", sessionId)
             return false;
         }
 
         session.setMcpServers(servers);
+        this.updateSessionInfo(session);
         return true;
     }
 
@@ -271,13 +258,14 @@ class SessionManager extends EventEmitter {
      * @returns {boolean} 设置是否成功
      */
     setSessionConversationMode(sessionId, mode) {
-        const session = this.sessionMap[sessionId];
+        const session = this.loadSession(sessionId);
         if (!session) {
             log.error("未找到会话", sessionId)
             return false;
         }
 
         session.setConversationMode(mode);
+        this.updateSessionInfo(session);
         return true;
     }
 }
