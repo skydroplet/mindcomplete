@@ -98,19 +98,21 @@ class SidebarSessionService {
                     e.stopPropagation();
                     this.renameSession(session.id, session.name);
                 };
+                actionsDiv.appendChild(renameBtn);
 
                 // 创建删除按钮，使用图标替代文字
-                const deleteBtn = document.createElement('button');
-                deleteBtn.className = 'session-action-btn';
-                deleteBtn.title = i18n.t('session.delete');
-                deleteBtn.innerHTML = '🗑️'; // 垃圾桶图标
-                deleteBtn.onclick = (e) => {
-                    e.stopPropagation();
-                    this.deleteSession(session.id);
-                };
-
-                actionsDiv.appendChild(renameBtn);
-                actionsDiv.appendChild(deleteBtn);
+                // 只剩一个的时候不允许删除
+                if (sessions.length > 1) {
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.className = 'session-action-btn';
+                    deleteBtn.title = i18n.t('session.delete');
+                    deleteBtn.innerHTML = '🗑️'; // 垃圾桶图标
+                    deleteBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        this.deleteSession(session.id);
+                    };
+                    actionsDiv.appendChild(deleteBtn);
+                }
 
                 sessionItem.appendChild(nameSpan);
                 sessionItem.appendChild(actionsDiv);

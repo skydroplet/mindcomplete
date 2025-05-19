@@ -741,7 +741,6 @@ class SidebarService {
 
                 // 确保设置准确的像素值
                 sidebarResizer.style.left = `${sidebarWidth}px`;
-                log.info('同步更新拖动条位置:', sidebarWidth);
             }
         }
 

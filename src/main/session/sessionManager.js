@@ -25,10 +25,6 @@ class SessionManager extends EventEmitter {
         this.sessionInfoFile = path.join(this.sessionDir, 'session-info-list.json');
 
         this.loadSessions();
-
-        if (this.sessionDataMap.size === 0) {
-            this.createSession();
-        }
     }
 
     /**
@@ -52,6 +48,11 @@ class SessionManager extends EventEmitter {
      */
     loadSessions() {
         try {
+            if (!fs.existsSync(this.sessionInfoFile)) {
+                // 初始没有会话 自动创建一个新的
+                this.createSession();
+            }
+
             const sessionInfoData = fs.readFileSync(this.sessionInfoFile, 'utf8');
             this.sessionInfoMap = JSON.parse(sessionInfoData);
             log.info('加载会话', this.sessionInfoMap.length);
