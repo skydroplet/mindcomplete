@@ -1,8 +1,14 @@
 # Changelog
 
+## [0.0.13](https://github.com/skydroplet/mindcomplete/compare/v0.0.12...v0.0.13) (2025-05-20)
+
+### 🐛 修复
+
+* 标签切换消息混乱 ([14b17d2](https://github.com/skydroplet/mindcomplete/commit/14b17d2b4068b5a431264bd41401acc08d33d492))
+* 初始化创建会话显示名称错误 至少保留一个会话 ([d2c2f3c](https://github.com/skydroplet/mindcomplete/commit/d2c2f3c790c026f0b865659cbad9ff6e7dcd2009))
+* 兼容响应工具缺少index ([790f276](https://github.com/skydroplet/mindcomplete/commit/790f27647cf89b01c864ce2af9fb93dc3858edf2))
 
 ## [0.0.12](https://github.com/skydroplet/mindcomplete/compare/v0.0.11...v0.0.12) (2025-05-18)
-
 
 ### ✨ 新功能
 
