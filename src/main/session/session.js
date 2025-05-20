@@ -301,7 +301,7 @@ class ChatSession {
             this.addMessage({ role: 'user', content: message })
             if (this.data.messageCount === 1) {
                 this.data.name = message.slice(0, 64);
-                event.sender.send("session-name-change", this.data.id, this.data.name);
+                event.sender.send("session-name-change-" + this.data.id, this.data.name);
             }
 
             const model = modelConfig.getModelById(this.data.modelId)
@@ -312,15 +312,6 @@ class ChatSession {
                 temperature: model.temperature || 0.7,
                 max_tokens: model.contextWindowSize || 4096,
                 stream: true
-            };
-
-            // // 添加思考过程请求参数
-            // requestParams.response_format = { type: "json_object" };
-            requestParams.seed = 123; // 使用固定的种子值保持结果一致性
-            requestParams.extra_body = {
-                max_thinking_length: 2000, // 最大思考长度
-                max_thinking_chunks: 50, // 最大思考块数
-                thinking_depth: 3 // 思考深度
             };
 
             // 只有当工具列表不为空时，才添加tools参数
@@ -360,7 +351,7 @@ class ChatSession {
 
     replyMessage(event, rspId, msgId, role, content) {
         let newMsgId = msgId || crypto.randomUUID();
-        event.sender.send("response-stream", rspId, newMsgId, role, content);
+        event.sender.send("response-stream-" + this.data.id, rspId, newMsgId, role, content);
         return newMsgId;
     }
 
@@ -386,6 +377,8 @@ class ChatSession {
             ...requestParams,
             signal
         });
+
+        log.info("模型请求: ", requestParams);
 
         let thinkingContent = '';
         let thinkingMsgId = null;
@@ -413,8 +406,8 @@ class ChatSession {
                 const toolCallChunks = chunk.choices[0]?.delta?.tool_calls || [];
                 if (toolCallChunks.length > 0) {
                     // 添加详细的工具调用日志
-                    for (const toolCallChunk of toolCallChunks) {
-                        const index = toolCallChunk.index;
+                    for (let index = 0; index < toolCallChunks.length; index++) {
+                        const toolCallChunk = toolCallChunks[index];
 
                         // 初始化工具调用对象
                         if (toolCalls[index] === undefined) {
@@ -448,6 +441,8 @@ class ChatSession {
                 }
             }
 
+            log.info("模型响应: ", { thinking: thinkingContent, content: modelContent, tool_calls: toolCalls });
+
             // 保存推理消息 只用于显示 不返回给模型
             if (thinkingContent) {
                 this.addMessage({ role: 'thinking', content: thinkingContent });
@@ -455,7 +450,6 @@ class ChatSession {
 
             // 多轮对话时 要返回给模型
             const responseMsg = { role: 'assistant', content: modelContent, tool_calls: toolCalls };
-            log.info("模型响应: ", responseMsg);
             this.addMessage(responseMsg);
 
             // 调用工具
@@ -520,7 +514,7 @@ class ChatSession {
                     this.replyMessage(event, responseId, toolMsgId, 'tool', toolMessage);
 
                     // 调用工具执行器(mcp)执行工具
-                    const result = await mcp.executeTool({
+                    const result = await mcp.executeTool(this.data.id, {
                         name: toolName,
                         arguments: args
                     });

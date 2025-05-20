@@ -71,7 +71,7 @@ function createMenu() {
                 { label: i18n.t('menu.view.toggleDevTools'), role: 'toggleDevTools', accelerator: 'CmdOrCtrl+Shift+I' },
                 { type: 'separator' },
                 { label: i18n.t('menu.view.resetZoom'), role: 'resetZoom', accelerator: 'CmdOrCtrl+0' },
-                { label: i18n.t('menu.view.zoomIn'), role: 'zoomIn', accelerator: 'CmdOrCtrl+Plus' },
+                { label: i18n.t('menu.view.zoomIn'), role: 'zoomIn', accelerator: 'CmdOrCtrl+=' },
                 { label: i18n.t('menu.view.zoomOut'), role: 'zoomOut', accelerator: 'CmdOrCtrl+-' },
                 { type: 'separator' },
                 { label: i18n.t('menu.view.toggleFullscreen'), role: 'toggleFullscreen', accelerator: 'F11' }
@@ -500,7 +500,7 @@ ipcMain.handle('reset-window-focus', (event) => {
 
 // 处理工具授权请求
 mcp.on('tool-authorization-request', async (request) => {
-    const { toolName, serverId, serverName } = request;
+    const { sessionId, toolName, serverId, serverName } = request;
     log.info(`收到工具授权请求: ${toolName}, 服务: ${serverId}`);
 
     try {
@@ -508,7 +508,7 @@ mcp.on('tool-authorization-request', async (request) => {
         const { mainWindow } = require('./mainWindow');
 
         // 发送授权请求到渲染进程，在工具消息中显示按钮
-        mainWindow.webContents.send('tool-authorization-request', {
+        mainWindow.webContents.send('tool-authorization-request-' + sessionId, {
             toolName,
             serverId,
             serverName: serverName || serverId
