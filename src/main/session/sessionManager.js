@@ -91,17 +91,17 @@ class SessionManager extends EventEmitter {
 
         const sessionInfo = this.sessionInfoMap[sessionId];
         if (!sessionInfo) {
-            log.error(`加载会话信息 ${sessionId} 失败:`, err.message);
+            log.error(`加载会话信息 ${sessionId} 失败:`);
             return null;
         }
 
         session = new ChatSession(sessionInfo.dataFile);
         if (!session) {
-            log.error(`加载会话数据 ${sessionId} 失败:`, err.message);
+            log.error(`加载会话数据 ${sessionId} 失败:`);
             return null;
         }
         this.sessionDataMap[sessionId] = session;
-        log.info(`加载会话数据`, sessionInfo);
+        log.info(`加载会话信息`, sessionInfo);
 
         return session;
     }

@@ -84,6 +84,10 @@ class ChatSessionService {
     }
 
     setEventListeners() {
+        if (!this.sessionId) {
+            return
+        }
+
         // 接收响应消息
         ipcRenderer.on('response-stream-' + this.sessionId, (event, rspId, msgId, role, content) => {
             this.setResponseMessages(rspId, msgId, role, content);
@@ -157,6 +161,8 @@ class ChatSessionService {
             const session = await ipcRenderer.invoke('create-session');
             this.sessionId = session.id;
             this.data = session;
+
+            this.setEventListeners();
 
             this.statusElement.textContent = i18n.t('ui.status.newSessionCreated', { name: session.name });
             return session;
