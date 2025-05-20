@@ -85,22 +85,20 @@ class ChatSessionService {
 
     setEventListeners() {
         // 接收响应消息
-        ipcRenderer.on('response-stream', (event, rspId, msgId, role, content) => {
+        ipcRenderer.on('response-stream-' + this.sessionId, (event, rspId, msgId, role, content) => {
             this.setResponseMessages(rspId, msgId, role, content);
         });
 
         // 工具授权请求监听
-        ipcRenderer.on('tool-authorization-request', (event, authRequest) => {
+        ipcRenderer.on('tool-authorization-request-' + this.sessionId, (event, authRequest) => {
             // 添加包含授权按钮的工具消息
             const messageContent = i18n.t('mcp.authorization.message', { serverName: authRequest.serverName, name: authRequest.toolName });
             this.addMessage(messageContent, 'tool', authRequest);
         });
 
         // 对话触发的会话名称变更
-        ipcRenderer.on('session-name-change', (event, sessionId, newName) => {
-            if (this.sessionId === sessionId) {
-                this.sessionNameChange(newName);
-            }
+        ipcRenderer.on('session-name-change-' + this.sessionId, (event, newName) => {
+            this.sessionNameChange(newName);
         });
     }
 

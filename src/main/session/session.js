@@ -301,7 +301,7 @@ class ChatSession {
             this.addMessage({ role: 'user', content: message })
             if (this.data.messageCount === 1) {
                 this.data.name = message.slice(0, 64);
-                event.sender.send("session-name-change", this.data.id, this.data.name);
+                event.sender.send("session-name-change-" + this.data.id, this.data.name);
             }
 
             const model = modelConfig.getModelById(this.data.modelId)
@@ -351,7 +351,7 @@ class ChatSession {
 
     replyMessage(event, rspId, msgId, role, content) {
         let newMsgId = msgId || crypto.randomUUID();
-        event.sender.send("response-stream", rspId, newMsgId, role, content);
+        event.sender.send("response-stream-" + this.data.id, rspId, newMsgId, role, content);
         return newMsgId;
     }
 
@@ -514,7 +514,7 @@ class ChatSession {
                     this.replyMessage(event, responseId, toolMsgId, 'tool', toolMessage);
 
                     // 调用工具执行器(mcp)执行工具
-                    const result = await mcp.executeTool({
+                    const result = await mcp.executeTool(this.data.id, {
                         name: toolName,
                         arguments: args
                     });

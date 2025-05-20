@@ -339,7 +339,7 @@ class MCPClientManager extends EventEmitter {
     }
 
     // 执行工具，根据工具的serverId属性确定使用哪个MCP服务
-    async executeTool(toolInfo) {
+    async executeTool(sessionId, toolInfo) {
         const { name, arguments: args, serverId, serverName } = toolInfo;
 
         // 如果没有指定服务ID，查找第一个拥有此工具的客户端
@@ -397,6 +397,7 @@ class MCPClientManager extends EventEmitter {
 
                 // 发送授权请求
                 this.emit('tool-authorization-request', {
+                    sessionId: sessionId,
                     toolName: name,
                     serverId: targetServerId,
                     serverName: clientInfo.serverName,
