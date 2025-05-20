@@ -1115,12 +1115,6 @@ class TabManagerService {
             }
         }
 
-        // 更新会话实例中的标签ID引用
-        const chatSession = this.tabSessions.get(tabId);
-        if (chatSession) {
-            chatSession.setTabId(tabId);
-        }
-
         // 聚焦输入框
         const inputElem = document.getElementById(`message-input-${tabId}`);
         if (inputElem) {

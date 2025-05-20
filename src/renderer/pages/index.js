@@ -719,15 +719,6 @@ function updateConversationModeButtons(mode) {
     }
 }
 
-// 将handleTabClick函数暴露到全局，以便在tabManager中调用
-window.handleTabClick = handleTabClick;
-
-// 暴露服务到全局对象，以便标签特定代码使用
-window.modelService = modelService;
-window.promptService = promptService;
-window.mcpService = mcpService;
-window.openSettingsWindowWithTab = openSettingsWindowWithTab;
-
 /**
  * 更新所有具有特定基础ID的选择元素
  * @param {string} baseId 基础ID (如 'model-select')
@@ -818,5 +809,7 @@ window.sendMessage = sendMessage;
 // 确保导出 handleTabClick 函数
 window.handleTabClick = handleTabClick;
 window.tabManager = tabManager;
+window.modelService = modelService;
+window.promptService = promptService;
 window.mcpService = mcpService;
 window.openSettingsWindowWithTab = openSettingsWindowWithTab;
