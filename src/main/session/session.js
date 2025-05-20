@@ -314,15 +314,6 @@ class ChatSession {
                 stream: true
             };
 
-            // // 添加思考过程请求参数
-            // requestParams.response_format = { type: "json_object" };
-            requestParams.seed = 123; // 使用固定的种子值保持结果一致性
-            requestParams.extra_body = {
-                max_thinking_length: 2000, // 最大思考长度
-                max_thinking_chunks: 50, // 最大思考块数
-                thinking_depth: 3 // 思考深度
-            };
-
             // 只有当工具列表不为空时，才添加tools参数
             if (tools && tools.length > 0) {
                 requestParams.tools = tools;
@@ -387,6 +378,8 @@ class ChatSession {
             signal
         });
 
+        log.info("模型请求: ", requestParams);
+
         let thinkingContent = '';
         let thinkingMsgId = null;
         let modelContent = '';
@@ -413,8 +406,8 @@ class ChatSession {
                 const toolCallChunks = chunk.choices[0]?.delta?.tool_calls || [];
                 if (toolCallChunks.length > 0) {
                     // 添加详细的工具调用日志
-                    for (const toolCallChunk of toolCallChunks) {
-                        const index = toolCallChunk.index;
+                    for (let index = 0; index < toolCallChunks.length; index++) {
+                        const toolCallChunk = toolCallChunks[index];
 
                         // 初始化工具调用对象
                         if (toolCalls[index] === undefined) {
@@ -448,6 +441,8 @@ class ChatSession {
                 }
             }
 
+            log.info("模型响应: ", { thinking: thinkingContent, content: modelContent, tool_calls: toolCalls });
+
             // 保存推理消息 只用于显示 不返回给模型
             if (thinkingContent) {
                 this.addMessage({ role: 'thinking', content: thinkingContent });
@@ -455,7 +450,6 @@ class ChatSession {
 
             // 多轮对话时 要返回给模型
             const responseMsg = { role: 'assistant', content: modelContent, tool_calls: toolCalls };
-            log.info("模型响应: ", responseMsg);
             this.addMessage(responseMsg);
 
             // 调用工具
