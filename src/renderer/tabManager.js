@@ -724,7 +724,7 @@ class TabManagerService {
             addServerOption.className = 'mcp-server-item add-server-item';
             addServerOption.textContent = i18n.t('mcp.addServer') || '添加MCP服务';
             addServerOption.addEventListener('click', () => {
-                window.openSettingsWindowWithTab('mcp');
+                window.openSettingsWindowWithTab('mcp-servers');
 
                 // 确保正确关闭下拉菜单
                 mcpDropdownContent.classList.remove('show');
