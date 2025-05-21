@@ -534,9 +534,9 @@ class ChatSession {
                         this.replyMessage(event, responseId, toolMsgId, 'tool', toolMessage);
 
                         // 设置结果角色并添加到消息列表，稍后发送给AI
-                        result.role = "tool";
-                        result.tool_call_id = toolCall.id;
-                        messages.push(result);
+                        const message = { role: "tool", tool_call_id: toolCall.id, name: toolName, content: toolMessage }
+                        messages.push(message);
+                        this.addMessage(message);
                     } else {
                         // 如果结果不是有效对象，记录错误
                         const errorMsg = i18n.t('toolCalls.invalidResult', { type: typeof result });
@@ -544,9 +544,6 @@ class ChatSession {
                         toolMessage += errorMsg;
                         this.replyMessage(event, responseId, toolMsgId, 'tool', toolMessage);
                     }
-
-                    // 将工具调用结果添加到会话历史
-                    this.addMessage({ role: 'tool', tool_call_id: toolCall.id, name: toolName, content: toolMessage });
                 } catch (toolError) {
                     // 捕获并处理工具执行过程中的错误
                     const errorMsg = i18n.t('toolCalls.error', { message: toolError.message });
