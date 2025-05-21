@@ -1251,9 +1251,8 @@ class TabManagerService {
     /**
      * 在标签中打开指定的会话
      * @param {string} sessionId 会话ID
-     * @param {boolean} createNewTab 是否在新标签中打开，默认为true
      */
-    async openSessionInTab(sessionId, createNewTab = true) {
+    async openSessionInTab(sessionId) {
         // 检查是否已经在某个标签中打开了这个会话
         for (const [tabId, sid] of this.tabSessionIds.entries()) {
             if (sid === sessionId) {
@@ -1263,34 +1262,8 @@ class TabManagerService {
             }
         }
 
-        // 如果需要在新标签中打开或没有找到已打开的标签
-        if (createNewTab) {
-            // 创建新标签并加载会话
-            return await this.createNewTab(sessionId);
-        } else {
-            // 在当前标签中加载会话
-            const currentTabId = this.activeTabId;
-            const chatSession = this.tabSessions.get(currentTabId);
-
-            if (chatSession) {
-                // 清空当前消息
-                chatSession.clearChatMessages();
-
-                // 确保使用正确的标签ID
-                chatSession.setTabId(currentTabId);
-
-                // 设置新的会话ID并加载
-                chatSession.sessionId = sessionId;
-                const session = await chatSession.loadSession();
-
-                if (session) {
-                    // 更新标签名称和会话ID映射
-                    this.updateTabName(currentTabId, session.name);
-                    this.tabSessionIds.set(currentTabId, sessionId);
-                    return currentTabId;
-                }
-            }
-        }
+        // 创建新标签并加载会话
+        return await this.createNewTab(sessionId);
     }
 
     /**
