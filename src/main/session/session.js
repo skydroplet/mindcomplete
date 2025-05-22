@@ -9,7 +9,7 @@ const i18n = require('../../locales/i18n');
 const modelConfig = require('../config/modelConfig');
 const promptConfig = require('../config/promptConfig');
 const mcpConfig = require('../config/mcpConfig');
-const mcp = require('../mcpClient');
+const mcp = require('../mcp/mcpClient');
 
 function getFormattedDate(date) {
     const year = date.getFullYear();
