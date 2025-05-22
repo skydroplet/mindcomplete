@@ -262,7 +262,7 @@ class ConfigManager extends EventEmitter {
                     }
 
                     if (url.includes('api.mindcomplete.me')) {
-                        updateInfo.downloadUrl = updateInfo.downloadUrl.replace('github.com', 'download.mindcomplete.me');
+                        updateInfo.downloadUrl = updateInfo.downloadUrl.replace('github.com/skydroplet/mindcomplete/releases/download', 'download.mindcomplete.me/v1');
                     }
 
                     // 判断是否有新版本

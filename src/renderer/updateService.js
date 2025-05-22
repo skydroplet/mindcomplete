@@ -202,7 +202,7 @@ class UpdateService {
         });
 
         downloadBtn.addEventListener('click', () => {
-            ipcRenderer.send('download-update');
+            ipcRenderer.invoke('open-external-url', updateInfo.downloadUrl);
             notification.remove();
             style.remove();
         });
