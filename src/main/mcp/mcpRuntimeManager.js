@@ -14,12 +14,11 @@ const { app } = require('electron');
 
 class McpRuntimeManager {
     constructor() {
-        // const userDataPath = app.getPath('userData');
-        const userDataPath = "./"
+        const userDataPath = app.getPath('userData');
         this.mcpDir = path.join(userDataPath, 'user-data', 'mcp');
 
-        this.cacheDir = path.join(this.mcpDir, 'cache');
-        fs.mkdirSync(this.cacheDir, { recursive: true });
+        this.downloadDir = path.join(this.mcpDir, 'cache');
+        fs.mkdirSync(this.downloadDir, { recursive: true });
 
         this.nodeDir = path.join(this.mcpDir, 'nodejs');
         this.pythonDir = path.join(this.mcpDir, 'python');
@@ -180,7 +179,7 @@ class McpRuntimeManager {
         fs.mkdirSync(versionDir, { recursive: true });
 
         const { url, filename, ext } = this.getNodeDownloadInfo(version);
-        const dest = path.join(this.cacheDir, filename);
+        const dest = path.join(this.downloadDir, filename);
         log.info('下载Node.js:', url, dest);
 
         await this.downloadFile(url, dest);
@@ -223,7 +222,7 @@ class McpRuntimeManager {
         fs.mkdirSync(versionDir, { recursive: true });
 
         const { url, filename, ext } = this.getPythonDownloadInfo(version);
-        const dest = path.join(this.cacheDir, filename);
+        const dest = path.join(this.downloadDir, filename);
         log.info('下载Python:', url, dest);
 
         await this.downloadFile(url, dest);
@@ -365,7 +364,7 @@ class McpRuntimeManager {
     removePython(version) {
         const versionDir = path.join(this.pythonDir, version);
         const { filename, ext } = this.getPythonDownloadInfo(version);
-        const installerPath = path.join(this.cacheDir, filename);
+        const installerPath = path.join(this.downloadDir, filename);
         if (ext === 'exe' && fs.existsSync(installerPath)) {
             // Windows下用安装包静默卸载
             const { execFileSync } = require('child_process');

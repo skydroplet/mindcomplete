@@ -1,3 +1,10 @@
+// mock electron.app.getPath，避免测试环境下报错
+jest.mock('electron', () => ({
+    app: {
+        getPath: () => require('path').resolve(__dirname, '../../../temp')
+    }
+}));
+
 const McpRuntimeManager = require('./mcpRuntimeManager');
 
 describe('下载和安装测试', () => {
