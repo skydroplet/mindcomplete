@@ -1,7 +1,7 @@
-// mock electron.app.getPath，避免测试环境下报错
+// mock electron.app.getPath
 jest.mock('electron', () => ({
     app: {
-        getPath: () => require('path').resolve(__dirname, '../../../temp')
+        getPath: (name) => require('path').resolve(__dirname, '../../../electron-test', name || '')
     }
 }));
 

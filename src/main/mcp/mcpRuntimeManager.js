@@ -17,7 +17,7 @@ class McpRuntimeManager {
         const userDataPath = app.getPath('userData');
         this.mcpDir = path.join(userDataPath, 'user-data', 'mcp');
 
-        this.downloadDir = path.join(this.mcpDir, 'cache');
+        this.downloadDir = path.join(this.mcpDir, 'download');
         fs.mkdirSync(this.downloadDir, { recursive: true });
 
         this.nodeDir = path.join(this.mcpDir, 'nodejs');
