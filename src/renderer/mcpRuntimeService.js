@@ -37,7 +37,9 @@ class McpRuntimeService {
                 nodeTbody.innerHTML = '';
                 if (info.node && info.node.length > 0) {
                     nodeEmpty.style.display = 'none';
-                    nodeTbody.innerHTML = info.node.map(n => `<tr><td><b>${n.version}</b></td><td style=\"font-family:monospace;\">${n.path}</td></tr>`).join('');
+                    nodeTbody.innerHTML = info.node.map(n =>
+                        `<tr data-node-version="${n.version}"><td><b>${n.version}</b></td><td style=\"font-family:monospace;\">${n.path}</td><td><button class='nodejs-delete-btn' data-version='${n.version}'>删除</button></td></tr>`
+                    ).join('');
                 } else {
                     nodeEmpty.style.display = '';
                     nodeEmpty.innerText = '未检测到Node.js环境';
@@ -53,6 +55,8 @@ class McpRuntimeService {
                     pythonEmpty.innerText = '未检测到Python环境';
                 }
             }
+            // 绑定删除按钮事件
+            this.bindNodeDeleteButtons();
         } catch (e) {
             if (loadingEl) loadingEl.style.display = 'none';
             const nodeTbody = document.getElementById('nodejs-runtime-tbody');
@@ -250,6 +254,42 @@ class McpRuntimeService {
                 if (e.key === 'Escape') cancelBtn.click();
             });
         });
+    }
+
+    /**
+     * 绑定Node.js删除按钮事件
+     */
+    bindNodeDeleteButtons() {
+        const btns = document.querySelectorAll('.nodejs-delete-btn');
+        btns.forEach(btn => {
+            btn.onclick = async (e) => {
+                const version = btn.getAttribute('data-version');
+                if (!version) return;
+                if (!window.confirm(`确定要删除 Node.js 版本 ${version} 吗？`)) return;
+                const result = await this.uninstallNodeRuntime(version);
+                if (result.success) {
+                    alert('删除成功');
+                    this.loadRuntimeInfo();
+                } else {
+                    alert('删除失败：' + (result.error || '未知错误'));
+                }
+            };
+        });
+    }
+
+    /**
+     * 删除指定版本Node.js
+     * @param {string} version 版本号
+     * @returns {Promise<{success: boolean, error?: string}>}
+     */
+    async uninstallNodeRuntime(version) {
+        if (!this.ipcRenderer) return { success: false, error: 'ipcRenderer 不可用' };
+        try {
+            const result = await this.ipcRenderer.invoke('uninstall-node-runtime', version);
+            return result;
+        } catch (e) {
+            return { success: false, error: e.message };
+        }
     }
 }
 

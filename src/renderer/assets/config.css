@@ -1019,3 +1019,19 @@ textarea {
     color: var(--text-secondary);
     margin-bottom: 12px;
 }
+
+#nodejs-runtime-table th:nth-child(3),
+#nodejs-runtime-table td:nth-child(3) {
+    width: 70px;
+    min-width: 60px;
+    max-width: 90px;
+    text-align: center;
+}
+
+#nodejs-runtime-table .nodejs-delete-btn {
+    min-width: 48px;
+    padding: 4px 10px;
+    font-size: 13px;
+    margin: 0 auto;
+    display: inline-block;
+}

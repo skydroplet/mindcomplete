@@ -627,6 +627,10 @@ ipcMain.handle('install-python-runtime', async (event, version) => {
 // 处理卸载Node.js运行环境的请求
 ipcMain.handle('uninstall-node-runtime', async (event, version) => {
     try {
+        if (!version.startsWith('v')) {
+            version = 'v' + version;
+        }
+
         module.exports.removeNode(version);
         return { success: true };
     } catch (error) {
