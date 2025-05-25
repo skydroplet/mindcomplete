@@ -885,10 +885,10 @@ textarea {
 
 /* MCP运行环境信息区域填充整个空间并左上对齐 */
 #mcp-servers .mcp-envs-section {
-    display: flex !important;
+    display: none;
     flex: 1 1 0%;
-    align-items: flex-start !important;
-    justify-content: flex-start !important;
+    align-items: flex-start;
+    justify-content: flex-start;
     height: 100%;
     min-height: 300px;
     flex-direction: column;
