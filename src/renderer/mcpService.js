@@ -346,21 +346,6 @@ class McpService {
         });
     }
 
-    /**
-     * 获取已激活的MCP服务列表
-     * @returns {Array} 已激活的MCP服务ID列表
-     */
-    getActiveMcps() {
-        return this.activeMcps;
-    }
-
-    /**
-     * 获取所有MCP服务
-     * @returns {Object} MCP服务配置对象
-     */
-    getMcpServers() {
-        return this.mcpServers;
-    }
 
     /**
      * 获取MCP配置
@@ -380,22 +365,6 @@ class McpService {
     setMcpConfig(config) {
         this.mcpServers = config.servers || {};
         this.activeMcps = config.activeMcps || [];
-    }
-
-    /**
-     * 获取当前选中的服务ID
-     * @returns {string} 当前服务ID
-     */
-    getCurrentServerId() {
-        return this.currentServerId;
-    }
-
-    /**
-     * 设置当前选中的服务ID
-     * @param {string} id - 服务ID
-     */
-    setCurrentServerId(id) {
-        this.currentServerId = id;
     }
 
     /**
@@ -464,11 +433,6 @@ class McpService {
      */
     selectMcpServer(serverId) {
         this.currentServerId = serverId;
-        // 同步到全局变量
-        if (window.currentServerId !== serverId) {
-            window.currentServerId = serverId;
-        }
-
         const server = this.mcpServers[serverId];
 
         if (server) {
@@ -624,8 +588,6 @@ class McpService {
         }
 
         this.currentServerId = null;
-        // 同步到全局变量
-        window.currentServerId = null;
 
         const deleteBtn = document.getElementById('deleteMcpServerBtn');
         if (deleteBtn) {

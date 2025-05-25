@@ -177,7 +177,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // 同步MCP全局变量与服务
         window.mcpConfig = mcpService.getMcpConfig();
-        window.currentServerId = mcpService.getCurrentServerId();
 
         // 初始化提示词相关事件
         promptService.initPromptEventListeners();
@@ -234,7 +233,6 @@ ipcRenderer.on('config-updated', (event, data) => {
         mcpService.setMcpConfig(data.mcpConfig);
         mcpService.updateMcpServerList();
         window.mcpConfig = mcpService.getMcpConfig();
-        window.currentServerId = mcpService.getCurrentServerId();
     } else if (data.mcpServers) {
         // 兼容旧版数据格式
         const mcpConfig = {
@@ -244,7 +242,6 @@ ipcRenderer.on('config-updated', (event, data) => {
         mcpService.setMcpConfig(mcpConfig);
         mcpService.updateMcpServerList();
         window.mcpConfig = mcpService.getMcpConfig();
-        window.currentServerId = mcpService.getCurrentServerId();
     }
 });
 
