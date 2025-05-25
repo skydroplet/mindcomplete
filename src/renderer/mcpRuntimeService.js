@@ -11,6 +11,12 @@ if (typeof window !== 'undefined' && window.ipcRenderer) {
 class McpRuntimeService {
     constructor() {
         this.ipcRenderer = ipcRenderer;
+        this.installTasks = {}; // 记录所有安装任务 { taskKey: { version, rowEl } }
+        if (this.ipcRenderer) {
+            this.ipcRenderer.on('node-install-progress', (event, data) => {
+                this.handleNodeInstallProgress(data);
+            });
+        }
     }
 
     /**
@@ -92,19 +98,87 @@ class McpRuntimeService {
         installBtn.addEventListener('click', async () => {
             const version = await this.promptNodeVersion();
             if (version === null) return; // 用户取消
-            installBtn.disabled = true;
-            installBtn.textContent = '安装中...';
-            if (loadingEl) loadingEl.style.display = '';
-            const result = await this.installNodeRuntime(version);
-            if (result.success) {
-                alert('Node.js 安装成功！');
-            } else {
-                alert('Node.js 安装失败: ' + (result.error || '未知错误'));
-            }
-            installBtn.disabled = false;
-            installBtn.textContent = '安装Node.js';
-            this.loadRuntimeInfo(loadingEl);
+            // 生成唯一任务key
+            const taskKey = `${version || '推荐'}-${Date.now()}`;
+            this.addNodeInstallRow(taskKey, version);
+            // 开始安装，不影响按钮状态
+            this.installNodeRuntimeWithProgress(taskKey, version, loadingEl);
         });
+    }
+
+    /**
+     * 在表格插入安装进度行
+     * @param {string} taskKey 任务唯一key
+     * @param {string} version 版本号
+     */
+    addNodeInstallRow(taskKey, version) {
+        const nodeTbody = document.getElementById('nodejs-runtime-tbody');
+        if (!nodeTbody) return;
+        const tr = document.createElement('tr');
+        tr.setAttribute('data-task-key', taskKey);
+        tr.innerHTML = `<td><b>${version || '推荐'}</b> <span style="color:#888;">(安装中...)</span></td><td id="progress-${taskKey}" style="font-family:monospace;">0% | -</td>`;
+        nodeTbody.appendChild(tr);
+        this.installTasks[taskKey] = { version, rowEl: tr };
+        // 隐藏"未检测到Node.js环境"
+        const nodeEmpty = document.getElementById('nodejs-runtime-empty');
+        if (nodeEmpty) nodeEmpty.style.display = 'none';
+    }
+
+    /**
+     * 处理主进程发来的安装进度事件
+     * @param {object} data { taskKey, percent, speed, status, error }
+     */
+    handleNodeInstallProgress(data) {
+        const { taskKey, percent, speed, status, error } = data;
+        const task = this.installTasks[taskKey];
+        if (!task) return;
+        const progressTd = document.getElementById(`progress-${taskKey}`);
+        if (progressTd) {
+            if (status === 'installing') {
+                progressTd.textContent = `${percent}% | ${speed || '-'} MB/s`;
+            } else if (status === 'success') {
+                progressTd.textContent = '安装完成';
+                setTimeout(() => {
+                    this.removeNodeInstallRow(taskKey);
+                    this.loadRuntimeInfo();
+                }, 1000);
+            } else if (status === 'error') {
+                progressTd.textContent = `安装失败: ${error || '未知错误'}`;
+                setTimeout(() => {
+                    this.removeNodeInstallRow(taskKey);
+                    this.loadRuntimeInfo();
+                }, 2000);
+            }
+        }
+    }
+
+    /**
+     * 移除安装进度行
+     * @param {string} taskKey 任务唯一key
+     */
+    removeNodeInstallRow(taskKey) {
+        const task = this.installTasks[taskKey];
+        if (task && task.rowEl && task.rowEl.parentNode) {
+            task.rowEl.parentNode.removeChild(task.rowEl);
+        }
+        delete this.installTasks[taskKey];
+    }
+
+    /**
+     * 启动带进度的Node.js安装
+     * @param {string} taskKey 任务唯一key
+     * @param {string} version 版本号
+     * @param {HTMLElement} loadingEl 加载提示元素
+     */
+    async installNodeRuntimeWithProgress(taskKey, version, loadingEl) {
+        if (!this.ipcRenderer) return;
+        try {
+            // 传递 taskKey 给主进程，主进程需在进度事件中带回
+            const result = await this.ipcRenderer.invoke('install-node-runtime', version || '', taskKey);
+            // 安装完成/失败由进度事件处理
+        } catch (e) {
+            this.handleNodeInstallProgress({ taskKey, status: 'error', error: e.message });
+        }
     }
 
     /**
@@ -115,31 +189,11 @@ class McpRuntimeService {
         return new Promise((resolve) => {
             const dialog = document.createElement('div');
             dialog.className = 'custom-dialog';
-            dialog.style.zIndex = '9999';
-            dialog.style.display = 'flex';
-            dialog.style.flexDirection = 'column';
-            dialog.style.alignItems = 'stretch';
-            dialog.style.background = 'var(--dialog-bg, #fff)';
-            dialog.style.borderRadius = '8px';
-            dialog.style.boxShadow = '0 4px 24px rgba(0,0,0,0.18)';
-            dialog.style.padding = '24px 20px 16px 20px';
-            dialog.style.maxWidth = '320px';
-            dialog.style.margin = 'auto';
-            dialog.style.position = 'fixed';
-            dialog.style.left = '50%';
-            dialog.style.top = '50%';
-            dialog.style.transform = 'translate(-50%, -50%)';
-            dialog.style.pointerEvents = 'auto';
+            // 样式全部交由CSS控制
 
             // 创建遮罩层
             const mask = document.createElement('div');
-            mask.style.position = 'fixed';
-            mask.style.left = '0';
-            mask.style.top = '0';
-            mask.style.width = '100vw';
-            mask.style.height = '100vh';
-            mask.style.background = 'rgba(0,0,0,0.15)';
-            mask.style.zIndex = '9998';
+            mask.className = 'custom-dialog-mask';
 
             // 点击遮罩关闭弹窗
             mask.addEventListener('click', (e) => {
@@ -158,11 +212,6 @@ class McpRuntimeService {
 
             const btnRow = document.createElement('div');
             btnRow.className = 'custom-dialog-btn-row';
-            btnRow.style.marginTop = '10px';
-            btnRow.style.display = 'flex';
-            btnRow.style.justifyContent = 'flex-end';
-            btnRow.style.gap = '10px'; // 按钮之间的间距
-            btnRow.style.width = '100%';
 
             const cancelBtn = document.createElement('button');
             cancelBtn.textContent = '取消';

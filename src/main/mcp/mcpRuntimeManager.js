@@ -105,9 +105,10 @@ class McpRuntimeManager {
      * 下载文件到指定路径
      * @param {string} url 下载链接
      * @param {string} dest 本地保存路径
+     * @param {function} [onProgress] 进度回调 (percent, speedMB, status)
      * @returns {Promise<void>}
      */
-    async downloadFile(url, dest) {
+    async downloadFile(url, dest, onProgress) {
         return new Promise((resolve, reject) => {
             const file = fs.createWriteStream(dest);
             let downloaded = 0;
@@ -137,15 +138,14 @@ class McpRuntimeManager {
                 response.on('data', (chunk) => {
                     downloaded += chunk.length;
                     const now = Date.now();
-                    const timeDiff = (now - lastTime) / 1000; // 转换为秒
-
+                    const timeDiff = (now - lastTime) / 1000; // 秒
                     if (timeDiff >= 1) { // 每秒更新一次
                         const byteDiff = downloaded - lastBytes;
                         const speed = byteDiff / timeDiff; // 字节/秒
                         const progress = totalSize ? ((downloaded / totalSize) * 100).toFixed(2) : 0;
-
-                        log.info(`下载进度: ${progress}% (${formatSize(downloaded)}/${formatSize(totalSize)}) 速率: ${formatSize(speed)}/s`);
-
+                        if (onProgress) {
+                            onProgress(Number(progress), (speed / 1024 / 1024).toFixed(2));
+                        }
                         lastTime = now;
                         lastBytes = downloaded;
                     }
@@ -154,8 +154,9 @@ class McpRuntimeManager {
                 response.pipe(file);
 
                 file.on('finish', () => {
-                    const totalTime = ((Date.now() - lastTime) / 1000).toFixed(2);
-                    log.info(`下载完成: ${formatSize(downloaded)}, 总耗时: ${totalTime}秒`);
+                    if (onProgress) {
+                        onProgress(100, '0.00');
+                    }
                     file.close(resolve);
                 });
             }).on('error', (err) => {
@@ -163,6 +164,88 @@ class McpRuntimeManager {
                 reject(err);
             });
         });
+    }
+
+    /**
+     * 安装Node.js运行环境到指定目录
+     * @param {string} version Node.js版本号，例如'v22.16.0'
+     * @param {string} taskKey 唯一任务key
+     * @param {Electron.IpcMainInvokeEvent} event ipc事件
+     * @returns {Promise<void>}
+     */
+    async installNodeWithProgress(version, taskKey, event) {
+        const nodeInfo = this.isNodeInstalled(version);
+        if (nodeInfo.installed) {
+            event.sender.send('node-install-progress', {
+                taskKey,
+                percent: 100,
+                speed: '-',
+                status: 'success',
+                message: '已安装'
+            });
+            return;
+        }
+
+        const versionDir = path.join(this.nodeDir, version);
+        fs.mkdirSync(versionDir, { recursive: true });
+
+        const { url, filename, ext } = this.getNodeDownloadInfo(version);
+        const dest = path.join(this.downloadDir, filename);
+        log.info('下载Node.js:', url, dest);
+
+        // 下载过程推送进度
+        await this.downloadFile(url, dest, (percent, speed) => {
+            event.sender.send('node-install-progress', {
+                taskKey,
+                percent,
+                speed,
+                status: 'installing',
+                message: percent === 100 ? '下载完成，准备解压...' : '下载中'
+            });
+        });
+
+        // 解压过程推送
+        try {
+            event.sender.send('node-install-progress', {
+                taskKey,
+                percent: 100,
+                speed: '-',
+                status: 'installing',
+                message: '正在解压...'
+            });
+            if (ext === 'zip') {
+                execSync(`powershell -Command "Expand-Archive -Path '${dest}' -DestinationPath '${this.nodeDir}' -Force"`);
+                const baseName = filename.replace('.zip', '');
+                const extractedDir = path.join(this.nodeDir, baseName);
+                if (fs.existsSync(extractedDir)) {
+                    fs.readdirSync(extractedDir).forEach(file => {
+                        const src = path.join(extractedDir, file);
+                        const destPath = path.join(versionDir, file);
+                        fs.renameSync(src, destPath);
+                    });
+                    fs.rmdirSync(extractedDir);
+                }
+            } else {
+                execSync(`tar -xf '${dest}' -C '${versionDir}' --strip-components=1`);
+            }
+            event.sender.send('node-install-progress', {
+                taskKey,
+                percent: 100,
+                speed: '-',
+                status: 'success',
+                message: '解压完成'
+            });
+        } catch (e) {
+            event.sender.send('node-install-progress', {
+                taskKey,
+                percent: 100,
+                speed: '-',
+                status: 'error',
+                error: '解压失败: ' + (e.message || '未知错误'),
+                message: '解压失败'
+            });
+            throw e;
+        }
     }
 
     /**
@@ -185,7 +268,9 @@ class McpRuntimeManager {
         const dest = path.join(this.downloadDir, filename);
         log.info('下载Node.js:', url, dest);
 
-        await this.downloadFile(url, dest);
+        await this.downloadFile(url, dest, (percent, speed) => {
+            // 这里可以添加进度处理逻辑
+        });
         // 解压
         if (ext === 'zip') {
             // 先解压到 nodeDir
@@ -228,7 +313,9 @@ class McpRuntimeManager {
         const dest = path.join(this.downloadDir, filename);
         log.info('下载Python:', url, dest);
 
-        await this.downloadFile(url, dest);
+        await this.downloadFile(url, dest, (percent, speed) => {
+            // 这里可以添加进度处理逻辑
+        });
         if (ext === 'exe') {
             // 静默安装到versionDir
             const absTargetDir = path.resolve(versionDir);
@@ -506,11 +593,23 @@ ipcMain.handle('get-mcp-runtime-info', async () => {
 });
 
 // 处理安装Node.js运行环境的请求
-ipcMain.handle('install-node-runtime', async (event, version) => {
+ipcMain.handle('install-node-runtime', async (event, version, taskKey) => {
+    // taskKey: 渲染进程传递的唯一任务key
     try {
-        await module.exports.installNode(version);
+        // 下载和解压过程推送进度
+        await module.exports.installNodeWithProgress(version, taskKey, event);
         return { success: true };
     } catch (error) {
+        // 失败时推送错误事件
+        if (taskKey) {
+            event.sender.send('node-install-progress', {
+                taskKey,
+                percent: 0,
+                speed: '-',
+                status: 'error',
+                error: error.message || '未知错误'
+            });
+        }
         return { success: false, error: error.message };
     }
 });
