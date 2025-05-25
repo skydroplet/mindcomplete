@@ -6,11 +6,12 @@
  * 提供主窗口的引用和创建功能
  */
 
-const { BrowserWindow, app } = require('electron');
+const { BrowserWindow, app, ipcMain } = require('electron');
 const path = require('path');
 const os = require('os');
 const i18n = require('../locales/i18n');
 const { configManager, promptConfig: promptConfigManager } = require('./config');
+const mcpRuntimeManager = require('./mcp/mcpRuntimeManager');
 
 // 主窗口实例引用
 let mainWindow;
@@ -58,6 +59,11 @@ function createWindow() {
 
     return mainWindow;
 }
+
+// 处理获取MCP运行环境信息的请求
+ipcMain.handle('get-mcp-runtime-info', async () => {
+    return mcpRuntimeManager.getAllRuntimeInfo();
+});
 
 /**
  * 导出主窗口模块

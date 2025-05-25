@@ -371,8 +371,8 @@ class McpRuntimeManager {
             try {
                 execFileSync(installerPath, ['/uninstall', '/quiet', 'InstallAllUsers=0'], { stdio: 'inherit' });
                 log.info(`已通过安装程序卸载 Python: ${installerPath}`);
-            } catch (e) {
-                log.warn(`通过安装程序卸载 Python 失败: ${installerPath}`, e);
+            } catch (err) {
+                log.warn(`通过安装程序卸载 Python 失败: ${installerPath}`, err.message);
             }
         } else if (fs.existsSync(versionDir)) {
             // 其他平台或无安装包时，仍然尝试物理删除
@@ -381,6 +381,119 @@ class McpRuntimeManager {
         } else {
             log.info(`Python 版本目录不存在: ${versionDir}`);
         }
+    }
+
+    /**
+     * 获取所有已安装的 Node.js 信息（版本和路径）
+     * @returns {Array<{version: string, path: string}>}
+     */
+    getAllInstalledNodes() {
+        const nodeExeNames = os.platform() === 'win32' ? ['node.exe'] : ['node'];
+        const pathEnv = process.env.PATH || process.env.Path || '';
+        const pathSep = os.platform() === 'win32' ? ';' : ':';
+        const exts = os.platform() === 'win32' ? ['.exe', '.cmd', '.bat', ''] : [''];
+        const found = new Map();
+
+        // 1. 查找环境变量中的 node
+        for (const dir of pathEnv.split(pathSep)) {
+            for (const exe of nodeExeNames) {
+                for (const ext of exts) {
+                    const nodePath = path.join(dir, exe.replace('.exe', '') + ext);
+                    if (fs.existsSync(nodePath)) {
+                        const ver = execSync(`"${nodePath}" --version`).toString().trim();
+                        const version = ver.replace(/^v/, '');
+                        if (!found.has(nodePath)) {
+                            found.set(nodePath, version);
+                        }
+                    }
+                }
+            }
+        }
+
+        // 2. 查找自定义安装目录
+        const versions = fs.readdirSync(this.nodeDir, { withFileTypes: true })
+            .filter(d => d.isDirectory())
+            .map(d => d.name);
+        for (const version of versions) {
+            let nodePath = path.join(this.nodeDir, version, nodeExeNames[0]);
+            if (!fs.existsSync(nodePath)) {
+                nodePath = path.join(this.nodeDir, version, 'bin', nodeExeNames[0]);
+            }
+            if (fs.existsSync(nodePath)) {
+                if (!found.has(nodePath)) {
+                    found.set(nodePath, version.replace(/^v/, ''));
+                }
+            }
+        }
+
+        // 返回数组
+        return Array.from(found.entries()).map(([path, version]) => ({ version, path }));
+    }
+
+    /**
+     * 获取所有已安装的 Python 信息（版本和路径）
+     * @returns {Array<{version: string, path: string}>}
+     */
+    getAllInstalledPythons() {
+        const pyNames = os.platform() === 'win32' ? ['python.exe', 'python3.exe', 'python'] : ['python3', 'python'];
+        const pathEnv = process.env.PATH || process.env.Path || '';
+        const pathSep = os.platform() === 'win32' ? ';' : ':';
+        const found = new Map();
+
+        // 1. 查找环境变量中的 python
+        for (const dir of pathEnv.split(pathSep)) {
+            for (const pyName of pyNames) {
+                const pyPath = path.join(dir, pyName);
+                if (fs.existsSync(pyPath)) {
+                    const ver = execSync(`"${pyPath}" --version`).toString().replace('Python', '').trim();
+                    if (ver) {
+                        if (!found.has(pyPath)) {
+                            found.set(pyPath, ver);
+                        }
+                    }
+                }
+            }
+        }
+
+        // 2. 查找自定义安装目录
+        const versions = fs.readdirSync(this.pythonDir, { withFileTypes: true })
+            .filter(d => d.isDirectory())
+            .map(d => d.name);
+        for (const version of versions) {
+            let pyPath = os.platform() === 'win32'
+                ? path.join(this.pythonDir, version, 'python.exe')
+                : path.join(this.pythonDir, version, 'bin', 'python3');
+            if (!fs.existsSync(pyPath)) {
+                pyPath = path.join(this.pythonDir, version, 'python3');
+            }
+            if (!fs.existsSync(pyPath)) {
+                pyPath = path.join(this.pythonDir, version, 'python');
+            }
+            if (fs.existsSync(pyPath)) {
+                try {
+                    const ver = execSync(`"${pyPath}" --version`).toString().replace('Python', '').trim();
+                    if (ver && !found.has(pyPath)) {
+                        found.set(pyPath, ver);
+                    }
+                } catch (e) {
+                    // 忽略异常
+                }
+            }
+        }
+
+        // 返回数组
+        return Array.from(found.entries()).map(([path, version]) => ({ version, path }));
+    }
+
+    /**
+     * 获取所有运行环境信息，包括 Node.js 和 Python 的安装列表
+     * @returns {{ node: Array<{version: string, path: string}>, python: Array<{version: string, path: string}> }}
+     */
+    getAllRuntimeInfo() {
+        return {
+            node: this.getAllInstalledNodes(),
+            python: this.getAllInstalledPythons()
+        };
     }
 }
 
