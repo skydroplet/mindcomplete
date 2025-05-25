@@ -17,6 +17,7 @@ const promptService = require('../promptService');
 const mcpService = require('../mcpService');
 const exportService = require('../exportService');
 const ImportService = require('../importService');
+const mcpRuntimeService = require('../mcpRuntimeService');
 
 // 创建导入服务实例
 const importService = new ImportService();
@@ -222,6 +223,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         const mcpListPanel = document.querySelector('.mcp-list-panel');
         const mcpDetailSection = document.getElementById('mcp-detail-section');
         const mcpEnvsSection = document.querySelector('.mcp-envs-section');
+        const runtimeInfoLoading = document.getElementById('runtime-info-loading');
+        const runtimeInfoList = document.getElementById('runtime-info-list');
+        // 移除原有的loadRuntimeInfo函数，直接调用mcpRuntimeService.loadRuntimeInfo
         mcpMenuItems.forEach(item => {
             item.addEventListener('click', function () {
                 mcpMenuItems.forEach(i => i.classList.remove('active'));
@@ -235,6 +239,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     mcpListPanel.style.display = 'none';
                     mcpDetailSection.style.display = 'none';
                     mcpEnvsSection.style.display = 'flex';
+                    mcpRuntimeService.loadRuntimeInfo(runtimeInfoLoading, runtimeInfoList);
                 }
             });
         });

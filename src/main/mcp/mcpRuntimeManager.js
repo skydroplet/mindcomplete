@@ -21,7 +21,10 @@ class McpRuntimeManager {
         fs.mkdirSync(this.downloadDir, { recursive: true });
 
         this.nodeDir = path.join(this.mcpDir, 'nodejs');
+        fs.mkdirSync(this.nodeDir, { recursive: true });
+
         this.pythonDir = path.join(this.mcpDir, 'python');
+        fs.mkdirSync(this.pythonDir, { recursive: true });
     }
 
     /**

@@ -147,9 +147,36 @@
                         </div>
                     </div>
                     <!-- 运行环境内容区，默认隐藏 -->
-                    <div class="mcp-envs-section"
-                        style="display:none;align-items:center;justify-content:center;height:100%;min-height:300px;">
-                        <div style="font-size:1.2em;color:var(--text-color);text-align:center;">待开发</div>
+                    <div class="mcp-envs-section">
+                        <div id="runtime-info-loading">正在加载运行环境信息...</div>
+                        <div id="runtime-info-list">
+                            <h3>NodeJS 运行环境</h3>
+                            <table class="tools-table" id="nodejs-runtime-table">
+                                <thead>
+                                    <tr>
+                                        <th>版本</th>
+                                        <th>路径</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="nodejs-runtime-tbody">
+                                    <!-- Node.js 运行环境数据行由JS动态插入 -->
+                                </tbody>
+                            </table>
+                            <div id="nodejs-runtime-empty">未检测到Node.js环境</div>
+                            <h3>Python 运行环境</h3>
+                            <table class="tools-table" id="python-runtime-table">
+                                <thead>
+                                    <tr>
+                                        <th>版本</th>
+                                        <th>路径</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="python-runtime-tbody">
+                                    <!-- Python 运行环境数据行由JS动态插入 -->
+                                </tbody>
+                            </table>
+                            <div id="python-runtime-empty">未检测到Python环境</div>
+                        </div>
                     </div>
                 </div>
             </div>
