@@ -216,6 +216,34 @@ document.addEventListener('DOMContentLoaded', async () => {
                     });
             }
         });
+
+        // ========== MCP服务标签页三栏切换逻辑 ========== 
+        const mcpMenuItems = document.querySelectorAll('.mcp-menu-item');
+        const mcpListPanel = document.querySelector('.mcp-list-panel');
+        const mcpDetailSection = document.getElementById('mcp-detail-section');
+        const mcpEnvsSection = document.querySelector('.mcp-envs-section');
+        mcpMenuItems.forEach(item => {
+            item.addEventListener('click', function () {
+                mcpMenuItems.forEach(i => i.classList.remove('active'));
+                this.classList.add('active');
+                const menu = this.getAttribute('data-menu');
+                if (menu === 'servers') {
+                    mcpListPanel.style.display = '';
+                    mcpDetailSection.style.display = '';
+                    mcpEnvsSection.style.display = 'none';
+                } else if (menu === 'envs') {
+                    mcpListPanel.style.display = 'none';
+                    mcpDetailSection.style.display = 'none';
+                    mcpEnvsSection.style.display = 'flex';
+                }
+            });
+        });
+        // 默认显示MCP服务
+        if (mcpListPanel && mcpDetailSection && mcpEnvsSection) {
+            mcpListPanel.style.display = '';
+            mcpDetailSection.style.display = '';
+            mcpEnvsSection.style.display = 'none';
+        }
     } catch (error) {
         log.error('配置页面初始化失败:', error.message);
         alert(`初始化配置页面失败: ${error.message}`);
@@ -263,4 +291,4 @@ ipcRenderer.on('switch-tab', (event, tabName) => {
 ipcRenderer.on('locale-updated', () => {
     // 重新初始化UI文本
     initUIText();
-}); 
+});

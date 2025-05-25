@@ -860,3 +860,25 @@ textarea {
     resize: vertical;
     min-height: 150px;
 }
+
+/* MCP服务左侧菜单样式，和模型列表选项按钮保持一致 */
+.mcp-menu-item {
+    padding: 10px;
+    margin-bottom: 5px;
+    cursor: pointer;
+    border-radius: 4px;
+    background-color: var(--container-bg);
+    color: var(--text-color);
+    transition: background 0.2s, color 0.2s;
+    font-size: 15px;
+    font-weight: 500;
+}
+
+.mcp-menu-item:hover {
+    background-color: var(--session-hover-bg);
+}
+
+.mcp-menu-item.active {
+    background-color: var(--session-active-bg);
+    color: var(--session-active-color);
+}
