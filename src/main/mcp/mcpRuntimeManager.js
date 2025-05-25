@@ -10,7 +10,7 @@ const https = require('https');
 const { execSync } = require('child_process');
 const Logger = require('../logger');
 const log = new Logger('mcpRuntime');
-const { app } = require('electron');
+const { app, ipcMain } = require('electron');
 
 class McpRuntimeManager {
     constructor() {
@@ -499,5 +499,50 @@ class McpRuntimeManager {
         };
     }
 }
+
+// 处理获取MCP运行环境信息的请求
+ipcMain.handle('get-mcp-runtime-info', async () => {
+    return module.exports.getAllRuntimeInfo();
+});
+
+// 处理安装Node.js运行环境的请求
+ipcMain.handle('install-node-runtime', async (event, version) => {
+    try {
+        await module.exports.installNode(version);
+        return { success: true };
+    } catch (error) {
+        return { success: false, error: error.message };
+    }
+});
+
+// 处理安装Python运行环境的请求
+ipcMain.handle('install-python-runtime', async (event, version) => {
+    try {
+        await module.exports.installPython(version);
+        return { success: true };
+    } catch (error) {
+        return { success: false, error: error.message };
+    }
+});
+
+// 处理卸载Node.js运行环境的请求
+ipcMain.handle('uninstall-node-runtime', async (event, version) => {
+    try {
+        module.exports.removeNode(version);
+        return { success: true };
+    } catch (error) {
+        return { success: false, error: error.message };
+    }
+});
+
+// 处理卸载Python运行环境的请求
+ipcMain.handle('uninstall-python-runtime', async (event, version) => {
+    try {
+        module.exports.removePython(version);
+        return { success: true };
+    } catch (error) {
+        return { success: false, error: error.message };
+    }
+});
 
 module.exports = new McpRuntimeManager();

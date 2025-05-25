@@ -60,11 +60,6 @@ function createWindow() {
     return mainWindow;
 }
 
-// 处理获取MCP运行环境信息的请求
-ipcMain.handle('get-mcp-runtime-info', async () => {
-    return mcpRuntimeManager.getAllRuntimeInfo();
-});
-
 /**
  * 导出主窗口模块
  *

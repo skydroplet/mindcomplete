@@ -534,6 +534,100 @@ textarea {
     background-color: var(--button-hover);
 }
 
+/* 自定义弹窗遮罩 */
+.custom-dialog-mask {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.25);
+    z-index: 9999;
+}
+
+/* 弹窗主体 */
+.custom-dialog {
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--dialog-bg, #fff);
+    color: var(--text-color, #333);
+    border-radius: 8px;
+    box-shadow: 0 2px 16px var(--dialog-shadow, rgba(0, 0, 0, 0.18));
+    min-width: 320px;
+    max-width: 90vw;
+    font-size: 15px;
+    padding: 24px 32px 16px 32px;
+    z-index: 10000;
+}
+
+[data-theme="dark"] .custom-dialog {
+    background: var(--dialog-bg, #2a2a2a);
+    color: var(--text-color, #e0e0e0);
+    box-shadow: 0 2px 16px var(--dialog-shadow, rgba(0, 0, 0, 0.45));
+}
+
+.custom-dialog-title {
+    margin-bottom: 12px;
+}
+
+.custom-dialog-input {
+    background: var(--input-bg, #fff);
+    color: var(--input-text, #333);
+    border: 1px solid var(--input-border, #ddd);
+    border-radius: 4px;
+    width: 100%;
+    font-size: 16px;
+    padding: 6px 8px;
+    margin-bottom: 16px;
+    box-sizing: border-box;
+}
+
+[data-theme="dark"] .custom-dialog-input {
+    background: var(--input-bg, #333);
+    color: var(--input-text, #e0e0e0);
+    border: 1px solid var(--input-border, #444);
+}
+
+.custom-dialog-btn-row {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+.custom-dialog button,
+.custom-dialog-ok-btn,
+.custom-dialog-cancel-btn {
+    padding: 6px 18px;
+    background: var(--button-bg, #2196F3);
+    color: var(--button-text, #fff);
+    border: none;
+    border-radius: 4px;
+    font-size: 15px;
+    cursor: pointer;
+    transition: filter 0.2s, opacity 0.2s;
+}
+
+.custom-dialog-cancel-btn {
+    background: var(--button-bg, #bbb);
+    color: #222;
+}
+
+[data-theme="dark"] .custom-dialog-cancel-btn {
+    background: #444;
+    color: #eee;
+}
+
+.custom-dialog button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.custom-dialog button:hover:not(:disabled) {
+    filter: brightness(0.95);
+}
+
 /* 模态对话框基本样式 */
 .modal-dialog {
     display: none;

@@ -430,3 +430,70 @@
 .menu-item:hover {
     background-color: var(--session-hover-bg);
 }
+
+/* 自定义弹窗样式，适配深浅色 */
+.custom-dialog {
+    background: var(--dialog-bg, #fff);
+    color: var(--text-color, #333);
+    border-radius: 8px;
+    box-shadow: 0 2px 16px var(--dialog-shadow, rgba(0, 0, 0, 0.18));
+    min-width: 320px;
+    max-width: 90vw;
+    font-size: 15px;
+    padding: 24px 32px 16px 32px;
+    z-index: 10000;
+}
+
+.custom-dialog input[type="text"] {
+    background: var(--input-bg, #fff);
+    color: var(--input-text, #333);
+    border: 1px solid var(--input-border, #ddd);
+    border-radius: 4px;
+    width: 100%;
+    font-size: 16px;
+    padding: 6px 8px;
+    margin-bottom: 16px;
+    box-sizing: border-box;
+}
+
+.custom-dialog button {
+    padding: 6px 18px;
+    background: var(--button-bg, #2196F3);
+    color: var(--button-text, #fff);
+    border: none;
+    border-radius: 4px;
+    margin-left: 8px;
+    cursor: pointer;
+    font-size: 15px;
+    transition: filter 0.2s, opacity 0.2s;
+}
+
+.custom-dialog button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.custom-dialog button:hover:not(:disabled) {
+    filter: brightness(0.95);
+}
+
+.custom-dialog-mask {
+    z-index: 9999;
+}
+
+[data-theme="dark"] .custom-dialog {
+    background: var(--dialog-bg, #2a2a2a);
+    color: var(--text-color, #e0e0e0);
+    box-shadow: 0 2px 16px var(--dialog-shadow, rgba(0, 0, 0, 0.45));
+}
+
+[data-theme="dark"] .custom-dialog input[type="text"] {
+    background: var(--input-bg, #333);
+    color: var(--input-text, #e0e0e0);
+    border: 1px solid var(--input-border, #444);
+}
+
+[data-theme="dark"] .custom-dialog button {
+    background: var(--button-bg, #2196F3);
+    color: var(--button-text, #fff);
+}
