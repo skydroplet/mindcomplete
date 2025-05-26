@@ -169,12 +169,18 @@
                                 </tbody>
                             </table>
                             <div id="nodejs-runtime-empty">未检测到Node.js环境</div>
-                            <h3>Python 运行环境</h3>
+                            <div style="display: flex; align-items: center; justify-content: space-between;">
+                                <h3 style="margin: 0;">Python 运行环境</h3>
+                                <div style="display: flex; align-items: center;">
+                                    <button class="add-btn" id="installPythonBtn">安装Python</button>
+                                </div>
+                            </div>
                             <table class="tools-table" id="python-runtime-table">
                                 <thead>
                                     <tr>
                                         <th>版本</th>
                                         <th>路径</th>
+                                        <th>操作</th>
                                     </tr>
                                 </thead>
                                 <tbody id="python-runtime-tbody">

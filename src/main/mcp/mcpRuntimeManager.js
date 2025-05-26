@@ -294,6 +294,84 @@ class McpRuntimeManager {
     }
 
     /**
+     * 安装Python运行环境到指定目录，带进度推送
+     * @param {string} version Python版本号，例如'3.10.11'
+     * @param {string} taskKey 唯一任务key
+     * @param {Electron.IpcMainInvokeEvent} event ipc事件
+     * @returns {Promise<void>}
+     */
+    async installPythonWithProgress(version, taskKey, event) {
+        const pythonInfo = this.isPythonInstalled(version);
+        if (pythonInfo.installed) {
+            event.sender.send('python-install-progress', {
+                taskKey,
+                percent: 100,
+                speed: '-',
+                status: 'success',
+                message: '已安装'
+            });
+            return;
+        }
+        const versionDir = path.join(this.pythonDir, version);
+        fs.mkdirSync(versionDir, { recursive: true });
+        const { url, filename, ext } = this.getPythonDownloadInfo(version);
+        const dest = path.join(this.downloadDir, filename);
+        log.info('下载Python:', url, dest);
+        // 下载过程推送进度
+        await this.downloadFile(url, dest, (percent, speed) => {
+            event.sender.send('python-install-progress', {
+                taskKey,
+                percent,
+                speed,
+                status: 'installing',
+                message: percent === 100 ? '下载完成，准备安装...' : '下载中'
+            });
+        });
+        // 安装过程推送
+        try {
+            event.sender.send('python-install-progress', {
+                taskKey,
+                percent: 100,
+                speed: '-',
+                status: 'installing',
+                message: '正在安装...'
+            });
+            if (ext === 'exe') {
+                const absTargetDir = path.resolve(versionDir);
+                const { execFileSync } = require('child_process');
+                execFileSync(dest, [
+                    '/quiet',
+                    'InstallAllUsers=0',
+                    `TargetDir=${absTargetDir}`,
+                    'PrependPath=1',
+                    'Include_test=0'
+                ], { stdio: 'inherit' });
+            } else if (ext === 'pkg') {
+                execSync(`sudo installer -pkg "${dest}" -target /`);
+            } else {
+                execSync(`tar -xf "${dest}" -C "${versionDir}" --strip-components=1`);
+            }
+            event.sender.send('python-install-progress', {
+                taskKey,
+                percent: 100,
+                speed: '-',
+                status: 'success',
+                message: '安装完成'
+            });
+        } catch (e) {
+            event.sender.send('python-install-progress', {
+                taskKey,
+                percent: 100,
+                speed: '-',
+                status: 'error',
+                error: '安装失败: ' + (e.message || '未知错误'),
+                message: '安装失败'
+            });
+            throw e;
+        }
+    }
+
+    /**
      * 安装Python运行环境到指定目录
      * @param {string} version Python版本号，例如'3.10.11'
      * @returns {Promise<void>}
@@ -615,11 +693,25 @@ ipcMain.handle('install-node-runtime', async (event, version, taskKey) => {
 });
 
 // 处理安装Python运行环境的请求
-ipcMain.handle('install-python-runtime', async (event, version) => {
+ipcMain.handle('install-python-runtime', async (event, version, taskKey) => {
     try {
-        await module.exports.installPython(version);
-        return { success: true };
+        if (taskKey) {
+            await module.exports.installPythonWithProgress(version, taskKey, event);
+            return { success: true };
+        } else {
+            await module.exports.installPython(version);
+            return { success: true };
+        }
     } catch (error) {
+        if (taskKey) {
+            event.sender.send('python-install-progress', {
+                taskKey,
+                percent: 0,
+                speed: '-',
+                status: 'error',
+                error: error.message || '未知错误'
+            });
+        }
         return { success: false, error: error.message };
     }
 });

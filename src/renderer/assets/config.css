@@ -1020,6 +1020,8 @@ textarea {
     margin-bottom: 12px;
 }
 
+#python-runtime-table th:nth-child(3),
+#python-runtime-table td:nth-child(3),
 #nodejs-runtime-table th:nth-child(3),
 #nodejs-runtime-table td:nth-child(3) {
     width: 70px;
@@ -1028,6 +1030,7 @@ textarea {
     text-align: center;
 }
 
+#python-runtime-table .python-delete-btn,
 #nodejs-runtime-table .nodejs-delete-btn {
     min-width: 48px;
     padding: 4px 10px;
@@ -1035,3 +1038,24 @@ textarea {
     margin: 0 auto;
     display: inline-block;
 }
+
+/* #python-runtime-table th:nth-child(3),
+#python-runtime-table td:nth-child(3) {
+    width: 70px;
+    min-width: 60px;
+    max-width: 90px;
+    text-align: center;
+} */
+
+/* #python-runtime-table th:first-child,
+#python-runtime-table td:first-child {
+    width: 60px;
+    text-align: center;
+    min-width: 2em;
+}
+
+#python-runtime-table th:nth-child(2),
+#python-runtime-table td:nth-child(2) {
+    width: 200px;
+    min-width: 4em;
+} */

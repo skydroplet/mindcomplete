@@ -16,6 +16,10 @@ class McpRuntimeService {
             this.ipcRenderer.on('node-install-progress', (event, data) => {
                 this.handleNodeInstallProgress(data);
             });
+            // 监听Python安装进度事件
+            this.ipcRenderer.on('python-install-progress', (event, data) => {
+                this.handlePythonInstallProgress(data);
+            });
         }
     }
 
@@ -49,7 +53,9 @@ class McpRuntimeService {
                 pythonTbody.innerHTML = '';
                 if (info.python && info.python.length > 0) {
                     pythonEmpty.style.display = 'none';
-                    pythonTbody.innerHTML = info.python.map(p => `<tr><td><b>${p.version}</b></td><td style=\"font-family:monospace;\">${p.path}</td></tr>`).join('');
+                    pythonTbody.innerHTML = info.python.map(p =>
+                        `<tr data-python-version="${p.version}"><td><b>${p.version}</b></td><td style=\"font-family:monospace;\">${p.path}</td><td><button class='python-delete-btn' data-version='${p.version}'>删除</button></td></tr>`
+                    ).join('');
                 } else {
                     pythonEmpty.style.display = '';
                     pythonEmpty.innerText = '未检测到Python环境';
@@ -57,6 +63,8 @@ class McpRuntimeService {
             }
             // 绑定删除按钮事件
             this.bindNodeDeleteButtons();
+            // 绑定Python删除按钮事件
+            this.bindPythonDeleteButtons();
         } catch (e) {
             if (loadingEl) loadingEl.style.display = 'none';
             const nodeTbody = document.getElementById('nodejs-runtime-tbody');
@@ -291,7 +299,222 @@ class McpRuntimeService {
             return { success: false, error: e.message };
         }
     }
+
+    /**
+     * 安装Python运行环境
+     * @param {string} version 版本号，如 '3.10.11'，可为空
+     * @returns {Promise<{success: boolean, error?: string}>}
+     */
+    async installPythonRuntime(version) {
+        if (!this.ipcRenderer) return { success: false, error: 'ipcRenderer 不可用' };
+        try {
+            const result = await this.ipcRenderer.invoke('install-python-runtime', version || '');
+            return result;
+        } catch (e) {
+            return { success: false, error: e.message };
+        }
+    }
+
+    /**
+     * 启动带进度的Python安装
+     * @param {string} taskKey 任务唯一key
+     * @param {string} version 版本号
+     * @param {HTMLElement} loadingEl 加载提示元素
+     */
+    async installPythonRuntimeWithProgress(taskKey, version, loadingEl) {
+        if (!this.ipcRenderer) return;
+        try {
+            // 传递 taskKey 给主进程，主进程需在进度事件中带回
+            const result = await this.ipcRenderer.invoke('install-python-runtime', version || '', taskKey);
+            // 安装完成/失败由进度事件处理
+        } catch (e) {
+            this.handlePythonInstallProgress({ taskKey, status: 'error', error: e.message });
+        }
+    }
+
+    /**
+     * 在表格插入Python安装进度行
+     * @param {string} taskKey 任务唯一key
+     * @param {string} version 版本号
+     */
+    addPythonInstallRow(taskKey, version) {
+        const pythonTbody = document.getElementById('python-runtime-tbody');
+        if (!pythonTbody) return;
+        const tr = document.createElement('tr');
+        tr.setAttribute('data-task-key', taskKey);
+        tr.innerHTML = `<td><b>${version || '推荐'}</b> <span style="color:#888;">(安装中...)</span></td><td id="python-progress-${taskKey}" style="font-family:monospace;">0% | -</td><td></td>`;
+        pythonTbody.appendChild(tr);
+        this.installTasks[taskKey] = { version, rowEl: tr, isPython: true };
+        // 隐藏"未检测到Python环境"
+        const pythonEmpty = document.getElementById('python-runtime-empty');
+        if (pythonEmpty) pythonEmpty.style.display = 'none';
+    }
+
+    /**
+     * 处理主进程发来的Python安装进度事件
+     * @param {object} data { taskKey, percent, speed, status, error }
+     */
+    handlePythonInstallProgress(data) {
+        const { taskKey, percent, speed, status, error } = data;
+        const task = this.installTasks[taskKey];
+        if (!task) return;
+        const progressTd = document.getElementById(`python-progress-${taskKey}`);
+        if (progressTd) {
+            if (status === 'installing') {
+                progressTd.textContent = `${percent}% | ${speed || '-'} MB/s`;
+            } else if (status === 'success') {
+                progressTd.textContent = '安装完成';
+                setTimeout(() => {
+                    this.removePythonInstallRow(taskKey);
+                    this.loadRuntimeInfo();
+                }, 1000);
+            } else if (status === 'error') {
+                progressTd.textContent = `安装失败: ${error || '未知错误'}`;
+                setTimeout(() => {
+                    this.removePythonInstallRow(taskKey);
+                    this.loadRuntimeInfo();
+                }, 2000);
+            }
+        }
+    }
+
+    /**
+     * 移除Python安装进度行
+     * @param {string} taskKey 任务唯一key
+     */
+    removePythonInstallRow(taskKey) {
+        const task = this.installTasks[taskKey];
+        if (task && task.rowEl && task.rowEl.parentNode) {
+            task.rowEl.parentNode.removeChild(task.rowEl);
+        }
+        delete this.installTasks[taskKey];
+    }
+
+    /**
+     * 绑定Python安装按钮事件
+     * @param {HTMLElement} installBtn 安装按钮
+     * @param {HTMLElement} loadingEl 加载提示元素
+     */
+    bindPythonInstallButton(installBtn, loadingEl) {
+        if (!installBtn) return;
+        installBtn.addEventListener('click', async () => {
+            const version = await this.promptPythonVersion();
+            if (version === null) return; // 用户取消
+            // 生成唯一任务key
+            const taskKey = `${version || '推荐'}-${Date.now()}`;
+            this.addPythonInstallRow(taskKey, version);
+            // 开始安装
+            this.installPythonRuntimeWithProgress(taskKey, version, loadingEl);
+        });
+    }
+
+    /**
+     * 弹出输入框让用户输入Python版本，支持深浅色模式
+     * @returns {Promise<string|null>} 用户输入的版本号，取消返回null
+     */
+    async promptPythonVersion() {
+        return new Promise((resolve) => {
+            const dialog = document.createElement('div');
+            dialog.className = 'custom-dialog';
+            const mask = document.createElement('div');
+            mask.className = 'custom-dialog-mask';
+            mask.addEventListener('click', (e) => {
+                if (e.target === mask) {
+                    document.body.removeChild(mask);
+                    document.body.removeChild(dialog);
+                    resolve(null);
+                }
+            });
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.placeholder = '如 3.10.11，留空为推荐';
+            input.className = 'custom-dialog-input';
+            dialog.appendChild(input);
+            const btnRow = document.createElement('div');
+            btnRow.className = 'custom-dialog-btn-row';
+            const cancelBtn = document.createElement('button');
+            cancelBtn.textContent = '取消';
+            cancelBtn.className = 'custom-dialog-cancel-btn';
+            cancelBtn.onclick = () => {
+                if (document.body.contains(mask)) document.body.removeChild(mask);
+                document.body.removeChild(dialog);
+                resolve(null);
+            };
+            btnRow.appendChild(cancelBtn);
+            const okBtn = document.createElement('button');
+            okBtn.textContent = '确定';
+            okBtn.className = 'custom-dialog-ok-btn';
+            okBtn.onclick = () => {
+                const val = input.value.trim();
+                if (document.body.contains(mask)) document.body.removeChild(mask);
+                document.body.removeChild(dialog);
+                resolve(val);
+            };
+            btnRow.appendChild(okBtn);
+            dialog.appendChild(btnRow);
+            document.body.appendChild(mask);
+            document.body.appendChild(dialog);
+            dialog.addEventListener('click', (e) => {
+                e.stopPropagation();
+            });
+            input.focus();
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') okBtn.click();
+                if (e.key === 'Escape') cancelBtn.click();
+            });
+        });
+    }
+
+    /**
+     * 绑定Python删除按钮事件
+     */
+    bindPythonDeleteButtons() {
+        const btns = document.querySelectorAll('.python-delete-btn');
+        btns.forEach(btn => {
+            btn.onclick = async (e) => {
+                const version = btn.getAttribute('data-version');
+                if (!version) return;
+                if (!window.confirm(`确定要删除 Python 版本 ${version} 吗？`)) return;
+                const result = await this.uninstallPythonRuntime(version);
+                if (result.success) {
+                    alert('删除成功');
+                    this.loadRuntimeInfo();
+                } else {
+                    alert('删除失败：' + (result.error || '未知错误'));
+                }
+            };
+        });
+    }
+
+    /**
+     * 删除指定版本Python
+     * @param {string} version 版本号
+     * @returns {Promise<{success: boolean, error?: string}>}
+     */
+    async uninstallPythonRuntime(version) {
+        if (!this.ipcRenderer) return { success: false, error: 'ipcRenderer 不可用' };
+        try {
+            const result = await this.ipcRenderer.invoke('uninstall-python-runtime', version);
+            return result;
+        } catch (e) {
+            return { success: false, error: e.message };
+        }
+    }
 }
 
+// 挂载到window，便于外部调用
 const mcpRuntimeService = new McpRuntimeService();
+// 绑定Node.js安装按钮
+window.addEventListener('DOMContentLoaded', () => {
+    const installNodeBtn = document.getElementById('installNodeBtn');
+    const runtimeLoading = document.getElementById('runtime-info-loading');
+    if (installNodeBtn) {
+        mcpRuntimeService.bindNodeInstallButton(installNodeBtn, null, runtimeLoading);
+    }
+    // 绑定Python安装按钮
+    const installPythonBtn = document.getElementById('installPythonBtn');
+    if (installPythonBtn) {
+        mcpRuntimeService.bindPythonInstallButton(installPythonBtn, runtimeLoading);
+    }
+});
 module.exports = mcpRuntimeService;
