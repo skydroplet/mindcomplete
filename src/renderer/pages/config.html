@@ -150,44 +150,49 @@
                     <div class="mcp-envs-section">
                         <div id="runtime-info-loading">正在加载运行环境信息...</div>
                         <div id="runtime-info-list">
-                            <div style="display: flex; align-items: center; justify-content: space-between;">
-                                <h3 style="margin: 0;">NodeJS 运行环境</h3>
-                                <div style="display: flex; align-items: center;">
-                                    <button class="add-btn" id="installNodeBtn">安装Node.js</button>
+                            <div class="runtime-section">
+                                <div style="display: flex; align-items: center; justify-content: space-between;">
+                                    <h3 style="margin: 0;">NodeJS 运行环境</h3>
+                                    <div style="display: flex; align-items: center;">
+                                        <button class="add-btn" id="installNodeBtn">安装Node.js</button>
+                                    </div>
                                 </div>
+                                <table class="tools-table" id="nodejs-runtime-table">
+                                    <thead>
+                                        <tr>
+                                            <th>版本</th>
+                                            <th>路径</th>
+                                            <th>操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="nodejs-runtime-tbody">
+                                        <!-- Node.js 运行环境数据行由JS动态插入 -->
+                                    </tbody>
+                                </table>
+                                <div id="nodejs-runtime-empty">未检测到Node.js环境</div>
                             </div>
-                            <table class="tools-table" id="nodejs-runtime-table">
-                                <thead>
-                                    <tr>
-                                        <th>版本</th>
-                                        <th>路径</th>
-                                        <th>操作</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="nodejs-runtime-tbody">
-                                    <!-- Node.js 运行环境数据行由JS动态插入 -->
-                                </tbody>
-                            </table>
-                            <div id="nodejs-runtime-empty">未检测到Node.js环境</div>
-                            <div style="display: flex; align-items: center; justify-content: space-between;">
-                                <h3 style="margin: 0;">Python 运行环境</h3>
-                                <div style="display: flex; align-items: center;">
-                                    <button class="add-btn" id="installPythonBtn">安装Python</button>
+
+                            <div class="runtime-section">
+                                <div style="display: flex; align-items: center; justify-content: space-between;">
+                                    <h3 style="margin: 0;">Python 运行环境</h3>
+                                    <div style="display: flex; align-items: center;">
+                                        <button class="add-btn" id="installPythonBtn">安装Python</button>
+                                    </div>
                                 </div>
+                                <table class="tools-table" id="python-runtime-table">
+                                    <thead>
+                                        <tr>
+                                            <th>版本</th>
+                                            <th>路径</th>
+                                            <th>操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="python-runtime-tbody">
+                                        <!-- Python 运行环境数据行由JS动态插入 -->
+                                    </tbody>
+                                </table>
+                                <div id="python-runtime-empty">未检测到Python环境</div>
                             </div>
-                            <table class="tools-table" id="python-runtime-table">
-                                <thead>
-                                    <tr>
-                                        <th>版本</th>
-                                        <th>路径</th>
-                                        <th>操作</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="python-runtime-tbody">
-                                    <!-- Python 运行环境数据行由JS动态插入 -->
-                                </tbody>
-                            </table>
-                            <div id="python-runtime-empty">未检测到Python环境</div>
                         </div>
                     </div>
                 </div>

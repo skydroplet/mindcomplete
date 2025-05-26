@@ -464,6 +464,21 @@ class McpService {
             // 更新测试按钮状态
             this.updateTestButtonState();
 
+            // 更新服务列表中的激活状态
+            const serverList = document.getElementById('mcpServersList');
+            if (serverList) {
+                // 移除所有服务项的激活状态
+                serverList.querySelectorAll('.model-item').forEach(item => {
+                    item.classList.remove('active');
+                });
+
+                // 为当前选中的服务添加激活状态
+                const currentServerItem = serverList.querySelector(`.model-item[data-server-id="${serverId}"]`);
+                if (currentServerItem) {
+                    currentServerItem.classList.add('active');
+                }
+            }
+
             // 如果有可用工具列表或已保存的工具列表，尝试显示工具列表
             if (server.toolDescriptions && server.toolDescriptions.length > 0) {
                 // 使用保存的工具描述显示工具列表
