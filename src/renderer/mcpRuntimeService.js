@@ -28,11 +28,17 @@ class McpRuntimeService {
      * @param {HTMLElement} loadingEl 加载提示元素
      */
     async loadRuntimeInfo(loadingEl) {
-        if (!this.ipcRenderer) return;
-        if (loadingEl) loadingEl.style.display = '';
+        if (!this.ipcRenderer) {
+            return;
+        }
+        if (loadingEl) {
+            loadingEl.style.display = '';
+        }
         try {
             const info = await this.ipcRenderer.invoke('get-mcp-runtime-info');
-            if (loadingEl) loadingEl.style.display = 'none';
+            if (loadingEl) {
+                loadingEl.style.display = 'none';
+            }
             const nodeTbody = document.getElementById('nodejs-runtime-tbody');
             const nodeEmpty = document.getElementById('nodejs-runtime-empty');
             const pythonTbody = document.getElementById('python-runtime-tbody');
@@ -85,33 +91,22 @@ class McpRuntimeService {
     }
 
     /**
-     * 安装Node.js运行环境
-     * @param {string} version 版本号，如 'v22.16.0'，可为空
-     * @returns {Promise<{success: boolean, error?: string}>}
-     */
-    async installNodeRuntime(version) {
-        if (!this.ipcRenderer) return { success: false, error: 'ipcRenderer not available' };
-        try {
-            const result = await this.ipcRenderer.invoke('install-node-runtime', version || '');
-            return result;
-        } catch (e) {
-            return { success: false, error: e.message };
-        }
-    }
-
-    /**
      * 绑定Node.js安装按钮事件
      * @param {HTMLElement} installBtn 安装按钮
      * @param {undefined} _versionInput 兼容参数，已废弃
      * @param {HTMLElement} loadingEl 加载提示元素
      */
     bindNodeInstallButton(installBtn, _versionInput, loadingEl) {
-        if (!installBtn) return;
+        if (!installBtn) {
+            return;
+        }
         installBtn.addEventListener('click', async () => {
             const version = await this.promptNodeVersion();
-            if (version === null) return; // 用户取消
+            if (version === null) {
+                return; // 用户取消
+            }
             // 生成唯一任务key
-            const taskKey = `${version || '推荐'}-${Date.now()}`;
+            const taskKey = `${version}-${Date.now()}`;
             this.addNodeInstallRow(taskKey, version);
             // 开始安装，不影响按钮状态
             this.installNodeRuntimeWithProgress(taskKey, version, loadingEl);
@@ -125,7 +120,9 @@ class McpRuntimeService {
      */
     addNodeInstallRow(taskKey, version) {
         const nodeTbody = document.getElementById('nodejs-runtime-tbody');
-        if (!nodeTbody) return;
+        if (!nodeTbody) {
+            return;
+        }
         const tr = document.createElement('tr');
         tr.setAttribute('data-task-key', taskKey);
         tr.innerHTML = `<td><b>${version || '推荐'}</b> <span style="color:#888;">(安装中...)</span></td><td id="progress-${taskKey}" style="font-family:monospace;">0% | -</td>`;
@@ -133,7 +130,9 @@ class McpRuntimeService {
         this.installTasks[taskKey] = { version, rowEl: tr };
         // 隐藏"未检测到Node.js环境"
         const nodeEmpty = document.getElementById('nodejs-runtime-empty');
-        if (nodeEmpty) nodeEmpty.style.display = 'none';
+        if (nodeEmpty) {
+            nodeEmpty.style.display = 'none';
+        }
     }
 
     /**
@@ -143,7 +142,9 @@ class McpRuntimeService {
     handleNodeInstallProgress(data) {
         const { taskKey, percent, speed, status, error } = data;
         const task = this.installTasks[taskKey];
-        if (!task) return;
+        if (!task) {
+            return;
+        }
         const progressTd = document.getElementById(`progress-${taskKey}`);
         if (progressTd) {
             if (status === 'installing') {
@@ -180,13 +181,11 @@ class McpRuntimeService {
      * 启动带进度的Node.js安装
      * @param {string} taskKey 任务唯一key
      * @param {string} version 版本号
-     * @param {HTMLElement} loadingEl 加载提示元素
      */
-    async installNodeRuntimeWithProgress(taskKey, version, loadingEl) {
-        if (!this.ipcRenderer) return;
+    async installNodeRuntimeWithProgress(taskKey, version) {
         try {
             // 传递 taskKey 给主进程，主进程需在进度事件中带回
-            const result = await this.ipcRenderer.invoke('install-node-runtime', version || '', taskKey);
+            await ipcRenderer.invoke('install-node-runtime', version || '', taskKey);
             // 安装完成/失败由进度事件处理
         } catch (e) {
             this.handleNodeInstallProgress({ taskKey, status: 'error', error: e.message });
@@ -229,7 +228,9 @@ class McpRuntimeService {
             cancelBtn.textContent = '取消';
             cancelBtn.className = 'custom-dialog-cancel-btn';
             cancelBtn.onclick = () => {
-                if (document.body.contains(mask)) document.body.removeChild(mask);
+                if (document.body.contains(mask)) {
+                    document.body.removeChild(mask);
+                }
                 document.body.removeChild(dialog);
                 resolve(null);
             };
@@ -240,7 +241,9 @@ class McpRuntimeService {
             okBtn.className = 'custom-dialog-ok-btn';
             okBtn.onclick = () => {
                 const val = input.value.trim();
-                if (document.body.contains(mask)) document.body.removeChild(mask);
+                if (document.body.contains(mask)) {
+                    document.body.removeChild(mask);
+                }
                 document.body.removeChild(dialog);
                 resolve(val);
             };
@@ -258,8 +261,12 @@ class McpRuntimeService {
 
             input.focus();
             input.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') okBtn.click();
-                if (e.key === 'Escape') cancelBtn.click();
+                if (e.key === 'Enter') {
+                    okBtn.click();
+                }
+                if (e.key === 'Escape') {
+                    cancelBtn.click();
+                }
             });
         });
     }
@@ -272,8 +279,12 @@ class McpRuntimeService {
         btns.forEach(btn => {
             btn.onclick = async (e) => {
                 const version = btn.getAttribute('data-version');
-                if (!version) return;
-                if (!window.confirm(`确定要删除 Node.js 版本 ${version} 吗？`)) return;
+                if (!version) {
+                    return;
+                }
+                if (!window.confirm(`确定要删除 Node.js 版本 ${version} 吗？`)) {
+                    return;
+                }
                 const result = await this.uninstallNodeRuntime(version);
                 if (result.success) {
                     alert('删除成功');
@@ -291,7 +302,9 @@ class McpRuntimeService {
      * @returns {Promise<{success: boolean, error?: string}>}
      */
     async uninstallNodeRuntime(version) {
-        if (!this.ipcRenderer) return { success: false, error: 'ipcRenderer 不可用' };
+        if (!this.ipcRenderer) {
+            return { success: false, error: 'ipcRenderer 不可用' };
+        }
         try {
             const result = await this.ipcRenderer.invoke('uninstall-node-runtime', version);
             return result;
@@ -306,7 +319,9 @@ class McpRuntimeService {
      * @returns {Promise<{success: boolean, error?: string}>}
      */
     async installPythonRuntime(version) {
-        if (!this.ipcRenderer) return { success: false, error: 'ipcRenderer 不可用' };
+        if (!this.ipcRenderer) {
+            return { success: false, error: 'ipcRenderer 不可用' };
+        }
         try {
             const result = await this.ipcRenderer.invoke('install-python-runtime', version || '');
             return result;
@@ -322,7 +337,9 @@ class McpRuntimeService {
      * @param {HTMLElement} loadingEl 加载提示元素
      */
     async installPythonRuntimeWithProgress(taskKey, version, loadingEl) {
-        if (!this.ipcRenderer) return;
+        if (!this.ipcRenderer) {
+            return;
+        }
         try {
             // 传递 taskKey 给主进程，主进程需在进度事件中带回
             const result = await this.ipcRenderer.invoke('install-python-runtime', version || '', taskKey);
@@ -339,7 +356,9 @@ class McpRuntimeService {
      */
     addPythonInstallRow(taskKey, version) {
         const pythonTbody = document.getElementById('python-runtime-tbody');
-        if (!pythonTbody) return;
+        if (!pythonTbody) {
+            return;
+        }
         const tr = document.createElement('tr');
         tr.setAttribute('data-task-key', taskKey);
         tr.innerHTML = `<td><b>${version || '推荐'}</b> <span style="color:#888;">(安装中...)</span></td><td id="python-progress-${taskKey}" style="font-family:monospace;">0% | -</td><td></td>`;
@@ -347,7 +366,9 @@ class McpRuntimeService {
         this.installTasks[taskKey] = { version, rowEl: tr, isPython: true };
         // 隐藏"未检测到Python环境"
         const pythonEmpty = document.getElementById('python-runtime-empty');
-        if (pythonEmpty) pythonEmpty.style.display = 'none';
+        if (pythonEmpty) {
+            pythonEmpty.style.display = 'none';
+        }
     }
 
     /**
@@ -357,7 +378,9 @@ class McpRuntimeService {
     handlePythonInstallProgress(data) {
         const { taskKey, percent, speed, status, error } = data;
         const task = this.installTasks[taskKey];
-        if (!task) return;
+        if (!task) {
+            return;
+        }
         const progressTd = document.getElementById(`python-progress-${taskKey}`);
         if (progressTd) {
             if (status === 'installing') {
@@ -396,10 +419,14 @@ class McpRuntimeService {
      * @param {HTMLElement} loadingEl 加载提示元素
      */
     bindPythonInstallButton(installBtn, loadingEl) {
-        if (!installBtn) return;
+        if (!installBtn) {
+            return;
+        }
         installBtn.addEventListener('click', async () => {
             const version = await this.promptPythonVersion();
-            if (version === null) return; // 用户取消
+            if (version === null) {
+                return; // 用户取消
+            }
             // 生成唯一任务key
             const taskKey = `${version || '推荐'}-${Date.now()}`;
             this.addPythonInstallRow(taskKey, version);
@@ -436,7 +463,9 @@ class McpRuntimeService {
             cancelBtn.textContent = '取消';
             cancelBtn.className = 'custom-dialog-cancel-btn';
             cancelBtn.onclick = () => {
-                if (document.body.contains(mask)) document.body.removeChild(mask);
+                if (document.body.contains(mask)) {
+                    document.body.removeChild(mask);
+                }
                 document.body.removeChild(dialog);
                 resolve(null);
             };
@@ -446,7 +475,9 @@ class McpRuntimeService {
             okBtn.className = 'custom-dialog-ok-btn';
             okBtn.onclick = () => {
                 const val = input.value.trim();
-                if (document.body.contains(mask)) document.body.removeChild(mask);
+                if (document.body.contains(mask)) {
+                    document.body.removeChild(mask);
+                }
                 document.body.removeChild(dialog);
                 resolve(val);
             };
@@ -459,8 +490,12 @@ class McpRuntimeService {
             });
             input.focus();
             input.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') okBtn.click();
-                if (e.key === 'Escape') cancelBtn.click();
+                if (e.key === 'Enter') {
+                    okBtn.click();
+                }
+                if (e.key === 'Escape') {
+                    cancelBtn.click();
+                }
             });
         });
     }
@@ -473,8 +508,12 @@ class McpRuntimeService {
         btns.forEach(btn => {
             btn.onclick = async (e) => {
                 const version = btn.getAttribute('data-version');
-                if (!version) return;
-                if (!window.confirm(`确定要删除 Python 版本 ${version} 吗？`)) return;
+                if (!version) {
+                    return;
+                }
+                if (!window.confirm(`确定要删除 Python 版本 ${version} 吗？`)) {
+                    return;
+                }
                 const result = await this.uninstallPythonRuntime(version);
                 if (result.success) {
                     alert('删除成功');
@@ -492,7 +531,9 @@ class McpRuntimeService {
      * @returns {Promise<{success: boolean, error?: string}>}
      */
     async uninstallPythonRuntime(version) {
-        if (!this.ipcRenderer) return { success: false, error: 'ipcRenderer 不可用' };
+        if (!this.ipcRenderer) {
+            return { success: false, error: 'ipcRenderer 不可用' };
+        }
         try {
             const result = await this.ipcRenderer.invoke('uninstall-python-runtime', version);
             return result;
