@@ -255,16 +255,6 @@ ipcMain.handle('check-for-updates', async (event, force = false) => {
     }
 });
 
-// 设置稍后提醒时间的IPC处理程序
-ipcMain.handle('set-remind-later', async (event) => {
-    try {
-        return configManager.setRemindLaterTime();
-    } catch (error) {
-        log.error('设置稍后提醒失败:', error.message);
-        throw error;
-    }
-});
-
 app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') {
         app.quit();

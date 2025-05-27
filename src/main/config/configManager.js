@@ -10,7 +10,7 @@ const modelManager = require('./modelConfig');
 const mcpManager = require('./mcpConfig');
 const fs = require('fs');
 const path = require('path');
-const { app } = require('electron');
+const { app, ipcMain } = require('electron');
 const axios = require('axios');
 const os = require('os');
 
@@ -37,7 +37,7 @@ class ConfigManager extends EventEmitter {
                 "https://api.mindcomplete.me/v1/latest"
             ],
             lastUpdateCheck: null,
-            latestVersion: null
+            latestVersion: null,
         };
 
         // 加载通用配置
@@ -130,48 +130,6 @@ class ConfigManager extends EventEmitter {
     }
 
     /**
-     * 解析GitHub API返回的数据，转换为应用统一格式
-     * @param {object} githubData GitHub API返回的数据
-     * @returns {object} 统一格式的更新信息
-     */
-    parseGitHubRelease(githubData) {
-        try {
-            const version = githubData.tag_name.replace(/^v/, ''); // 去掉版本号前的'v'
-            const downloadUrl = githubData.assets && githubData.assets.length > 0
-                ? githubData.assets[0].browser_download_url
-                : githubData.html_url;
-
-            return {
-                version: version,
-                downloadUrl: downloadUrl,
-                releaseDate: githubData.published_at,
-                releaseNotes: githubData.body || '',
-                source: 'github'
-            };
-        } catch (error) {
-            log.error('解析GitHub API数据失败:', error.message);
-            throw error;
-        }
-    }
-
-    /**
-     * 解析MindComplete自定义API返回的数据
-     * @param {object} mcData MindComplete API返回的数据
-     * @returns {object} 统一格式的更新信息
-     */
-    parseMindCompleteRelease(mcData) {
-        try {
-            return {
-                ...mcData.data,
-                source: 'mindcomplete'
-            };
-        } catch (error) {
-            log.error('解析MindComplete API数据失败:', error.message);
-            throw error;
-        }
-    }
-
-    /**
      * 获取要下载的文件后缀
      */
     getDownloadFileSuffix() {
@@ -217,7 +175,7 @@ class ConfigManager extends EventEmitter {
                     const hasUpdate = this.hasNewVersion(this.appVersion, this.generalConfig.latestVersion.version);
 
                     // 即使使用缓存的结果，也要通知所有窗口更新信息
-                    if (hasUpdate) {
+                    if (hasUpdate && !this.generalConfig.latestVersion.ignored) {
                         this.notifyWindowsAboutUpdate({
                             hasUpdate,
                             ...this.generalConfig.latestVersion
@@ -271,10 +229,11 @@ class ConfigManager extends EventEmitter {
 
                     if (hasUpdate) {
                         // 找到新版本，更新缓存并通知
-                        log.info(`发现新版本: ${updateInfo.version}，来源: ${updateInfo.source}`);
+                        log.info(`发现新版本: ${updateInfo.version}`);
 
                         // 更新最后检查时间和最新版本信息
                         this.generalConfig.lastUpdateCheck = now;
+                        updateInfo.ignored = false;
                         this.generalConfig.latestVersion = updateInfo;
                         this.saveGeneralConfig();
 
@@ -399,8 +358,36 @@ class ConfigManager extends EventEmitter {
         log.info('已设置稍后提醒时间:', new Date(this.generalConfig.remindLaterTime).toLocaleString());
         return true;
     }
+
+    /**
+     * 忽略新版本
+     */
+    setIgnoreUpdate() {
+        this.generalConfig.latestVersion.ignored = true;
+        this.saveGeneralConfig();
+    }
 }
 
 // 创建并导出单例实例
 const configManager = new ConfigManager();
 module.exports = configManager;
+
+// 设置稍后提醒时间的IPC处理程序
+ipcMain.handle('set-remind-later', async (event) => {
+    try {
+        return configManager.setRemindLaterTime();
+    } catch (error) {
+        log.error('设置稍后提醒失败:', error.message);
+        throw error;
+    }
+});
+
+// 设置忽略新版本
+ipcMain.handle('set-ignore-update', async (event) => {
+    try {
+        return configManager.setIgnoreUpdate();
+    } catch (error) {
+        log.error('设置忽略版本失败:', error.message);
+        throw error;
+    }
+});

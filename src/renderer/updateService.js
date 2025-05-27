@@ -13,7 +13,6 @@ class UpdateService {
         this.setupUpdateListeners();
         this.notificationTemplate = null;
         this.notificationStyles = null;
-        this.ignoredVersions = new Set(this.loadIgnoredVersions());
 
         // 等待DOM准备就绪后再获取状态元素
         if (document.readyState === 'loading') {
@@ -120,40 +119,9 @@ class UpdateService {
             });
     }
 
-    // 保存被忽略的版本
-    saveIgnoredVersions() {
-        try {
-            localStorage.setItem('ignoredVersions', JSON.stringify(Array.from(this.ignoredVersions)));
-        } catch (error) {
-            log.error('保存忽略版本失败:', error);
-        }
-    }
-
-    // 加载被忽略的版本
-    loadIgnoredVersions() {
-        try {
-            const versions = localStorage.getItem('ignoredVersions');
-            return versions ? new Set(JSON.parse(versions)) : new Set();
-        } catch (error) {
-            log.error('加载忽略版本失败:', error);
-            return new Set();
-        }
-    }
-
-    // 忽略指定版本
-    ignoreVersion(version) {
-        this.ignoredVersions.add(version);
-        this.saveIgnoredVersions();
-    }
-
-    // 检查版本是否被忽略
-    isVersionIgnored(version) {
-        return this.ignoredVersions.has(version);
-    }
-
     showUpdateNotification(updateInfo) {
         // 检查版本是否被忽略
-        if (this.isVersionIgnored(updateInfo.version)) {
+        if (updateInfo.ignored) {
             log.info('版本已被忽略:', updateInfo.version);
             return;
         }
@@ -192,11 +160,12 @@ class UpdateService {
         document.body.appendChild(notification);
 
         // 添加事件监听器
-        const closeBtn = notification.querySelector('.close-btn');
+        const remainLasterBtn = notification.querySelector('.remind-later-btn');
         const downloadBtn = notification.querySelector('.download-btn');
         const ignoreBtn = notification.querySelector('.ignore-btn');
 
-        closeBtn.addEventListener('click', () => {
+        remainLasterBtn.addEventListener('click', () => {
+            ipcRenderer.invoke('set-remind-later');
             notification.remove();
             style.remove();
         });
@@ -208,7 +177,7 @@ class UpdateService {
         });
 
         ignoreBtn.addEventListener('click', () => {
-            this.ignoreVersion(updateInfo.version);
+            ipcRenderer.invoke('set-ignore-update');
             notification.remove();
             style.remove();
         });
