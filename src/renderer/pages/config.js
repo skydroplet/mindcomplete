@@ -249,13 +249,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             mcpDetailSection.style.display = '';
             mcpEnvsSection.style.display = 'none';
         }
-
-        // Node.js 安装按钮逻辑
-        const installNodeBtn = document.getElementById('installNodeBtn');
-        // 由于已无输入框，直接传null
-        if (installNodeBtn) {
-            mcpRuntimeService.bindNodeInstallButton(installNodeBtn, null, runtimeInfoLoading);
-        }
     } catch (error) {
         log.error('配置页面初始化失败:', error.message);
         alert(`初始化配置页面失败: ${error.message}`);
