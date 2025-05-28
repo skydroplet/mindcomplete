@@ -162,25 +162,29 @@ class McpRuntimeService {
         if (!task) {
             return;
         }
-        const progressTd = document.getElementById(`progress-${taskKey}`);
-        if (progressTd) {
-            if (status === 'installing') {
-                progressTd.textContent = `${percent}% | ${speed || '-'} MB/s`;
-            } else if (status === 'success') {
-                progressTd.textContent = '安装完成';
-                setTimeout(() => {
-                    this.removeNodeInstallRow(taskKey);
-                    this.loadRuntimeInfo();
-                    this.enableWindowClose();
-                }, 1000);
-            } else if (status === 'error') {
-                progressTd.textContent = `安装失败: ${error || '未知错误'}`;
-                setTimeout(() => {
-                    this.removeNodeInstallRow(taskKey);
-                    this.loadRuntimeInfo();
-                    this.enableWindowClose();
-                }, 2000);
-            }
+
+        let progressTd = document.getElementById(`progress-${taskKey}`);
+        if (!progressTd) {
+            this.addNodeInstallRow(taskKey, task.version);
+            progressTd = document.getElementById(`progress-${taskKey}`);
+        }
+
+        if (status === 'installing') {
+            progressTd.textContent = `${percent}% | ${speed || '-'} MB/s`;
+        } else if (status === 'success') {
+            progressTd.textContent = '安装完成';
+            setTimeout(() => {
+                this.removeNodeInstallRow(taskKey);
+                this.loadRuntimeInfo();
+                this.enableWindowClose();
+            }, 1000);
+        } else if (status === 'error') {
+            progressTd.textContent = `安装失败: ${error || '未知错误'}`;
+            setTimeout(() => {
+                this.removeNodeInstallRow(taskKey);
+                this.loadRuntimeInfo();
+                this.enableWindowClose();
+            }, 2000);
         }
     }
 
@@ -381,25 +385,28 @@ class McpRuntimeService {
         if (!task) {
             return;
         }
-        const progressTd = document.getElementById(`python-progress-${taskKey}`);
-        if (progressTd) {
-            if (status === 'installing') {
-                progressTd.textContent = `${percent}% | ${speed || '-'} MB/s`;
-            } else if (status === 'success') {
-                progressTd.textContent = '安装完成';
-                setTimeout(() => {
-                    this.removePythonInstallRow(taskKey);
-                    this.loadRuntimeInfo();
-                    this.enableWindowClose();
-                }, 1000);
-            } else if (status === 'error') {
-                progressTd.textContent = `安装失败: ${error || '未知错误'}`;
-                setTimeout(() => {
-                    this.removePythonInstallRow(taskKey);
-                    this.loadRuntimeInfo();
-                    this.enableWindowClose();
-                }, 2000);
-            }
+        let progressTd = document.getElementById(`python-progress-${taskKey}`);
+        if (!progressTd) {
+            this.addPythonInstallRow(taskKey, task.version);
+            progressTd = document.getElementById(`python-progress-${taskKey}`);
+        }
+
+        if (status === 'installing') {
+            progressTd.textContent = `${percent}% | ${speed || '-'} MB/s`;
+        } else if (status === 'success') {
+            progressTd.textContent = '安装完成';
+            setTimeout(() => {
+                this.removePythonInstallRow(taskKey);
+                this.loadRuntimeInfo();
+                this.enableWindowClose();
+            }, 1000);
+        } else if (status === 'error') {
+            progressTd.textContent = `安装失败: ${error || '未知错误'}`;
+            setTimeout(() => {
+                this.removePythonInstallRow(taskKey);
+                this.loadRuntimeInfo();
+                this.enableWindowClose();
+            }, 2000);
         }
     }
 
