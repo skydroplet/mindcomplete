@@ -11,6 +11,7 @@ if (typeof window !== 'undefined' && window.ipcRenderer) {
 class McpRuntimeService {
     constructor() {
         this.installTasks = {}; // 记录所有安装任务 { taskKey: { version, rowEl } }
+        this.activeInstallCount = 0; // 记录当前正在进行的安装任务数
 
         ipcRenderer.on('node-install-progress', (event, data) => {
             this.handleNodeInstallProgress(data);
@@ -20,6 +21,27 @@ class McpRuntimeService {
         ipcRenderer.on('python-install-progress', (event, data) => {
             this.handlePythonInstallProgress(data);
         });
+    }
+
+    /**
+     * 禁用窗口关闭
+     */
+    disableWindowClose() {
+        this.activeInstallCount++;
+        if (this.activeInstallCount === 1) {
+            ipcRenderer.invoke('disable-window-close');
+        }
+    }
+
+    /**
+     * 启用窗口关闭
+     */
+    enableWindowClose() {
+        this.activeInstallCount--;
+        if (this.activeInstallCount <= 0) {
+            this.activeInstallCount = 0;
+            ipcRenderer.invoke('enable-window-close');
+        }
     }
 
     /**
@@ -92,13 +114,19 @@ class McpRuntimeService {
      */
     bindNodeInstallButton(installBtn) {
         installBtn.addEventListener('click', async () => {
-            const version = await this.promptNodeVersion() || "v22.16.0";
+            const version = await this.promptNodeVersion();
+            if (version === null) {
+                return; // 用户点击取消，直接返回
+            }
+
+            // 用户点击确定但没有输入时使用默认版本
+            const finalVersion = version || "v22.16.0";
 
             // 生成唯一任务key
-            const taskKey = `${version}-${Date.now()}`;
-            this.addNodeInstallRow(taskKey, version);
+            const taskKey = `${finalVersion}`;
+            this.addNodeInstallRow(taskKey, finalVersion);
             // 开始安装，不影响按钮状态
-            this.installNodeRuntimeWithProgress(taskKey, version);
+            this.installNodeRuntimeWithProgress(taskKey, finalVersion);
         });
     }
 
@@ -143,12 +171,14 @@ class McpRuntimeService {
                 setTimeout(() => {
                     this.removeNodeInstallRow(taskKey);
                     this.loadRuntimeInfo();
+                    this.enableWindowClose();
                 }, 1000);
             } else if (status === 'error') {
                 progressTd.textContent = `安装失败: ${error || '未知错误'}`;
                 setTimeout(() => {
                     this.removeNodeInstallRow(taskKey);
                     this.loadRuntimeInfo();
+                    this.enableWindowClose();
                 }, 2000);
             }
         }
@@ -173,11 +203,13 @@ class McpRuntimeService {
      */
     async installNodeRuntimeWithProgress(taskKey, version) {
         try {
+            this.disableWindowClose();
             // 传递 taskKey 给主进程，主进程需在进度事件中带回
             await ipcRenderer.invoke('install-node-runtime', version || '', taskKey);
             // 安装完成/失败由进度事件处理
         } catch (e) {
             this.handleNodeInstallProgress({ taskKey, status: 'error', error: e.message });
+            this.enableWindowClose();
         }
     }
 
@@ -307,11 +339,13 @@ class McpRuntimeService {
      */
     async installPythonRuntimeWithProgress(taskKey, version) {
         try {
+            this.disableWindowClose();
             // 传递 taskKey 给主进程，主进程需在进度事件中带回
             await ipcRenderer.invoke('install-python-runtime', version || '', taskKey);
             // 安装完成/失败由进度事件处理
         } catch (e) {
             this.handlePythonInstallProgress({ taskKey, status: 'error', error: e.message });
+            this.enableWindowClose();
         }
     }
 
@@ -356,12 +390,14 @@ class McpRuntimeService {
                 setTimeout(() => {
                     this.removePythonInstallRow(taskKey);
                     this.loadRuntimeInfo();
+                    this.enableWindowClose();
                 }, 1000);
             } else if (status === 'error') {
                 progressTd.textContent = `安装失败: ${error || '未知错误'}`;
                 setTimeout(() => {
                     this.removePythonInstallRow(taskKey);
                     this.loadRuntimeInfo();
+                    this.enableWindowClose();
                 }, 2000);
             }
         }
@@ -386,13 +422,19 @@ class McpRuntimeService {
      */
     bindPythonInstallButton(installBtn) {
         installBtn.addEventListener('click', async () => {
-            const version = await this.promptPythonVersion() || "3.11.9";
+            const version = await this.promptPythonVersion();
+            if (version === null) {
+                return; // 用户点击取消，直接返回
+            }
+
+            // 用户点击确定但没有输入时使用默认版本
+            const finalVersion = version || "3.11.9";
 
             // 生成唯一任务key
-            const taskKey = `${version}-${Date.now()}`;
-            this.addPythonInstallRow(taskKey, version);
+            const taskKey = `${finalVersion}`;
+            this.addPythonInstallRow(taskKey, finalVersion);
             // 开始安装
-            this.installPythonRuntimeWithProgress(taskKey, version);
+            this.installPythonRuntimeWithProgress(taskKey, finalVersion);
         });
     }
 

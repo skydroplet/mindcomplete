@@ -249,51 +249,6 @@ class McpRuntimeManager {
     }
 
     /**
-     * 安装Node.js运行环境到指定目录
-     * @param {string} version Node.js版本号，例如'v22.16.0'
-     * @returns {Promise<void>}
-     */
-    async installNode(version) {
-        // 安装前先检查是否已安装
-        const nodeInfo = this.isNodeInstalled(version);
-        if (nodeInfo.installed) {
-            log.info(`Node.js 已安装`, nodeInfo);
-            return;
-        }
-
-        const versionDir = path.join(this.nodeDir, version);
-        fs.mkdirSync(versionDir, { recursive: true });
-
-        const { url, filename, ext } = this.getNodeDownloadInfo(version);
-        const dest = path.join(this.downloadDir, filename);
-        log.info('下载Node.js:', url, dest);
-
-        await this.downloadFile(url, dest, (percent, speed) => {
-            // 这里可以添加进度处理逻辑
-        });
-        // 解压
-        if (ext === 'zip') {
-            // 先解压到 nodeDir
-            execSync(`powershell -Command "Expand-Archive -Path '${dest}' -DestinationPath '${this.nodeDir}' -Force"`);
-            // 查找解压出来的 node-vXX-XX-XX 文件夹
-            const baseName = filename.replace('.zip', '');
-            const extractedDir = path.join(this.nodeDir, baseName);
-            if (fs.existsSync(extractedDir)) {
-                // 移动所有内容到 versionDir
-                fs.readdirSync(extractedDir).forEach(file => {
-                    const src = path.join(extractedDir, file);
-                    const destPath = path.join(versionDir, file);
-                    fs.renameSync(src, destPath);
-                });
-                fs.rmdirSync(extractedDir);
-            }
-        } else {
-            execSync(`tar -xf '${dest}' -C '${versionDir}' --strip-components=1`);
-        }
-        log.info('Node.js安装完成:', versionDir);
-    }
-
-    /**
      * 安装Python运行环境到指定目录，带进度推送
      * @param {string} version Python版本号，例如'3.10.11'
      * @param {string} taskKey 唯一任务key
@@ -369,48 +324,6 @@ class McpRuntimeManager {
             });
             throw e;
         }
-    }
-
-    /**
-     * 安装Python运行环境到指定目录
-     * @param {string} version Python版本号，例如'3.10.11'
-     * @returns {Promise<void>}
-     */
-    async installPython(version) {
-        // 安装前先检查是否已安装
-        const pythonInfo = this.isPythonInstalled(version);
-        if (pythonInfo.installed) {
-            log.info(`Python 已安装。`, pythonInfo);
-            return;
-        }
-
-        const versionDir = path.join(this.pythonDir, version);
-        fs.mkdirSync(versionDir, { recursive: true });
-
-        const { url, filename, ext } = this.getPythonDownloadInfo(version);
-        const dest = path.join(this.downloadDir, filename);
-        log.info('下载Python:', url, dest);
-
-        await this.downloadFile(url, dest, (percent, speed) => {
-            // 这里可以添加进度处理逻辑
-        });
-        if (ext === 'exe') {
-            // 静默安装到versionDir
-            const absTargetDir = path.resolve(versionDir);
-            const { execFileSync } = require('child_process');
-            execFileSync(dest, [
-                '/quiet',
-                'InstallAllUsers=0',
-                `TargetDir=${absTargetDir}`,
-                'PrependPath=1',
-                'Include_test=0'
-            ], { stdio: 'inherit' });
-        } else if (ext === 'pkg') {
-            execSync(`sudo installer -pkg "${dest}" -target /`);
-        } else {
-            execSync(`tar -xf "${dest}" -C "${versionDir}" --strip-components=1`);
-        }
-        log.info('Python安装完成:', versionDir);
     }
 
     /**
@@ -568,8 +481,7 @@ class McpRuntimeManager {
                 for (const ext of exts) {
                     const nodePath = path.join(dir, exe.replace('.exe', '') + ext);
                     if (fs.existsSync(nodePath)) {
-                        const ver = execSync(`"${nodePath}" --version`).toString().trim();
-                        const version = ver.replace(/^v/, '');
+                        const version = execSync(`"${nodePath}" --version`).toString().trim();
                         if (!found.has(nodePath)) {
                             found.set(nodePath, version);
                         }
@@ -589,7 +501,7 @@ class McpRuntimeManager {
             }
             if (fs.existsSync(nodePath)) {
                 if (!found.has(nodePath)) {
-                    found.set(nodePath, version.replace(/^v/, ''));
+                    found.set(nodePath, version);
                 }
             }
         }
@@ -674,6 +586,10 @@ ipcMain.handle('get-mcp-runtime-info', async () => {
 ipcMain.handle('install-node-runtime', async (event, version, taskKey) => {
     // taskKey: 渲染进程传递的唯一任务key
     try {
+        if (!version.startsWith('v')) {
+            version = 'v' + version;
+        }
+
         // 下载和解压过程推送进度
         await module.exports.installNodeWithProgress(version, taskKey, event);
         return { success: true };
@@ -695,13 +611,8 @@ ipcMain.handle('install-node-runtime', async (event, version, taskKey) => {
 // 处理安装Python运行环境的请求
 ipcMain.handle('install-python-runtime', async (event, version, taskKey) => {
     try {
-        if (taskKey) {
-            await module.exports.installPythonWithProgress(version, taskKey, event);
-            return { success: true };
-        } else {
-            await module.exports.installPython(version);
-            return { success: true };
-        }
+        await module.exports.installPythonWithProgress(version, taskKey, event);
+        return { success: true };
     } catch (error) {
         if (taskKey) {
             event.sender.send('python-install-progress', {

@@ -118,6 +118,22 @@ function registerConfigIPC() {
         return models;
     });
 
+    // 添加禁用窗口关闭的处理函数
+    ipcMain.handle('disable-window-close', () => {
+        log.info('禁用配置窗口关闭功能');
+        if (configWindow) {
+            configWindow.setClosable(false);
+        }
+    });
+
+    // 添加启用窗口关闭的处理函数
+    ipcMain.handle('enable-window-close', () => {
+        log.info('启用配置窗口关闭功能');
+        if (configWindow) {
+            configWindow.setClosable(true);
+        }
+    });
+
     // 添加打开配置窗口的处理函数
     ipcMain.handle('open-config-window', () => {
         log.info('处理打开配置窗口请求');
