@@ -272,45 +272,28 @@ class McpRuntimeManager {
             return false;
         }
 
-        // 配置npm全局安装目录
+        // 配置npm安装和缓存目录
         const libDir = path.join(this.nodeDir, 'lib', version);
         fs.mkdirSync(libDir, { recursive: true });
 
-        // 执行配置命令并验证结果
-        try {
-            const cmd = `"${npmExe}" config set prefix "${libDir}" --global`;
-            log.info('run cmd:', cmd);
-            const result = execSync(cmd, { encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] }).toString().trim();
-            log.info(`cmd result: `, result);
-        } catch (error) {
-            log.error('npm config prefix failed:', error.message);
-            return false;
-        }
+        const cacheDir = path.join(this.nodeDir, 'cache', version);
+        fs.mkdirSync(cacheDir, { recursive: true });
 
-        // 配置npm镜像源为淘宝镜像
-        try {
-            const cmd = `"${npmExe}" config set registry "https://registry.npmmirror.com" --global`;
-            log.info(`run cmd:`, cmd);
-            const result = execSync(cmd, { encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] }).toString().trim();
-            log.info(`result: `, result);
-        } catch (registryError) {
-            log.error('npm config registry failed:', error.message);
-            return false;
-        }
+        const commands = [
+            `"${npmExe}" config set prefix "${libDir}" --global`,
+            `"${npmExe}" config set cache "${cacheDir}" --global`,
+            `"${npmExe}" config set registry "https://registry.npmmirror.com" --global`,
+            `"${npmExe}" config list`,
+        ]
 
-        // 验证配置是否生效
         try {
-            const cmd = `"${npmExe}" config list --global`;
-            log.info(`run cmd:`, cmd);
-            const config = execSync(cmd, { encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] }).toString();
-            log.info(`npm config:`, config);
-
-            if (!config.includes(libDir) || !config.includes('registry.npmmirror.com')) {
-                log.error('npm config failed');
-                return false;
+            for (const cmd of commands) {
+                log.info(`run cmd:`, cmd);
+                const result = execSync(cmd, { encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] }).toString().trim();
+                log.info(`cmd result: `, result);
             }
-        } catch (verifyError) {
-            log.error('npm config list failed:', error.message);
+        } catch (error) {
+            log.error(`run cmd fail: ${error.message}`);
             return false;
         }
 
