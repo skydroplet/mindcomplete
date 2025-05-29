@@ -11,15 +11,17 @@ const i18n = require('../locales/i18n');
 const fs = require('fs');
 const { createWindow } = require('./mainWindow');
 const { configManager, createConfigWindow, registerConfigIPC, promptConfig, modelConfig, openConfigWindowWithTab } = require('./config');
-const { sessionManager, registerSessionIPC } = require('./session');
+const { registerSessionIPC } = require('./session');
 const Logger = require('./logger');
 const log = new Logger('main');
 const path = require('path');
 
 // 全局MCP实例
-const mcp = require('./mcpClient');
+const mcp = require('./mcp/mcpClient');
 const { closeConfigWindow } = require('./config/configWindow');
-const { time } = require('console');
+const mcpRuntimeManager = require('./mcp/mcpRuntimeManager');
+
+const { findExecutableInPath } = require('./utils');
 
 /**
  * 创建应用程序菜单
@@ -253,16 +255,6 @@ ipcMain.handle('check-for-updates', async (event, force = false) => {
     }
 });
 
-// 设置稍后提醒时间的IPC处理程序
-ipcMain.handle('set-remind-later', async (event) => {
-    try {
-        return configManager.setRemindLaterTime();
-    } catch (error) {
-        log.error('设置稍后提醒失败:', error.message);
-        throw error;
-    }
-});
-
 app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') {
         app.quit();
@@ -363,8 +355,7 @@ ipcMain.handle('direct-test-mcp-tool', async (event, serverConfig) => {
             log.info(`MCP可执行文件未指定完整路径, 尝试从PATH环境变量中搜索: ${execPath}`);
 
             // 获取MCP实例并使用其内部的findExecutableInPath函数
-            const mcp = require('./mcpClient');
-            const pathExecPath = mcp.findExecutableInPath ? mcp.findExecutableInPath(execPath) : null;
+            const pathExecPath = findExecutableInPath ? findExecutableInPath(execPath) : null;
 
             if (pathExecPath) {
                 execPath = pathExecPath;
@@ -381,7 +372,7 @@ ipcMain.handle('direct-test-mcp-tool', async (event, serverConfig) => {
         log.info(`使用规范化后的路径: ${execPath}`);
 
         // 获取mcp实例
-        const mcp = require('./mcpClient');
+        const mcp = require('./mcp/mcpClient');
         const testServerName = serverConfig.name || "临时测试服务";
 
         // 使用临时配置直接测试连接

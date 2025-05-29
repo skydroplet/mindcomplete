@@ -156,6 +156,11 @@ class PromptService {
             const div = document.createElement('div');
             div.className = 'model-item';
 
+            // 如果是当前选中的提示词，添加active类
+            if (window.currentPromptId === promptId) {
+                div.classList.add('active');
+            }
+
             // 显示提示词名称及类型
             const nameSpan = document.createElement('span');
             nameSpan.textContent = prompt.name;
@@ -178,6 +183,17 @@ class PromptService {
      * @param {string} promptId - 提示词ID
      */
     selectPrompt(promptId) {
+        // 移除所有列表项的active类
+        document.querySelectorAll('#promptList .model-item').forEach(item => {
+            item.classList.remove('active');
+        });
+
+        // 为当前选中的项添加active类
+        const selectedItem = document.querySelector(`#promptList .model-item[data-prompt-id="${promptId}"]`);
+        if (selectedItem) {
+            selectedItem.classList.add('active');
+        }
+
         window.currentPromptId = promptId;
         const prompts = window.prompts || {};
         if (prompts[promptId]) {

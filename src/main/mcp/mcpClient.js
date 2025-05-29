@@ -1,57 +1,13 @@
 const { Client } = require("@modelcontextprotocol/sdk/client/index.js");
 const { StdioClientTransport } = require("@modelcontextprotocol/sdk/client/stdio.js");
-const Logger = require('./logger');
+const Logger = require('../logger');
 const log = new Logger('mcp');
 const path = require('path');
 const fs = require('fs');
-const { mcpConfig: mcpConfigManager } = require('./config');
+const { mcpConfig: mcpConfigManager } = require('../config');
 const EventEmitter = require('events');
-
-/**
- * 从系统环境变量PATH中搜索可执行文件
- * @param {string} filename 要搜索的可执行文件名
- * @returns {string|null} 找到的可执行文件的完整路径，如果未找到则返回null
- */
-function findExecutableInPath(filename) {
-    try {
-        // 获取系统PATH环境变量
-        const pathEnv = process.env.PATH || process.env.Path || process.env.path;
-        if (!pathEnv) {
-            log.error('无法获取系统PATH环境变量');
-            return null;
-        }
-
-        // 获取路径分隔符（Windows是分号，Linux/Mac是冒号）
-        const pathSeparator = process.platform === 'win32' ? ';' : ':';
-
-        // 获取可执行文件扩展名（Windows上需要检查.exe等扩展名）
-        const exeExtensions = process.platform === 'win32'
-            ? (process.env.PATHEXT || '.exe;.cmd;.bat').split(pathSeparator)
-            : [''];
-
-        // 搜索每个PATH目录
-        const pathDirs = pathEnv.split(pathSeparator);
-
-        for (const dir of pathDirs) {
-            if (!dir) continue;
-
-            // 对于每个可能的扩展名，检查可执行文件是否存在
-            for (const ext of exeExtensions) {
-                const fullPath = path.join(dir, filename + ext);
-                if (fs.existsSync(fullPath) && fs.statSync(fullPath).isFile()) {
-                    log.info(`在PATH中找到可执行文件: ${fullPath}`);
-                    return fullPath;
-                }
-            }
-        }
-
-        log.warn(`在PATH中未找到可执行文件: ${filename}`);
-        return null;
-    } catch (error) {
-        log.error(`搜索可执行文件时出错: ${error.message}`);
-        return null;
-    }
-}
+const { findExecutableInPath } = require('../utils');
+const { type } = require("os");
 
 class MCPClientManager extends EventEmitter {
     constructor() {
@@ -338,6 +294,21 @@ class MCPClientManager extends EventEmitter {
         }
     }
 
+
+    /**
+     * 
+     * @param {string} message 
+     * @returns 
+     */
+    createToolResultError(message) {
+        return {
+            content: [{
+                type: 'text',
+                text: message,
+            }]
+        };
+    }
+
     // 执行工具，根据工具的serverId属性确定使用哪个MCP服务
     async executeTool(sessionId, toolInfo) {
         const { name, arguments: args, serverId, serverName } = toolInfo;
@@ -355,27 +326,13 @@ class MCPClientManager extends EventEmitter {
         }
 
         if (!targetServerId) {
-            log.error(`找不到提供工具 ${name} 的MCP服务`);
-            return {
-                name,
-                content: JSON.stringify({
-                    error: `找不到提供工具 ${name} 的MCP服务`,
-                    tool: name
-                })
-            };
+            return this.createToolResultError(`找不到提供工具 ${name} 的MCP服务`);
         }
 
         // 获取对应的MCP客户端
         const clientInfo = this.mcpClients.get(targetServerId);
         if (!clientInfo || !clientInfo.isConnected) {
-            log.error(`MCP服务 ${targetServerId} 未连接，无法执行工具 ${name}`);
-            return {
-                name,
-                content: JSON.stringify({
-                    error: `MCP服务 ${targetServerId} 未连接`,
-                    tool: name
-                })
-            };
+            return this.createToolResultError(`MCP服务 ${targetServerId} 未连接，无法执行工具 ${name}`);
         }
 
         // 检查工具是否已授权
@@ -407,14 +364,7 @@ class MCPClientManager extends EventEmitter {
 
             // 如果授权被拒绝，返回错误
             if (!result.authorized) {
-                log.info(`工具 ${name} 执行请求被用户拒绝`);
-                return {
-                    name,
-                    content: JSON.stringify({
-                        error: `工具执行请求被拒绝`,
-                        tool: name
-                    })
-                };
+                return this.createToolResultError(`工具 ${name} 执行请求被用户拒绝`);
             }
 
             // 如果永久授权，更新授权状态
@@ -442,14 +392,7 @@ class MCPClientManager extends EventEmitter {
             return result;
         } catch (error) {
             log.error(`工具执行失败: ${error.message}`);
-            return {
-                name: name,
-                content: JSON.stringify({
-                    error: `工具执行失败: ${error.message}`,
-                    tool: name,
-                    server: targetServerId
-                })
-            };
+            return this.createToolResultError(`工具执行失败: ${error.message}`);
         }
     }
 
@@ -500,4 +443,3 @@ class MCPClientManager extends EventEmitter {
 const mcpClientManager = new MCPClientManager();
 
 module.exports = mcpClientManager;
-module.exports.findExecutableInPath = findExecutableInPath;

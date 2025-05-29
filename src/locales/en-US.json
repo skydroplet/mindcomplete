@@ -190,7 +190,7 @@
         "tabs": {
             "models": "Models",
             "prompts": "Prompts",
-            "mcp": "MCP Servers",
+            "mcp": "MCP Manager",
             "newSession": "New Session",
             "close": "Close Tab",
             "newTab": "New Tab",

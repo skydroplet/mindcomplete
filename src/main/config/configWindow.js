@@ -29,8 +29,8 @@ let configWindow;
  */
 function createConfigWindow(activeTab) {
     configWindow = new BrowserWindow({
-        width: 800,
-        height: 600,
+        width: 900,
+        height: 700,
         webPreferences: {
             nodeIntegration: true,
             contextIsolation: false
@@ -116,6 +116,22 @@ function registerConfigIPC() {
         const models = modelConfig.models || {};
         log.info('返回模型列表:', JSON.stringify(models, null, 2));
         return models;
+    });
+
+    // 添加禁用窗口关闭的处理函数
+    ipcMain.handle('disable-window-close', () => {
+        log.info('禁用配置窗口关闭功能');
+        if (configWindow) {
+            configWindow.setClosable(false);
+        }
+    });
+
+    // 添加启用窗口关闭的处理函数
+    ipcMain.handle('enable-window-close', () => {
+        log.info('启用配置窗口关闭功能');
+        if (configWindow) {
+            configWindow.setClosable(true);
+        }
     });
 
     // 添加打开配置窗口的处理函数

@@ -17,6 +17,7 @@ const promptService = require('../promptService');
 const mcpService = require('../mcpService');
 const exportService = require('../exportService');
 const ImportService = require('../importService');
+const mcpRuntimeService = require('../mcpRuntimeService');
 
 // 创建导入服务实例
 const importService = new ImportService();
@@ -177,7 +178,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // 同步MCP全局变量与服务
         window.mcpConfig = mcpService.getMcpConfig();
-        window.currentServerId = mcpService.getCurrentServerId();
 
         // 初始化提示词相关事件
         promptService.initPromptEventListeners();
@@ -217,6 +217,38 @@ document.addEventListener('DOMContentLoaded', async () => {
                     });
             }
         });
+
+        // ========== MCP服务标签页三栏切换逻辑 ========== 
+        const mcpMenuItems = document.querySelectorAll('.mcp-menu-item');
+        const mcpListPanel = document.querySelector('.mcp-list-panel');
+        const mcpDetailSection = document.getElementById('mcp-detail-section');
+        const mcpEnvsSection = document.querySelector('.mcp-envs-section');
+        const runtimeInfoLoading = document.getElementById('runtime-info-loading');
+        const runtimeInfoList = document.getElementById('runtime-info-list');
+        // 移除原有的loadRuntimeInfo函数，直接调用mcpRuntimeService.loadRuntimeInfo
+        mcpMenuItems.forEach(item => {
+            item.addEventListener('click', function () {
+                mcpMenuItems.forEach(i => i.classList.remove('active'));
+                this.classList.add('active');
+                const menu = this.getAttribute('data-menu');
+                if (menu === 'servers') {
+                    mcpListPanel.style.display = '';
+                    mcpDetailSection.style.display = '';
+                    mcpEnvsSection.style.display = 'none';
+                } else if (menu === 'envs') {
+                    mcpListPanel.style.display = 'none';
+                    mcpDetailSection.style.display = 'none';
+                    mcpEnvsSection.style.display = 'flex';
+                    mcpRuntimeService.loadRuntimeInfo(runtimeInfoLoading, runtimeInfoList);
+                }
+            });
+        });
+        // 默认显示MCP服务
+        if (mcpListPanel && mcpDetailSection && mcpEnvsSection) {
+            mcpListPanel.style.display = '';
+            mcpDetailSection.style.display = '';
+            mcpEnvsSection.style.display = 'none';
+        }
     } catch (error) {
         log.error('配置页面初始化失败:', error.message);
         alert(`初始化配置页面失败: ${error.message}`);
@@ -234,7 +266,6 @@ ipcRenderer.on('config-updated', (event, data) => {
         mcpService.setMcpConfig(data.mcpConfig);
         mcpService.updateMcpServerList();
         window.mcpConfig = mcpService.getMcpConfig();
-        window.currentServerId = mcpService.getCurrentServerId();
     } else if (data.mcpServers) {
         // 兼容旧版数据格式
         const mcpConfig = {
@@ -244,7 +275,6 @@ ipcRenderer.on('config-updated', (event, data) => {
         mcpService.setMcpConfig(mcpConfig);
         mcpService.updateMcpServerList();
         window.mcpConfig = mcpService.getMcpConfig();
-        window.currentServerId = mcpService.getCurrentServerId();
     }
 });
 
@@ -266,4 +296,4 @@ ipcRenderer.on('switch-tab', (event, tabName) => {
 ipcRenderer.on('locale-updated', () => {
     // 重新初始化UI文本
     initUIText();
-}); 
+});

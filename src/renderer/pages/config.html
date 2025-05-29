@@ -88,49 +88,113 @@
 
         <!-- MCP服务配置标签页 -->
         <div class="tab-content" id="mcp-servers">
-            <div class="model-list">
-                <button class="add-btn" id="addMcpServerBtn" data-i18n="mcp.buttons.addServer">添加MCP服务</button>
-                <div id="mcpServersList" class="config-list"></div>
-            </div>
-            <div class="model-form">
-                <form id="mcpServerForm">
-                    <div class="form-group">
-                        <label for="serverName" data-i18n="mcp.labels.serverName">服务名称</label>
-                        <input type="text" id="serverName" name="serverName" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="serverPath" data-i18n="mcp.labels.executablePath">可执行文件</label>
-                        <input type="text" id="serverPath" name="serverPath" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="envVars" data-i18n="mcp.labels.envVars">环境变量</label>
-                        <div id="envVarsContainer" class="key-value-container"></div>
-                        <button type="button" class="add-env-btn" id="add-env-btn"
-                            data-i18n="mcp.buttons.addEnvVar">添加环境变量</button>
-                    </div>
-                    <div class="form-group">
-                        <label for="cmdArgs" data-i18n="mcp.labels.cmdArgs">命令行参数</label>
-                        <div id="argsContainer" class="key-value-container"></div>
-                        <button type="button" class="add-arg-btn" id="add-arg-btn"
-                            data-i18n="mcp.buttons.addParam">添加参数</button>
-                    </div>
-                </form>
-
-                <!-- 工具列表展示区域 -->
-                <div id="toolsListContainer" class="hidden">
-                    <h3 data-i18n="mcp.toolsList.title">工具列表</h3>
-                    <div id="toolsList" class="tools-list-container"></div>
+            <div class="mcp-flex-container" style="display: flex; height: 100%;">
+                <!-- 左侧一级目录 -->
+                <div class="mcp-sidebar">
+                    <ul class="mcp-menu">
+                        <li class="mcp-menu-item active" data-menu="servers">MCP服务</li>
+                        <li class="mcp-menu-item" data-menu="envs">MCP运行环境</li>
+                    </ul>
                 </div>
+                <!-- 中间服务列表 -->
+                <div class="mcp-list-panel"
+                    style="width: 250px; background: var(--sidebar-bg); border-right: 1px solid var(--border-color); display: flex; flex-direction: column;">
+                    <div class="model-list" id="mcp-list-section">
+                        <button class="add-btn" id="addMcpServerBtn" data-i18n="mcp.buttons.addServer">添加MCP服务</button>
+                        <div id="mcpServersList" class="config-list"></div>
+                    </div>
+                </div>
+                <!-- 右侧详情表单 -->
+                <div class="mcp-detail-panel" style="flex: 1; display: flex; flex-direction: column;">
+                    <div class="model-form" id="mcp-detail-section">
+                        <form id="mcpServerForm">
+                            <div class="form-group">
+                                <label for="serverName" data-i18n="mcp.labels.serverName">服务名称</label>
+                                <input type="text" id="serverName" name="serverName" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="serverPath" data-i18n="mcp.labels.executablePath">可执行文件</label>
+                                <input type="text" id="serverPath" name="serverPath" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="envVars" data-i18n="mcp.labels.envVars">环境变量</label>
+                                <div id="envVarsContainer" class="key-value-container"></div>
+                                <button type="button" class="add-env-btn" id="add-env-btn"
+                                    data-i18n="mcp.buttons.addEnvVar">添加环境变量</button>
+                            </div>
+                            <div class="form-group">
+                                <label for="cmdArgs" data-i18n="mcp.labels.cmdArgs">命令行参数</label>
+                                <div id="argsContainer" class="key-value-container"></div>
+                                <button type="button" class="add-arg-btn" id="add-arg-btn"
+                                    data-i18n="mcp.buttons.addParam">添加参数</button>
+                            </div>
+                        </form>
+                        <!-- 工具列表展示区域 -->
+                        <div id="toolsListContainer" class="hidden">
+                            <h3 data-i18n="mcp.toolsList.title">工具列表</h3>
+                            <div id="toolsList" class="tools-list-container"></div>
+                        </div>
+                        <!-- MCP服务按钮 -->
+                        <div class="form-buttons" id="mcp-buttons">
+                            <button class="test-btn" id="test-mcp-button" data-i18n="mcp.toolsList.testButton"
+                                title="测试">测试</button>
+                            <button class="delete-btn hidden" id="deleteMcpServerBtn"
+                                data-i18n="mcp.buttons.deleteServer">删除</button>
+                            <button class="copy-btn hidden" id="copyMcpServerBtn"
+                                data-i18n="mcp.buttons.copy">复制</button>
+                            <button class="cancel-btn" id="cancelMcpBtn" data-i18n="mcp.buttons.cancel">取消</button>
+                            <button class="save-btn" id="saveMcpBtn" data-i18n="mcp.buttons.save">保存</button>
+                        </div>
+                    </div>
+                    <!-- 运行环境内容区，默认隐藏 -->
+                    <div class="mcp-envs-section">
+                        <div id="runtime-info-loading">正在加载运行环境信息...</div>
+                        <div id="runtime-info-list">
+                            <div class="runtime-section">
+                                <div style="display: flex; align-items: center; justify-content: space-between;">
+                                    <h3 style="margin: 0;">NodeJS 运行环境</h3>
+                                    <div style="display: flex; align-items: center;">
+                                        <button class="add-btn" id="installNodeBtn">安装Node.js</button>
+                                    </div>
+                                </div>
+                                <table class="tools-table" id="nodejs-runtime-table">
+                                    <thead>
+                                        <tr>
+                                            <th>版本</th>
+                                            <th>路径</th>
+                                            <th>操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="nodejs-runtime-tbody">
+                                        <!-- Node.js 运行环境数据行由JS动态插入 -->
+                                    </tbody>
+                                </table>
+                                <div id="nodejs-runtime-empty">未检测到Node.js环境</div>
+                            </div>
 
-                <!-- MCP服务按钮 -->
-                <div class="form-buttons" id="mcp-buttons">
-                    <button class="test-btn" id="test-mcp-button" data-i18n="mcp.toolsList.testButton"
-                        title="测试">测试</button>
-                    <button class="delete-btn hidden" id="deleteMcpServerBtn"
-                        data-i18n="mcp.buttons.deleteServer">删除</button>
-                    <button class="copy-btn hidden" id="copyMcpServerBtn" data-i18n="mcp.buttons.copy">复制</button>
-                    <button class="cancel-btn" id="cancelMcpBtn" data-i18n="mcp.buttons.cancel">取消</button>
-                    <button class="save-btn" id="saveMcpBtn" data-i18n="mcp.buttons.save">保存</button>
+                            <div class="runtime-section">
+                                <div style="display: flex; align-items: center; justify-content: space-between;">
+                                    <h3 style="margin: 0;">Python 运行环境</h3>
+                                    <div style="display: flex; align-items: center;">
+                                        <button class="add-btn" id="installPythonBtn">安装Python</button>
+                                    </div>
+                                </div>
+                                <table class="tools-table" id="python-runtime-table">
+                                    <thead>
+                                        <tr>
+                                            <th>版本</th>
+                                            <th>路径</th>
+                                            <th>操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="python-runtime-tbody">
+                                        <!-- Python 运行环境数据行由JS动态插入 -->
+                                    </tbody>
+                                </table>
+                                <div id="python-runtime-empty">未检测到Python环境</div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

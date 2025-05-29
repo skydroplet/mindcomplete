@@ -190,7 +190,7 @@
         "tabs": {
             "models": "模型配置",
             "prompts": "提示词管理",
-            "mcp": "MCP服务",
+            "mcp": "MCP管理",
             "newSession": "新会话",
             "close": "关闭标签",
             "newTab": "新建标签页",

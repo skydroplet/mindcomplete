@@ -188,6 +188,13 @@ class ChatSessionService {
             });
         }
 
+        // 延迟滚动，确保渲染完成
+        if (this.chatMessages) {
+            setTimeout(() => {
+                this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
+            }, 50);
+        }
+
         // 仅更新UI显示，不发送IPC消息
         this.modelSelect.value = this.data.modelId;
         this.promptSelect.value = this.data.promptId;

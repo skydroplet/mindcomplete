@@ -458,6 +458,23 @@ textarea {
     color: var(--button-text);
 }
 
+/* 提示词列表项样式 */
+.model-item {
+    padding: 10px;
+    border-bottom: 1px solid var(--border-color);
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.model-item:hover {
+    background-color: var(--session-hover-bg);
+}
+
+.model-item.active {
+    background-color: var(--session-active-bg);
+    color: var(--session-active-color);
+}
+
 /* 添加额外的底部间距，防止内容重叠 */
 #modelForm,
 #mcpServerForm,
@@ -532,6 +549,101 @@ textarea {
 
 .import-btn:hover {
     background-color: var(--button-hover);
+}
+
+/* 弹窗遮罩层 */
+.custom-dialog-mask {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.15);
+    z-index: 9998;
+}
+
+/* 弹窗主体 */
+.custom-dialog {
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    background: var(--dialog-bg, #fff);
+    border-radius: 8px;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.18);
+    padding: 24px 20px 16px 20px;
+    max-width: 320px;
+    margin: auto;
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: auto;
+}
+
+[data-theme="dark"] .custom-dialog {
+    background: var(--dialog-bg, #23272e);
+    color: var(--text-color, #fff);
+}
+
+.custom-dialog-title {
+    margin-bottom: 12px;
+}
+
+.custom-dialog-input {
+    margin-bottom: 8px;
+    padding: 8px;
+    border: 1px solid var(--input-border, #ccc);
+    border-radius: 4px;
+    font-size: 15px;
+    background: var(--input-bg, #fff);
+    color: var(--text-color, #222);
+}
+
+[data-theme="dark"] .custom-dialog-input {
+    background: var(--input-bg, #23272e);
+    color: var(--text-color, #fff);
+    border: 1px solid var(--input-border, #444);
+}
+
+.custom-dialog-btn-row {
+    margin-top: 10px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    width: 100%;
+}
+
+.custom-dialog button,
+.custom-dialog .custom-dialog-ok-btn,
+.custom-dialog .custom-dialog-cancel-btn {
+    padding: 6px 16px;
+    border-radius: 4px;
+    border: none;
+    font-size: 15px;
+    cursor: pointer;
+    background: var(--button-bg, #409eff);
+    color: var(--button-text, #fff);
+    transition: background 0.2s;
+}
+
+.custom-dialog-cancel-btn {
+    background: var(--button-cancel-bg, #e0e0e0);
+    color: var(--button-cancel-text, #333);
+}
+
+[data-theme="dark"] .custom-dialog-cancel-btn {
+    background: var(--button-cancel-bg, #444);
+    color: var(--button-cancel-text, #fff);
+}
+
+.custom-dialog button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.custom-dialog button:hover:not(:disabled) {
+    filter: brightness(0.95);
 }
 
 /* 模态对话框基本样式 */
@@ -859,4 +971,189 @@ textarea {
     font-family: monospace;
     resize: vertical;
     min-height: 150px;
+}
+
+/* MCP服务左侧菜单样式，和模型列表选项按钮保持一致 */
+.mcp-menu-item {
+    padding: 10px;
+    margin-bottom: 5px;
+    cursor: pointer;
+    border-radius: 4px;
+    background-color: var(--container-bg);
+    color: var(--text-color);
+    transition: background 0.2s, color 0.2s;
+    font-size: 15px;
+    font-weight: 500;
+}
+
+.mcp-menu-item:hover {
+    background-color: var(--session-hover-bg);
+}
+
+.mcp-menu-item.active {
+    background-color: var(--session-active-bg);
+    color: var(--session-active-color);
+}
+
+/* MCP运行环境信息区域填充整个空间并左上对齐 */
+#mcp-servers .mcp-envs-section {
+    display: none;
+    flex: 1 1 0%;
+    align-items: flex-start;
+    justify-content: flex-start;
+    height: 100%;
+    min-height: 300px;
+    flex-direction: column;
+    padding: 0;
+    background-color: var(--container-bg);
+}
+
+#runtime-info-list {
+    flex: 1 1 0%;
+    align-self: stretch;
+    max-width: none;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    box-sizing: border-box;
+    padding: 0 24px 24px 24px;
+    background-color: var(--container-bg);
+}
+
+#runtime-info-list h3 {
+    margin: 8px 0 4px 0;
+    text-align: left;
+    color: var(--text-color);
+}
+
+#nodejs-runtime-table th,
+#nodejs-runtime-table td,
+#python-runtime-table th,
+#python-runtime-table td {
+    text-align: left;
+    color: var(--text-color);
+}
+
+#nodejs-runtime-empty,
+#python-runtime-empty {
+    color: var(--secondary-text-color);
+    margin-bottom: 12px;
+}
+
+#python-runtime-table th:nth-child(3),
+#python-runtime-table td:nth-child(3),
+#nodejs-runtime-table th:nth-child(3),
+#nodejs-runtime-table td:nth-child(3) {
+    width: 70px;
+    min-width: 60px;
+    max-width: 90px;
+    text-align: center;
+}
+
+#python-runtime-table .python-delete-btn,
+#nodejs-runtime-table .nodejs-delete-btn {
+    min-width: 48px;
+    padding: 4px 10px;
+    font-size: 13px;
+    margin: 0 auto;
+    display: inline-block;
+    background-color: var(--button-bg);
+    color: var(--button-text);
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+#python-runtime-table .python-delete-btn:hover,
+#nodejs-runtime-table .nodejs-delete-btn:hover {
+    background-color: var(--button-hover);
+}
+
+.mcp-sidebar {
+    width: auto;
+    min-width: 120px;
+    max-width: 150px;
+    background-color: var(--sidebar-bg);
+    border-right: 1px solid var(--border-color);
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+}
+
+.mcp-menu {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.mcp-flex-container {
+    display: flex;
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+}
+
+.mcp-list-panel {
+    width: 250px;
+    background: var(--sidebar-bg);
+    border-right: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+}
+
+.mcp-detail-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--container-bg);
+    padding: 20px;
+    overflow-y: auto;
+    min-width: 0;
+    /* 防止flex子项溢出 */
+}
+
+.mcp-detail-panel .model-form {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    /* 防止flex子项溢出 */
+}
+
+.mcp-detail-panel form {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    /* 防止flex子项溢出 */
+}
+
+#mcp-detail-section {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+    /* 防止flex子项溢出 */
+}
+
+/* MCP运行环境部分样式 */
+.runtime-section {
+    background: var(--bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 30px;
+}
+
+.runtime-section:last-child {
+    margin-bottom: 0;
+}
+
+.runtime-section h3 {
+    color: var(--text-color);
+    font-size: 16px;
+    font-weight: 600;
 }
