@@ -7,6 +7,7 @@ const fs = require('fs');
 const { mcpConfig: mcpConfigManager } = require('../config');
 const EventEmitter = require('events');
 const { findExecutableInPath } = require('../utils');
+const { type } = require("os");
 
 class MCPClientManager extends EventEmitter {
     constructor() {
@@ -293,6 +294,21 @@ class MCPClientManager extends EventEmitter {
         }
     }
 
+
+    /**
+     * 
+     * @param {string} message 
+     * @returns 
+     */
+    createToolResultError(message) {
+        return {
+            content: [{
+                type: 'text',
+                text: message,
+            }]
+        };
+    }
+
     // 执行工具，根据工具的serverId属性确定使用哪个MCP服务
     async executeTool(sessionId, toolInfo) {
         const { name, arguments: args, serverId, serverName } = toolInfo;
@@ -310,27 +326,13 @@ class MCPClientManager extends EventEmitter {
         }
 
         if (!targetServerId) {
-            log.error(`找不到提供工具 ${name} 的MCP服务`);
-            return {
-                name,
-                content: JSON.stringify({
-                    error: `找不到提供工具 ${name} 的MCP服务`,
-                    tool: name
-                })
-            };
+            return this.createToolResultError(`找不到提供工具 ${name} 的MCP服务`);
         }
 
         // 获取对应的MCP客户端
         const clientInfo = this.mcpClients.get(targetServerId);
         if (!clientInfo || !clientInfo.isConnected) {
-            log.error(`MCP服务 ${targetServerId} 未连接，无法执行工具 ${name}`);
-            return {
-                name,
-                content: JSON.stringify({
-                    error: `MCP服务 ${targetServerId} 未连接`,
-                    tool: name
-                })
-            };
+            return this.createToolResultError(`MCP服务 ${targetServerId} 未连接，无法执行工具 ${name}`);
         }
 
         // 检查工具是否已授权
@@ -362,14 +364,7 @@ class MCPClientManager extends EventEmitter {
 
             // 如果授权被拒绝，返回错误
             if (!result.authorized) {
-                log.info(`工具 ${name} 执行请求被用户拒绝`);
-                return {
-                    name,
-                    content: JSON.stringify({
-                        error: `工具执行请求被拒绝`,
-                        tool: name
-                    })
-                };
+                return this.createToolResultError(`工具 ${name} 执行请求被用户拒绝`);
             }
 
             // 如果永久授权，更新授权状态
@@ -397,14 +392,7 @@ class MCPClientManager extends EventEmitter {
             return result;
         } catch (error) {
             log.error(`工具执行失败: ${error.message}`);
-            return {
-                name: name,
-                content: JSON.stringify({
-                    error: `工具执行失败: ${error.message}`,
-                    tool: name,
-                    server: targetServerId
-                })
-            };
+            return this.createToolResultError(`工具执行失败: ${error.message}`);
         }
     }
 
