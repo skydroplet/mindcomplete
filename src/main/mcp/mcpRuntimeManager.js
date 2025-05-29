@@ -228,6 +228,10 @@ class McpRuntimeManager {
             } else {
                 execSync(`tar -xf '${dest}' -C '${versionDir}' --strip-components=1`);
             }
+
+            // 配置Node.js环境
+            this.configureNode(version);
+
             event.sender.send('node-install-progress', {
                 taskKey,
                 percent: 100,
@@ -246,6 +250,71 @@ class McpRuntimeManager {
             });
             throw e;
         }
+    }
+
+    /**
+     * 配置Node.js环境
+     * @param {string} version Node.js版本号，例如'v22.16.0'
+     * @returns {boolean} 是否配置成功
+     */
+    configureNode(version) {
+        const nodeInfo = this.isNodeInstalled(version);
+        if (!nodeInfo.installed) {
+            log.warn(`Node.js ${version} 未安装，无法配置`);
+            return false;
+        }
+
+        const versionDir = path.join(this.nodeDir, version);
+        const npmExe = path.join(versionDir, os.platform() === 'win32' ? 'npm' : path.join('bin', 'npm'));
+
+        if (!fs.existsSync(npmExe)) {
+            log.warn(`npm可执行文件不存在: ${npmExe}`);
+            return false;
+        }
+
+        // 配置npm全局安装目录
+        const libDir = path.join(this.nodeDir, 'lib', version);
+        fs.mkdirSync(libDir, { recursive: true });
+
+        // 执行配置命令并验证结果
+        try {
+            const cmd = `"${npmExe}" config set prefix "${libDir}" --global`;
+            log.info('run cmd:', cmd);
+            const result = execSync(cmd, { encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] }).toString().trim();
+            log.info(`cmd result: `, result);
+        } catch (error) {
+            log.error('npm config prefix failed:', error.message);
+            return false;
+        }
+
+        // 配置npm镜像源为淘宝镜像
+        try {
+            const cmd = `"${npmExe}" config set registry "https://registry.npmmirror.com" --global`;
+            log.info(`run cmd:`, cmd);
+            const result = execSync(cmd, { encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] }).toString().trim();
+            log.info(`result: `, result);
+        } catch (registryError) {
+            log.error('npm config registry failed:', error.message);
+            return false;
+        }
+
+        // 验证配置是否生效
+        try {
+            const cmd = `"${npmExe}" config list --global`;
+            log.info(`run cmd:`, cmd);
+            const config = execSync(cmd, { encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] }).toString();
+            log.info(`npm config:`, config);
+
+            if (!config.includes(libDir) || !config.includes('registry.npmmirror.com')) {
+                log.error('npm config failed');
+                return false;
+            }
+        } catch (verifyError) {
+            log.error('npm config list failed:', error.message);
+            return false;
+        }
+
+        return true;
     }
 
     /**
