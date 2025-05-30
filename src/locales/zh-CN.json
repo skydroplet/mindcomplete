@@ -107,7 +107,8 @@
         },
         "help": {
             "label": "帮助",
-            "about": "关于"
+            "about": "关于",
+            "checkForUpdates": "检查更新"
         }
     },
     "chat": {

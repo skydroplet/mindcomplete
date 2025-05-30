@@ -107,7 +107,8 @@
         },
         "help": {
             "label": "Help",
-            "about": "About"
+            "about": "About",
+            "checkForUpdates": "Check for Updates"
         }
     },
     "chat": {

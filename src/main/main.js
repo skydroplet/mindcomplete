@@ -121,12 +121,7 @@ function createMenu() {
                             }
 
                             // 强制检查更新
-                            const updateInfo = await configManager.checkForUpdates(true);
-
-                            // 显示检查结果
-                            if (mainWindow && mainWindow.webContents) {
-                                mainWindow.webContents.send('update-check-result', updateInfo);
-                            }
+                            await configManager.checkForUpdates(true);
                         } catch (error) {
                             log.error('手动检查更新失败:', error.message);
                             const { mainWindow } = require('./mainWindow');
