@@ -3,108 +3,20 @@
  * 负责提示词的添加、删除、更新和设置当前提示词
  */
 
-const { app } = require('electron');
-const fs = require('fs');
-const path = require('path');
-const EventEmitter = require('events');
+const BaseConfigManager = require('./baseConfigManager');
 const Logger = require('../logger');
 const log = new Logger('promptManager');
-const crypto = require('crypto');
 
-class PromptConfigManager extends EventEmitter {
+class PromptConfigManager extends BaseConfigManager {
+    /**
+     * 创建提示词配置管理器实例
+     */
     constructor() {
-        super();
-        this.config = {
+        const defaultConfig = {
             prompts: {},
             currentPrompt: null
         };
-        this.configPath = '';
-        this.windows = [];
-
-        this.init();
-    }
-
-    /**
-     * 初始化提示词配置
-     */
-    init() {
-        try {
-            // 使用app.getPath('userData')目录
-            const userDataPath = app.getPath('userData');
-            const configDir = path.join(userDataPath, 'user-data', 'config');
-
-            // 确保配置目录存在
-            if (!fs.existsSync(configDir)) {
-                fs.mkdirSync(configDir, { recursive: true });
-                log.info(`已创建配置目录: ${configDir}`);
-            }
-
-            this.configPath = path.join(configDir, 'prompts.json');
-            log.info(`提示词配置文件路径: ${this.configPath}`);
-
-            if (fs.existsSync(this.configPath)) {
-                const data = fs.readFileSync(this.configPath, 'utf8');
-                this.config = JSON.parse(data);
-
-                log.info('已加载提示词配置');
-            } else {
-                // 初始化默认配置
-                this.config = {
-                    prompts: {},
-                    currentPrompt: null
-                };
-                this.save();
-                log.info('已创建默认提示词配置');
-            }
-
-            this.initialized = true;
-        } catch (error) {
-            log.error('初始化提示词配置出错:', error.message);
-        }
-    }
-
-    /**
-     * 保存提示词配置到文件
-     */
-    save() {
-        try {
-            fs.writeFileSync(this.configPath, JSON.stringify(this.config, null, 2));
-            log.info(`已保存提示词配置到: ${this.configPath}`);
-            this.emit('prompts-updated', this.config);
-            this.notifyWindows();
-        } catch (error) {
-            log.error('保存提示词配置出错:', error.message);
-            throw error;
-        }
-    }
-
-    /**
-     * 注册窗口，以便发送配置更新通知
-     * @param {Object} window 浏览器窗口的webContents对象
-     */
-    registerWindow(window) {
-        if (!this.windows.includes(window)) {
-            this.windows.push(window);
-            log.info('已注册窗口以接收提示词配置更新');
-        }
-    }
-
-    /**
-     * 通知所有已注册的窗口提示词配置已更新
-     */
-    notifyWindows() {
-        // 过滤掉已销毁的窗口
-        this.windows = this.windows.filter(window => !window.isDestroyed());
-
-        // 向所有窗口发送配置更新消息
-        for (const window of this.windows) {
-            try {
-                window.send('prompts-updated', this.config);
-                log.info('已向窗口发送提示词配置更新通知');
-            } catch (error) {
-                log.error('向窗口发送提示词配置更新通知失败:', error.message);
-            }
-        }
+        super('prompts.json', 'promptManager', defaultConfig);
     }
 
     /**
@@ -115,6 +27,10 @@ class PromptConfigManager extends EventEmitter {
         return this.config.prompts;
     }
 
+    /**
+     * 获取当前选中的提示词ID
+     * @returns {string|null} 当前提示词ID
+     */
     getCurrentPromptId() {
         return this.config.currentPrompt;
     }
@@ -154,16 +70,13 @@ class PromptConfigManager extends EventEmitter {
         return null;
     }
 
+    /**
+     * 获取指定ID的提示词
+     * @param {string} promptId - 提示词ID
+     * @returns {Object} 提示词对象
+     */
     getPromptById(promptId) {
         return this.config.prompts[promptId];
-    }
-
-    /**
-     * 获取当前选中的提示词ID
-     * @returns {string|null} 当前提示词ID或null
-     */
-    getCurrentPromptId() {
-        return this.config.currentPrompt;
     }
 
     /**
@@ -174,23 +87,9 @@ class PromptConfigManager extends EventEmitter {
     setCurrentPrompt(promptId) {
         if (promptId === null || this.config.prompts[promptId]) {
             this.config.currentPrompt = promptId;
-            this.save();
-            return true;
+            return this.saveConfig();
         }
         return false;
-    }
-
-    /**
-     * 生成不重复的随机提示词ID
-     * @returns {string} 随机生成的提示词ID
-     */
-    generatePromptId() {
-        const randomId = 'prompt-' + crypto.randomBytes(5).toString('hex');
-        // 确保ID不重复
-        if (this.config.prompts && this.config.prompts[randomId]) {
-            return this.generatePromptId(); // 递归重新生成
-        }
-        return randomId;
     }
 
     /**
@@ -200,9 +99,9 @@ class PromptConfigManager extends EventEmitter {
      */
     addPrompt(prompt) {
         try {
-            const promptId = this.generatePromptId();
+            const promptId = this.generateUniqueId('prompt', this.config.prompts);
             this.config.prompts[promptId] = prompt;
-            this.save();
+            this.saveConfig();
             return promptId;
         } catch (error) {
             log.error('添加提示词失败:', error.message);
@@ -220,8 +119,7 @@ class PromptConfigManager extends EventEmitter {
         try {
             if (this.config.prompts[promptId]) {
                 this.config.prompts[promptId] = prompt;
-                this.save();
-                return true;
+                return this.saveConfig();
             }
             return false;
         } catch (error) {
@@ -245,8 +143,7 @@ class PromptConfigManager extends EventEmitter {
                     this.config.currentPrompt = null;
                 }
 
-                this.save();
-                return true;
+                return this.saveConfig();
             }
             return false;
         } catch (error) {
@@ -258,5 +155,4 @@ class PromptConfigManager extends EventEmitter {
 
 // 创建单例
 const promptConfigManager = new PromptConfigManager();
-
 module.exports = promptConfigManager; 

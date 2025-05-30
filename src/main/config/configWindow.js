@@ -112,7 +112,7 @@ function registerConfigIPC() {
     // 配置相关IPC处理
     ipcMain.handle('get-models', () => {
         log.info('处理获取模型列表请求');
-        const modelConfig = modelManager.getModelConfig();
+        const modelConfig = modelManager.getConfig();
         const models = modelConfig.models || {};
         log.info('返回模型列表:', JSON.stringify(models, null, 2));
         return models;
@@ -191,7 +191,7 @@ function registerConfigIPC() {
 
     ipcMain.handle('get-mcp-config', () => {
         log.info('处理获取MCP配置请求');
-        return mcpManager.getMcpConfig();
+        return mcpManager.getConfig();
     });
 
     ipcMain.handle('save-mcp-server', async (event, serverData) => {
