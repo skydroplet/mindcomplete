@@ -321,6 +321,9 @@ class ChatSession {
             }
 
             const modelClient = modelConfig.getModelClient(this.data.modelId)
+            if (!modelClient) {
+                throw new Error("can't find model client");
+            }
 
             // 添加中断控制器信号
             const signal = this.abortController.signal;

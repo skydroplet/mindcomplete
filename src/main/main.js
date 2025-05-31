@@ -588,7 +588,7 @@ ipcMain.handle('import-config', async (event, importData) => {
                 }
 
                 // 如果模型名称已存在，添加导入标识
-                const existingModels = modelConfig.getModelConfig().models || {};
+                const existingModels = modelConfig.getConfig().models || {};
                 const existingNames = Object.values(existingModels).map(m => m.name);
                 if (existingNames.includes(model.name)) {
                     model.name = `${model.name} (导入)`;

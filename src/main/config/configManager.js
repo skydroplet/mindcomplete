@@ -321,8 +321,8 @@ class ConfigManager extends EventEmitter {
 
     notifyAllWindows() {
         const config = {
-            models: modelManager.getModelConfig(),
-            mcpConfig: mcpManager.getMcpConfig(),
+            models: modelManager.getConfig(),
+            mcpConfig: mcpManager.getConfig(),
             generalConfig: this.generalConfig
         };
 

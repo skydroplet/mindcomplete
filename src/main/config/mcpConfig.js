@@ -28,7 +28,7 @@ class McpConfigManager extends BaseConfigManager {
             servers: {},
             activeMcps: []
         };
-        super('mcp-servers.json', 'mcpManager', defaultConfig);
+        super('mcp-servers.json', defaultConfig);
     }
 
     /**
@@ -129,7 +129,6 @@ class McpConfigManager extends BaseConfigManager {
         }
 
         if (this.config.servers[serverId]) {
-            const server = this.config.servers[serverId];
             delete this.config.servers[serverId];
 
             // 如果删除的MCP是当前活跃的MCP之一，从活跃列表中移除

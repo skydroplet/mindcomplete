@@ -9,7 +9,7 @@ const { OpenAI } = require('openai');
  * 负责管理AI模型配置，提供添加、删除、更新模型的功能
  * 继承自BaseConfigManager，可以发出配置变更事件
  */
-class ModelConfig extends BaseConfigManager {
+class ModelConfigManager extends BaseConfigManager {
     /**
      * 创建模型配置管理器实例
      */
@@ -18,8 +18,7 @@ class ModelConfig extends BaseConfigManager {
             models: {},
             currentModel: null
         };
-        super('models.json', 'modelConfig', defaultConfig);
-        this.client = null;
+        super('models.json', defaultConfig);
     }
 
     /**
@@ -136,29 +135,26 @@ class ModelConfig extends BaseConfigManager {
      * @throws {Error} 当模型配置不存在时抛出错误
      */
     getModelClient(modelId) {
-        try {
-            if (!this.config.models) {
-                throw new Error("模型配置不存在");
-            }
-
-            const model = this.config.models[modelId];
-            if (!model) {
-                throw new Error("模型", modelId, "不存在");
-            }
-
-            const modelClient = new OpenAI({
-                apiKey: model.apiKey,
-                baseURL: model.apiBaseUrl
-            });
-
-            return modelClient;
-        } catch (err) {
-            log.error("获取modelClient失败", err.message)
-            throw err;
+        if (!this.config.models) {
+            log.error("no models");
+            return null
         }
+
+        const model = this.config.models[modelId];
+        if (!model) {
+            log.error("model ", modelId, " not found");
+            return null
+        }
+
+        const modelClient = new OpenAI({
+            apiKey: model.apiKey,
+            baseURL: model.apiBaseUrl
+        });
+
+        return modelClient;
     }
 }
 
 // 创建并导出单例实例
-const modelConfigManager = new ModelConfig();
+const modelConfigManager = new ModelConfigManager();
 module.exports = modelConfigManager;

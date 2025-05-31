@@ -147,7 +147,7 @@ function registerConfigIPC() {
 
     ipcMain.handle('get-config', () => {
         log.info('处理获取配置请求');
-        return modelManager.getModelConfig();
+        return modelManager.getConfig();
     });
 
     ipcMain.handle('select-model', (event, modelId) => {
@@ -178,8 +178,8 @@ function registerConfigIPC() {
 
     // 添加配置数据监听
     ipcMain.on('request-config-data', (event) => {
-        const models = modelManager.getModelConfig();
-        const mcpConfig = mcpManager.getMcpConfig();
+        const models = modelManager.getConfig();
+        const mcpConfig = mcpManager.getConfig();
         event.sender.send('config-data', { models, mcpConfig });
     });
 

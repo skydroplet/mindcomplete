@@ -13,17 +13,16 @@ const path = require('path');
 const EventEmitter = require('events');
 const crypto = require('crypto');
 const Logger = require('../logger');
+const log = new Logger('BaseConfigManager');
 
 class BaseConfigManager extends EventEmitter {
     /**
      * 创建配置管理器实例
      * @param {string} configFileName - 配置文件名
-     * @param {string} loggerName - 日志记录器名称
      * @param {Object} defaultConfig - 默认配置对象
      */
-    constructor(configFileName, loggerName, defaultConfig) {
+    constructor(configFileName, defaultConfig) {
         super();
-        this.log = new Logger(loggerName);
         this.defaultConfig = defaultConfig;
 
         // 初始化配置路径
@@ -37,8 +36,6 @@ class BaseConfigManager extends EventEmitter {
 
         // 存储所有窗口的WebContents以便更新
         this.registeredWindows = new Set();
-
-        this.log.info(`初始化${loggerName}，配置文件:`, this.configPath);
     }
 
     /**
@@ -51,10 +48,10 @@ class BaseConfigManager extends EventEmitter {
                 return { ...this.defaultConfig };
             }
             const data = fs.readFileSync(this.configPath, 'utf8');
-            this.log.info('加载配置成功:', data);
+            log.info('加载配置成功:', data);
             return JSON.parse(data);
         } catch (error) {
-            this.log.error('加载配置失败:', error.message);
+            log.error('加载配置失败:', error.message);
             return { ...this.defaultConfig };
         }
     }
@@ -65,7 +62,7 @@ class BaseConfigManager extends EventEmitter {
      */
     saveConfig() {
         try {
-            this.log.info('保存配置:', this.config);
+            log.info('保存配置:', this.config);
             const configDir = path.dirname(this.configPath);
             fs.mkdirSync(configDir, { recursive: true });
             fs.writeFileSync(this.configPath, JSON.stringify(this.config, null, 2));
@@ -73,7 +70,7 @@ class BaseConfigManager extends EventEmitter {
             this.emit('config-updated', this.config);
             return true;
         } catch (error) {
-            this.log.error('保存配置失败:', error.message);
+            log.error('保存配置失败:', error.message);
             return false;
         }
     }

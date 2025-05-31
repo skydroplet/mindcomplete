@@ -16,7 +16,7 @@ class PromptConfigManager extends BaseConfigManager {
             prompts: {},
             currentPrompt: null
         };
-        super('prompts.json', 'promptManager', defaultConfig);
+        super('prompts.json', defaultConfig);
     }
 
     /**

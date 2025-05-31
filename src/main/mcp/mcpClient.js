@@ -18,7 +18,7 @@ class MCPClientManager extends EventEmitter {
     // 初始化MCP客户端
     initialize() {
         // 获取配置中的MCP服务列表和活跃MCP
-        const mcpConfig = mcpConfigManager.getMcpConfig();
+        const mcpConfig = mcpConfigManager.getConfig();
         this.activeServers = mcpConfig.activeMcps || [];
 
         log.info("初始化MCP Clients, 活跃MCP列表:", this.activeServers);
