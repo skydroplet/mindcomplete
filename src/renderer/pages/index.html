@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="../assets/dark-mode.css">
     <link rel="stylesheet" href="../assets/main-styles.css">
     <link rel="stylesheet" href="../assets/tabs.css">
+    <link rel="stylesheet" href="../assets/promptSelector.css">
     <link id="highlight-theme" rel="stylesheet" href="../assets/highlight.js/styles/github.min.css">
 </head>
 
@@ -132,6 +133,15 @@
                 <button id="rename-confirm-btn" class="dialog-btn dialog-confirm-btn">确定</button>
             </div>
         </div>
+    </div>
+
+    <!-- 提示词选择器 -->
+    <div id="promptSelector" class="prompt-selector">
+        <div class="prompt-selector-header">
+            <div class="prompt-selector-title" data-i18n="prompts.selectPrompt">选择提示词</div>
+            <div class="prompt-selector-close">×</div>
+        </div>
+        <div class="prompt-list"></div>
     </div>
 
     <!-- JavaScript引用 -->

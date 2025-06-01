@@ -184,7 +184,9 @@
         "loadingFailed": "Failed to load prompt list: {error}",
         "systemType": "System Prompt",
         "userType": "User Prompt",
-        "typeHelp": "System prompts define AI behavior and role. User prompts provide specific instructions or context."
+        "typeHelp": "System prompts define AI behavior and role. User prompts provide specific instructions or context.",
+        "selectPrompt": "Select Prompt",
+        "searchPlaceholder": "Search prompts..."
     },
     "settings": {
         "title": "Configuration",

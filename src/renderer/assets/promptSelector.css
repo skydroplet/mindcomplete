@@ -1,0 +1,111 @@
+.prompt-selector {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--container-bg);
+    border-radius: 8px;
+    padding: 16px;
+    width: 400px;
+    max-height: 80vh;
+    z-index: 1000;
+    box-shadow: 0 4px 12px var(--dropdown-shadow);
+    color: var(--text-color);
+    outline: none;
+}
+
+.prompt-selector:focus {
+    outline: none;
+}
+
+.prompt-selector.show {
+    display: block;
+}
+
+.prompt-list {
+    max-height: 60vh;
+    overflow-y: auto;
+    margin: 12px 0;
+}
+
+.prompt-list::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+.prompt-list::-webkit-scrollbar-track {
+    background: var(--scrollbar-track);
+}
+
+.prompt-list::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: 3px;
+}
+
+.prompt-list::-webkit-scrollbar-thumb:hover {
+    background: var(--scrollbar-thumb-hover);
+}
+
+.prompt-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    border-radius: 4px;
+    margin: 4px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: var(--text-color);
+    transition: background-color 0.2s;
+}
+
+.prompt-item:hover {
+    background: var(--session-hover-bg);
+}
+
+.prompt-item.active {
+    background: var(--session-active-bg);
+    color: var(--session-active-color);
+}
+
+.prompt-item .prompt-type {
+    font-size: 12px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: var(--input-bg);
+    color: var(--text-color);
+}
+
+.prompt-item .prompt-type.system {
+    background: var(--button-bg);
+    color: var(--button-text);
+}
+
+.prompt-item .prompt-type.user {
+    background: var(--secondary-color, #2196F3);
+    color: var(--button-text);
+}
+
+.prompt-selector-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.prompt-selector-title {
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--text-color);
+}
+
+.prompt-selector-close {
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    color: var(--text-color);
+}
+
+.prompt-selector-close:hover {
+    background: var(--session-hover-bg);
+}
