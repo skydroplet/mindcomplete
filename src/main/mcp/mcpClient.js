@@ -36,7 +36,7 @@ class MCPClientManager extends EventEmitter {
 
     // 连接到所有活跃的MCP服务
     async connectToActiveServers() {
-        const mcpConfig = mcpConfigManager.getMcpConfig();
+        const mcpConfig = mcpConfigManager.getConfig();
         const servers = mcpConfig.servers || {};
 
         for (const serverId of this.activeServers) {
@@ -207,7 +207,7 @@ class MCPClientManager extends EventEmitter {
     getToolsForServer(serverIds) {
         let tools = [];
 
-        const mcpConfig = mcpConfigManager.getMcpConfig();
+        const mcpConfig = mcpConfigManager.getConfig();
         const servers = mcpConfig.servers || {};
 
         for (const serverId of serverIds) {
@@ -250,7 +250,7 @@ class MCPClientManager extends EventEmitter {
 
     // 检查工具是否已授权
     isToolAuthorized(toolName, serverId) {
-        const config = mcpConfigManager.getMcpConfig();
+        const config = mcpConfigManager.getConfig();
         if (!config || !config.servers || !config.servers[serverId]) {
             log.error(`无法获取MCP服务 ${serverId} 的配置，无法检查工具授权状态`);
             return false;
@@ -269,7 +269,7 @@ class MCPClientManager extends EventEmitter {
 
     async updateToolAuthorizationStatus(toolName, serverId, isAuthorized) {
         try {
-            const config = mcpConfigManager.getMcpConfig();
+            const config = mcpConfigManager.getConfig();
             if (!config || !config.servers || !config.servers[serverId]) {
                 log.error(`无法获取服务 ${serverId} 的配置，无法更新工具授权状态`);
                 return false;

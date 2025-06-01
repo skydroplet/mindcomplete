@@ -14,7 +14,7 @@ const { app, ipcMain } = require('electron');
 const axios = require('axios');
 const os = require('os');
 
-class ConfigManager extends EventEmitter {
+class AppConfig extends EventEmitter {
     constructor() {
         super();
         log.info('初始化ConfigManager');
@@ -369,13 +369,13 @@ class ConfigManager extends EventEmitter {
 }
 
 // 创建并导出单例实例
-const configManager = new ConfigManager();
-module.exports = configManager;
+const appConfig = new AppConfig();
+module.exports = appConfig;
 
 // 设置稍后提醒时间的IPC处理程序
 ipcMain.handle('set-remind-later', async (event) => {
     try {
-        return configManager.setRemindLaterTime();
+        return appConfig.setRemindLaterTime();
     } catch (error) {
         log.error('设置稍后提醒失败:', error.message);
         throw error;
@@ -385,7 +385,7 @@ ipcMain.handle('set-remind-later', async (event) => {
 // 设置忽略新版本
 ipcMain.handle('set-ignore-update', async (event) => {
     try {
-        return configManager.setIgnoreUpdate();
+        return appConfig.setIgnoreUpdate();
     } catch (error) {
         log.error('设置忽略版本失败:', error.message);
         throw error;

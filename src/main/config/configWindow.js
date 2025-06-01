@@ -10,7 +10,7 @@ const { BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const Logger = require('../logger');
 const log = new Logger('config');
-const configManager = require('./configManager');
+const appConfig = require('./appConfig');
 const modelManager = require('./modelConfig');
 const mcpManager = require('./mcpConfig');
 const promptManager = require('./promptConfig');
@@ -43,7 +43,7 @@ function createConfigWindow(activeTab) {
     configWindow.setMenuBarVisibility(false);
 
     // 注册配置窗口以接收配置更新
-    configManager.registerWindow(configWindow.webContents);
+    appConfig.registerWindow(configWindow.webContents);
 
     // 注册配置窗口以接收提示词更新
     promptManager.registerWindow(configWindow.webContents);

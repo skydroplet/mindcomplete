@@ -10,7 +10,7 @@ require('dotenv').config();
 const i18n = require('../locales/i18n');
 const fs = require('fs');
 const { createWindow } = require('./mainWindow');
-const { configManager, createConfigWindow, registerConfigIPC, promptConfig, modelConfig, openConfigWindowWithTab } = require('./config');
+const { appConfig, createConfigWindow, registerConfigIPC, promptConfig, modelConfig, openConfigWindowWithTab } = require('./config');
 const { registerSessionIPC } = require('./session');
 const Logger = require('./logger');
 const log = new Logger('main');
@@ -32,7 +32,7 @@ const { findExecutableInPath } = require('./utils');
  */
 function createMenu() {
     // 确保使用当前配置的语言
-    const configLanguage = configManager.getLanguage();
+    const configLanguage = appConfig.getLanguage();
     if (configLanguage) {
         i18n.loadFromConfig(configLanguage);
     }
@@ -121,7 +121,7 @@ function createMenu() {
                             }
 
                             // 强制检查更新
-                            await configManager.checkForUpdates(true);
+                            await appConfig.checkForUpdates(true);
                         } catch (error) {
                             log.error('手动检查更新失败:', error.message);
                             const { mainWindow } = require('./mainWindow');
@@ -148,7 +148,7 @@ function createMenu() {
 
 app.whenReady().then(() => {
     // 从配置加载语言设置
-    const configLanguage = configManager.getLanguage();
+    const configLanguage = appConfig.getLanguage();
     if (configLanguage) {
         i18n.loadFromConfig(configLanguage);
     }
@@ -160,7 +160,7 @@ app.whenReady().then(() => {
 
     // 将配置管理器注册到主窗口
     if (mainWindow && mainWindow.webContents) {
-        configManager.registerWindow(mainWindow.webContents);
+        appConfig.registerWindow(mainWindow.webContents);
     }
 
     // 创建菜单
@@ -177,7 +177,7 @@ app.whenReady().then(() => {
     // 注册主题切换IPC事件
     ipcMain.on('theme-changed', (event, theme) => {
         // 保存主题设置到通用配置
-        configManager.setTheme(theme);
+        appConfig.setTheme(theme);
 
         // 获取所有窗口
         const windows = BrowserWindow.getAllWindows();
@@ -192,7 +192,7 @@ app.whenReady().then(() => {
     // 设置系统主题变化监听
     nativeTheme.on('updated', () => {
         // 获取当前主题设置
-        const theme = configManager.getTheme();
+        const theme = appConfig.getTheme();
         // 如果是自动模式，通知所有窗口系统主题变化
         if (theme === 'auto') {
             // 获取所有窗口
@@ -234,7 +234,7 @@ app.whenReady().then(() => {
 async function checkForUpdates() {
     try {
         log.info('应用启动时自动检查更新');
-        configManager.checkForUpdates();
+        appConfig.checkForUpdates();
     } catch (error) {
         log.error('自动检查更新失败:', error.message);
     }
@@ -243,7 +243,7 @@ async function checkForUpdates() {
 // 添加IPC通道供渲染进程调用
 ipcMain.handle('check-for-updates', async (event, force = false) => {
     try {
-        return await configManager.checkForUpdates(force);
+        return await appConfig.checkForUpdates(force);
     } catch (error) {
         log.error('IPC检查更新失败:', error.message);
         throw error;
@@ -264,18 +264,18 @@ app.on('activate', () => {
 
 // 获取当前语言设置
 ipcMain.handle('get-language', () => {
-    return configManager.getLanguage();
+    return appConfig.getLanguage();
 });
 
 // 获取当前主题设置
 ipcMain.handle('get-theme', () => {
-    return configManager.getTheme();
+    return appConfig.getTheme();
 });
 
 // 处理语言切换
 ipcMain.handle('set-locale', (event, locale) => {
     // 保存语言设置到通用配置
-    configManager.setLanguage(locale);
+    appConfig.setLanguage(locale);
 
     i18n.setLocale(locale);
     const { mainWindow } = require('./mainWindow');

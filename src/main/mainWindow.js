@@ -10,7 +10,7 @@ const { BrowserWindow, app, ipcMain } = require('electron');
 const path = require('path');
 const os = require('os');
 const i18n = require('../locales/i18n');
-const { configManager, promptConfig: promptConfigManager } = require('./config');
+const { appConfig, promptConfig: promptConfigManager } = require('./config');
 const mcpRuntimeManager = require('./mcp/mcpRuntimeManager');
 
 // 主窗口实例引用
@@ -47,7 +47,7 @@ function createWindow() {
     mainWindow.setMenuBarVisibility(false);
 
     // 注册主窗口以接收配置更新
-    configManager.registerWindow(mainWindow.webContents);
+    appConfig.registerWindow(mainWindow.webContents);
 
     // 注册主窗口以接收提示词配置更新
     promptConfigManager.registerWindow(mainWindow.webContents);

@@ -12,7 +12,7 @@ describe('下载和安装测试', () => {
     describe('Node.js下载安装', () => {
         const nodeVersion = 'v22.16.0';
         it('should install Node.js successfully', async () => {
-            await McpRuntimeManager.installNode(nodeVersion);
+            await McpRuntimeManager.installNodeWithProgress(nodeVersion);
             expect(McpRuntimeManager.isNodeInstalled(nodeVersion).installed).toBe(true);
         }, 300000);
 
