@@ -7,7 +7,7 @@ const BaseConfigManager = require('./baseConfigManager');
 const Logger = require('../logger');
 const log = new Logger('promptManager');
 
-class PromptConfigManager extends BaseConfigManager {
+class PromptConfig extends BaseConfigManager {
     /**
      * 创建提示词配置管理器实例
      */
@@ -154,5 +154,5 @@ class PromptConfigManager extends BaseConfigManager {
 }
 
 // 创建单例
-const promptConfigManager = new PromptConfigManager();
-module.exports = promptConfigManager; 
+const promptConfig = new PromptConfig();
+module.exports = promptConfig; 

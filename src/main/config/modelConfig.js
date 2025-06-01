@@ -9,7 +9,7 @@ const { OpenAI } = require('openai');
  * 负责管理AI模型配置，提供添加、删除、更新模型的功能
  * 继承自BaseConfigManager，可以发出配置变更事件
  */
-class ModelConfigManager extends BaseConfigManager {
+class ModelConfig extends BaseConfigManager {
     /**
      * 创建模型配置管理器实例
      */
@@ -156,5 +156,5 @@ class ModelConfigManager extends BaseConfigManager {
 }
 
 // 创建并导出单例实例
-const modelConfigManager = new ModelConfigManager();
-module.exports = modelConfigManager;
+const modelConfig = new ModelConfig();
+module.exports = modelConfig;

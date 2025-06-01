@@ -19,7 +19,7 @@ const log = new Logger('mcpManager');
  * 负责管理MCP服务配置，提供添加、删除、更新服务的功能
  * 继承自BaseConfigManager，可以发出配置变更事件
  */
-class McpConfigManager extends BaseConfigManager {
+class McpConfig extends BaseConfigManager {
     /**
      * 创建MCP配置管理器实例
      */
@@ -208,5 +208,5 @@ class McpConfigManager extends BaseConfigManager {
 }
 
 // 创建并导出单例实例
-const mcpConfigManager = new McpConfigManager();
-module.exports = mcpConfigManager;
+const mcpConfig = new McpConfig();
+module.exports = mcpConfig;
