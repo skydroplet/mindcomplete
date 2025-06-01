@@ -449,12 +449,15 @@ class ModelService {
 
         // 保存模型按钮事件
         const saveBtn = document.getElementById('saveBtn');
-        if (saveBtn) {
-            saveBtn.addEventListener('click', () => {
-                log.info('保存按钮被点击');
-                this.saveCurrentModel();
-            });
-        }
+        saveBtn.addEventListener('click', () => {
+            const nameInput = document.getElementById('modelName');
+            if (nameInput && !nameInput.value.trim()) {
+                nameInput.focus();
+                return;
+            }
+
+            this.saveCurrentModel();
+        });
 
         // 取消按钮事件
         const cancelBtn = document.getElementById('cancelBtn');

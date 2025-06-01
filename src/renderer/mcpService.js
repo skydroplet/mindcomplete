@@ -1047,6 +1047,12 @@ ${formattedToolList}
         const saveMcpBtn = document.getElementById('saveMcpBtn');
         if (saveMcpBtn) {
             saveMcpBtn.addEventListener('click', async () => {
+                const nameInput = document.getElementById('serverName');
+                if (nameInput && !nameInput.value.trim()) {
+                    nameInput.focus();
+                    return;
+                }
+
                 await this.saveMcpServerConfig();
             });
         }

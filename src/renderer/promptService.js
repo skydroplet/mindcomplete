@@ -273,6 +273,12 @@ class PromptService {
         });
 
         document.getElementById('savePromptBtn').addEventListener('click', () => {
+            const nameInput = document.getElementById('promptName');
+            if (nameInput && !nameInput.value.trim()) {
+                nameInput.focus();
+                return;
+            }
+
             this.saveCurrentPrompt();
         });
 
