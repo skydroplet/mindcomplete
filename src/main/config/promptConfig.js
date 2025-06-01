@@ -12,9 +12,24 @@ class PromptConfig extends BaseConfigManager {
      * 创建提示词配置管理器实例
      */
     constructor() {
+        const emptyPrompt = {
+            name: '不添加提示词',
+            content: '',
+            type: 'system'
+        };
+
+        const mcpPrompt = {
+            name: 'MCP工具优先',
+            content: '当你不确定的时候，请使用使用Tools。',
+            type: 'system'
+        };
+
         const defaultConfig = {
-            prompts: {},
-            currentPrompt: null
+            prompts: {
+                'default-prompt-1': emptyPrompt,
+                'default-prompt-2': mcpPrompt,
+            },
+            currentPrompt: ' default-prompt-2',
         };
         super('prompts.json', defaultConfig);
     }

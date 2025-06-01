@@ -1180,7 +1180,8 @@ ${formattedToolList}
                     });
                 } else {
                     log.info('添加新MCP服务');
-                    success = await ipcRenderer.invoke('save-mcp-server', serverData);
+                    const newServerId = await ipcRenderer.invoke('save-mcp-server', serverData);
+                    success = newServerId !== null;
                 }
 
                 log.info('保存MCP服务结果:', success);
@@ -1304,55 +1305,14 @@ ${formattedToolList}
             };
 
             // 保存新复制的MCP服务
-            const success = await ipcRenderer.invoke('save-mcp-server', copiedServer);
-            if (success) {
+            const newServerId = await ipcRenderer.invoke('save-mcp-server', copiedServer);
+            if (newServerId) {
                 // 刷新MCP服务列表
                 const updatedMcpConfig = await ipcRenderer.invoke('get-mcp-config');
                 this.mcpServers = updatedMcpConfig?.servers || {};
                 this.activeMcps = updatedMcpConfig?.activeMcps || [];
                 this.updateMcpServerList();
-
-                // 清除当前选中状态
-                this.currentServerId = null;
-                document.getElementById('deleteMcpServerBtn')?.classList.add('hidden');
-                document.getElementById('copyMcpServerBtn')?.classList.add('hidden');
-                this.hideToolsList();
-
-                // 填充复制的MCP服务数据
-                document.getElementById('serverName').value = copiedServer.name;
-                document.getElementById('serverPath').value = copiedServer.command || '';
-
-                // 清空环境变量和参数容器
-                document.getElementById('envVarsContainer').innerHTML = '';
-                document.getElementById('argsContainer').innerHTML = '';
-
-                // 添加环境变量
-                if (copiedServer.envs) {
-                    Object.entries(copiedServer.envs).forEach(([key, value]) => {
-                        this.addEnvRow(key, value);
-                    });
-                }
-
-                // 添加命令行参数
-                if (copiedServer.args && Array.isArray(copiedServer.args)) {
-                    copiedServer.args.forEach(arg => {
-                        this.addArgRow(arg);
-                    });
-                }
-
-                // 确保所有输入框可编辑
-                document.querySelectorAll('#mcpServerForm input').forEach(input => {
-                    input.readOnly = false;
-                    input.disabled = false;
-                });
-                document.querySelectorAll('#envVarsContainer input').forEach(input => {
-                    input.readOnly = false;
-                    input.disabled = false;
-                });
-                document.querySelectorAll('#argsContainer input').forEach(input => {
-                    input.readOnly = false;
-                    input.disabled = false;
-                });
+                this.selectMcpServer(newServerId);
             } else {
                 throw new Error('复制MCP服务失败');
             }

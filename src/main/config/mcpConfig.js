@@ -24,10 +24,34 @@ class McpConfig extends BaseConfigManager {
      * 创建MCP配置管理器实例
      */
     constructor() {
+        const defaultMcp = [
+            {
+                name: 'mcp-server-commands',
+                command: 'npx',
+                args: ['-y', 'mcp-server-commands'],
+            },
+            {
+                name: 'bing-cn',
+                command: 'npx',
+                args: ['-y', 'bing-cn-mcp'],
+            },
+        ]
+
         const defaultConfig = {
             servers: {},
             activeMcps: []
         };
+
+        for (let i = 0; i < defaultMcp.length; i++) {
+            let id = 'default-mcp-' + i;
+            defaultConfig.servers[id] = {
+                name: defaultMcp[i].name,
+                command: defaultMcp[i].command,
+                args: defaultMcp[i].args,
+            }
+            defaultConfig.activeMcps.push(id);
+        }
+
         super('mcp-servers.json', defaultConfig);
     }
 
@@ -55,7 +79,6 @@ class McpConfig extends BaseConfigManager {
 
             // 转换数据结构
             const serverConfig = {
-                id: serverId,
                 name: name,
                 command: serverData.command,
                 args: serverData.args || [],
@@ -70,10 +93,11 @@ class McpConfig extends BaseConfigManager {
             // 更新内存中的配置
             this.config.servers[serverId] = serverConfig;
 
-            return this.saveConfig();
+            this.saveConfig();
+            return serverId;
         } catch (err) {
             log.error('添加MCP服务配置失败:', err.message);
-            return false;
+            return null;
         }
     }
 
@@ -94,7 +118,6 @@ class McpConfig extends BaseConfigManager {
             if (this.config.servers[serverId]) {
                 // 转换数据结构，确保格式一致性
                 const updatedConfig = {
-                    id: serverId, // 确保ID保持不变
                     name: config.name,
                     command: config.command,
                     args: config.args || [],

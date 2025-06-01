@@ -219,7 +219,8 @@ class PromptService {
                     prompt
                 });
             } else {
-                success = await window.ipcRenderer.invoke('add-prompt', prompt);
+                const promptId = await window.ipcRenderer.invoke('add-prompt', prompt);
+                success = !!promptId;
             }
 
             this.log.info('保存操作结果:', success);
@@ -357,26 +358,9 @@ class PromptService {
                     // 刷新提示词列表
                     const prompts = await window.ipcRenderer.invoke('get-all-prompts');
                     window.prompts = prompts;
+                    window.currentPromptId = promptId;
                     this.updatePromptList(prompts);
-
-                    // 清除当前选中状态
-                    window.currentPromptId = null;
-                    document.querySelector('#deletePromptBtn').classList.add('hidden');
-                    document.querySelector('#copyPromptBtn').classList.add('hidden');
-
-                    // 填充复制的提示词数据
-                    document.getElementById('promptName').value = copiedPrompt.name;
-                    document.getElementById('promptContent').value = copiedPrompt.content;
-                    document.getElementById('promptType').value = copiedPrompt.type;
-
-                    // 确保所有输入框和文本域可编辑
-                    document.querySelectorAll('#promptForm input, #promptForm textarea, #promptForm select').forEach(element => {
-                        element.readOnly = false;
-                        element.disabled = false;
-                        element.style.pointerEvents = 'auto'; // 确保CSS不阻止交互
-                        element.style.opacity = '1'; // 确保元素是可见的
-                        element.tabIndex = 0; // 确保元素可以通过Tab键访问
-                    });
+                    this.selectPrompt(promptId);
                 } else {
                     throw new Error('复制提示词失败');
                 }

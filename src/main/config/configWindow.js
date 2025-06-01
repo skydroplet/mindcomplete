@@ -249,7 +249,7 @@ function registerConfigIPC() {
     ipcMain.handle('add-prompt', (event, prompt) => {
         log.info('处理添加提示词请求, 提示词数据:', JSON.stringify(prompt, null, 2));
         const promptId = promptManager.addPrompt(prompt);
-        return !!promptId;
+        return promptId;
     });
 
     ipcMain.handle('update-prompt', (event, { promptId, prompt }) => {

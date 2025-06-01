@@ -342,14 +342,22 @@ class ModelService {
                 this.models = models;
                 this.updateModelList(models);
 
-                // 清除当前选中状态
-                this.selectedModelId = null;
+                // 获取新复制的模型ID（最后一个添加的模型）
+                const newModelId = Object.keys(models).pop();
+                if (newModelId) {
+                    // 设置新复制的模型为当前选中状态
+                    this.selectedModelId = newModelId;
+                    window.currentModelId = newModelId;
 
-                const deleteBtn = document.querySelector('.delete-btn');
-                const copyModelBtn = document.querySelector('#copyModelBtn');
+                    // 更新UI显示
+                    this.updateActiveModelItem(newModelId);
 
-                if (deleteBtn) deleteBtn.classList.add('hidden');
-                if (copyModelBtn) copyModelBtn.classList.add('hidden');
+                    // 显示删除按钮和复制按钮
+                    const deleteBtn = document.querySelector('.delete-btn');
+                    const copyModelBtn = document.querySelector('#copyModelBtn');
+                    if (deleteBtn) deleteBtn.classList.remove('hidden');
+                    if (copyModelBtn) copyModelBtn.classList.remove('hidden');
+                }
 
                 // 填充复制的模型数据
                 const modelName = document.getElementById('modelName');
