@@ -16,6 +16,9 @@ const Logger = require('./logger');
 const log = new Logger('main');
 const path = require('path');
 
+// 注册相关回调
+require('./mcp/mcpRuntimeManager');
+
 // 全局MCP实例
 const mcp = require('./mcp/mcpClient');
 const { closeConfigWindow } = require('./config/configWindow');

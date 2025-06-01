@@ -629,6 +629,8 @@ class McpRuntimeManager {
     }
 }
 
+module.exports = new McpRuntimeManager();
+
 // 处理获取MCP运行环境信息的请求
 ipcMain.handle('get-mcp-runtime-info', async () => {
     return module.exports.getAllRuntimeInfo();
@@ -703,4 +705,3 @@ ipcMain.handle('uninstall-python-runtime', async (event, version) => {
     }
 });
 
-module.exports = new McpRuntimeManager();

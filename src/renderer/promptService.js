@@ -69,22 +69,6 @@ class PromptService {
     }
 
     /**
-     * 设置当前提示词
-     * @param {string} promptId - 提示词ID
-     */
-    setCurrentPrompt(promptId) {
-        this.currentPrompt = promptId;
-    }
-
-    /**
-     * 获取当前提示词
-     * @returns {string} - 当前提示词ID
-     */
-    getCurrentPrompt() {
-        return this.currentPrompt;
-    }
-
-    /**
      * 处理提示词选择事件
      * 
      * @param {HTMLElement} statusElement - 状态显示元素

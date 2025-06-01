@@ -225,9 +225,9 @@ function registerConfigIPC() {
     });
 
     // 提示词相关IPC处理
-    ipcMain.handle('get-prompts', () => {
+    ipcMain.handle('get-prompts', async (event, promptType = 'system') => {
         log.info('处理获取提示词列表请求 - 只返回系统提示词');
-        return promptManager.getPromptsByType('system');
+        return promptManager.getPromptsByType(promptType);
     });
 
     // 专门为配置窗口提供的获取所有提示词的IPC处理
