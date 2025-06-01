@@ -11,7 +11,6 @@ const path = require('path');
 const os = require('os');
 const i18n = require('../locales/i18n');
 const { appConfig, promptConfig: promptConfigManager } = require('./config');
-const mcpRuntimeManager = require('./mcp/mcpRuntimeManager');
 
 // 主窗口实例引用
 let mainWindow;

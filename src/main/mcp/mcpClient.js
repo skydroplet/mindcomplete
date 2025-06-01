@@ -7,7 +7,6 @@ const fs = require('fs');
 const { mcpConfig: mcpConfigManager } = require('../config');
 const EventEmitter = require('events');
 const { findExecutableInPath } = require('../utils');
-const { type } = require("os");
 
 class MCPClientManager extends EventEmitter {
     constructor() {

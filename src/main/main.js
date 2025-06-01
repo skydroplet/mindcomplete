@@ -10,7 +10,7 @@ require('dotenv').config();
 const i18n = require('../locales/i18n');
 const fs = require('fs');
 const { createWindow } = require('./mainWindow');
-const { appConfig, createConfigWindow, registerConfigIPC, promptConfig, modelConfig, openConfigWindowWithTab } = require('./config');
+const { appConfig, createConfigWindow, registerConfigIPC, openConfigWindowWithTab } = require('./config');
 const { registerSessionIPC } = require('./session');
 const Logger = require('./logger');
 const log = new Logger('main');
@@ -19,9 +19,16 @@ const path = require('path');
 // 全局MCP实例
 const mcp = require('./mcp/mcpClient');
 const { closeConfigWindow } = require('./config/configWindow');
-const mcpRuntimeManager = require('./mcp/mcpRuntimeManager');
 
 const { findExecutableInPath } = require('./utils');
+
+
+const { mainWindow } = require('./mainWindow');
+
+// 引入各个配置管理器
+const modelConfig = require('./config/modelConfig');
+const promptConfig = require('./config/promptConfig');
+const mcpConfig = require('./config/mcpConfig');
 
 /**
  * 创建应用程序菜单
@@ -33,9 +40,7 @@ const { findExecutableInPath } = require('./utils');
 function createMenu() {
     // 确保使用当前配置的语言
     const configLanguage = appConfig.getLanguage();
-    if (configLanguage) {
-        i18n.loadFromConfig(configLanguage);
-    }
+    i18n.loadFromConfig(configLanguage);
 
     // 定义菜单模板
     const template = [
@@ -156,8 +161,6 @@ app.whenReady().then(() => {
     // 初始化窗口
     createWindow();
 
-    const { mainWindow } = require('./mainWindow');
-
     // 将配置管理器注册到主窗口
     if (mainWindow && mainWindow.webContents) {
         appConfig.registerWindow(mainWindow.webContents);
@@ -171,7 +174,8 @@ app.whenReady().then(() => {
 
     // 检查更新
     setTimeout(() => {
-        checkForUpdates();
+        log.info('checking for updates...');
+        appConfig.checkForUpdates();
     }, 5000);
 
     // 注册主题切换IPC事件
@@ -225,21 +229,6 @@ app.whenReady().then(() => {
     });
 });
 
-/**
- * 应用启动时检查更新
- *
- * 在应用启动时自动检查是否有新版本可用
- * 如果发现新版本，会通知主窗口显示更新提示
- */
-async function checkForUpdates() {
-    try {
-        log.info('应用启动时自动检查更新');
-        appConfig.checkForUpdates();
-    } catch (error) {
-        log.error('自动检查更新失败:', error.message);
-    }
-}
-
 // 添加IPC通道供渲染进程调用
 ipcMain.handle('check-for-updates', async (event, force = false) => {
     try {
@@ -276,9 +265,7 @@ ipcMain.handle('get-theme', () => {
 ipcMain.handle('set-locale', (event, locale) => {
     // 保存语言设置到通用配置
     appConfig.setLanguage(locale);
-
     i18n.setLocale(locale);
-    const { mainWindow } = require('./mainWindow');
 
     // 更新所有窗口的标题和语言
     const allWindows = BrowserWindow.getAllWindows();
@@ -490,9 +477,6 @@ mcp.on('tool-authorization-request', async (request) => {
     log.info(`收到工具授权请求: ${toolName}, 服务: ${serverId}`);
 
     try {
-        // 不再弹出对话框，而是将授权请求发送到渲染进程
-        const { mainWindow } = require('./mainWindow');
-
         // 发送授权请求到渲染进程，在工具消息中显示按钮
         mainWindow.webContents.send('tool-authorization-request-' + sessionId, {
             toolName,
@@ -557,11 +541,6 @@ ipcMain.handle('export-config', async (event, configData, defaultFileName) => {
 ipcMain.handle('import-config', async (event, importData) => {
     try {
         log.info('导入配置请求:', Object.keys(importData));
-
-        // 引入各个配置管理器
-        const modelConfig = require('./config/modelConfig');
-        const promptConfig = require('./config/promptConfig');
-        const mcpConfig = require('./config/mcpConfig');
 
         // 记录导入的项目数量
         const importCount = {
@@ -641,7 +620,7 @@ ipcMain.handle('import-config', async (event, importData) => {
         index = 1;
         if (importData.mcpServers && typeof importData.mcpServers === 'object') {
             // 获取现有MCP服务
-            const mcpConfigs = mcpConfig.getMcpConfig();
+            const mcpConfigs = mcpConfig.getConfig();
             const existingServers = mcpConfigs.servers || {};
             const existingNames = Object.values(existingServers).map(s => s.name);
 

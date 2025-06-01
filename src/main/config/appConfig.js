@@ -39,7 +39,7 @@ class AppConfig extends BaseConfigManager {
 
     // 获取语言设置
     getLanguage() {
-        return this.config.language;
+        return this.config.language || 'zh-CN';
     }
 
     // 更新主题设置
@@ -51,7 +51,7 @@ class AppConfig extends BaseConfigManager {
 
     // 获取主题设置
     getTheme() {
-        return this.config.theme;
+        return this.config.theme || 'auto';
     }
 
     /**
