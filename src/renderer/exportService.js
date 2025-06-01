@@ -374,7 +374,7 @@ class ExportService {
         const mcpEnvVarsCheckbox = document.createElement('input');
         mcpEnvVarsCheckbox.type = 'checkbox';
         mcpEnvVarsCheckbox.id = 'select-all-mcp-env';
-        mcpEnvVarsCheckbox.checked = false;
+        mcpEnvVarsCheckbox.checked = true;
         mcpEnvVarsCheckbox.className = 'select-all-checkbox';
         mcpEnvVarsCheckbox.title = i18n.t('export.selectAllEnvVars', '选择/取消选择所有环境变量');
         mcpEnvVarsHeader.appendChild(mcpEnvVarsCheckbox);
@@ -387,7 +387,7 @@ class ExportService {
         const mcpArgsCheckbox = document.createElement('input');
         mcpArgsCheckbox.type = 'checkbox';
         mcpArgsCheckbox.id = 'select-all-mcp-args';
-        mcpArgsCheckbox.checked = false;
+        mcpArgsCheckbox.checked = true;
         mcpArgsCheckbox.className = 'select-all-checkbox';
         mcpArgsCheckbox.title = i18n.t('export.selectAllArgs', '选择/取消选择所有参数');
         mcpArgsHeader.appendChild(mcpArgsCheckbox);
@@ -663,7 +663,7 @@ class ExportService {
         envVarsCheckbox.id = `mcp-env-${id}`;
         envVarsCheckbox.dataset.id = id;
         envVarsCheckbox.dataset.type = 'mcp-env';
-        envVarsCheckbox.checked = false;
+        envVarsCheckbox.checked = true;
         envVarsCheckbox.className = 'export-item-checkbox';
         envVarsCheckbox.title = i18n.t('export.selectEnvVars', '选择/取消选择环境变量');
 
@@ -678,7 +678,7 @@ class ExportService {
         argsCheckbox.id = `mcp-args-${id}`;
         argsCheckbox.dataset.id = id;
         argsCheckbox.dataset.type = 'mcp-args';
-        argsCheckbox.checked = false;
+        argsCheckbox.checked = true;
         argsCheckbox.className = 'export-item-checkbox';
         argsCheckbox.title = i18n.t('export.selectArgs', '选择/取消选择参数');
 
