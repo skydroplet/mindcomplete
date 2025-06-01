@@ -76,13 +76,28 @@ class BaseConfigManager extends EventEmitter {
     }
 
     /**
+     * 生成指定长度的只包含数字和小写字母的随机字符串
+     * @param {number} length - 随机字符串长度
+     * @returns {string}
+     */
+    static randomString(length) {
+        const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+        let result = '';
+        for (let i = 0; i < length; i++) {
+            const idx = crypto.randomInt(0, chars.length);
+            result += chars[idx];
+        }
+        return result;
+    }
+
+    /**
      * 生成不重复的随机ID
      * @param {string} prefix - ID前缀
      * @param {Object} existingItems - 现有项目对象
      * @returns {string} 生成的唯一ID
      */
     generateUniqueId(prefix, existingItems) {
-        const randomId = prefix + '-' + crypto.randomBytes(5).toString('hex');
+        const randomId = prefix + '-' + BaseConfigManager.randomString(16);
         if (existingItems && existingItems[randomId]) {
             return this.generateUniqueId(prefix, existingItems);
         }
@@ -130,4 +145,4 @@ class BaseConfigManager extends EventEmitter {
     }
 }
 
-module.exports = BaseConfigManager; 
+module.exports = BaseConfigManager;

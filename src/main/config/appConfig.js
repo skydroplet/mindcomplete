@@ -5,128 +5,53 @@
 
 const Logger = require('../logger');
 const log = new Logger('config');
-const EventEmitter = require('events');
-const modelManager = require('./modelConfig');
-const mcpManager = require('./mcpConfig');
-const fs = require('fs');
-const path = require('path');
 const { app, ipcMain } = require('electron');
 const axios = require('axios');
 const os = require('os');
+const BaseConfigManager = require('./baseConfigManager');
 
-class AppConfig extends EventEmitter {
+class AppConfig extends BaseConfigManager {
     constructor() {
-        super();
-        log.info('初始化ConfigManager');
-
-        // 存储所有窗口的WebContents以便更新
-        this.registeredWindows = new Set();
-
-        // 配置文件路径
-        const userDataPath = app.getPath('userData');
-        const configDir = path.join(userDataPath, 'user-data', 'config');
-        fs.mkdirSync(configDir, { recursive: true });
-        this.configPath = path.join(configDir, 'config.json');
-
         // 默认配置
-        this.defaultConfig = {
+        const defaultConfig = {
             language: 'zh-CN',
             theme: 'auto',
             updateUrls: [
                 "https://api.github.com/repos/skydroplet/mindcomplete/releases/latest",
                 "https://api.mindcomplete.me/v1/latest"
             ],
+            latestVersion: {},
             lastUpdateCheck: null,
-            latestVersion: null,
         };
 
-        // 加载通用配置
-        this.generalConfig = this.loadGeneralConfig();
-
-        // 监听子管理器的配置更新事件
-        modelManager.on('model-config-updated', () => {
-            this.notifyAllWindows();
-        });
-
-        mcpManager.on('mcp-config-updated', () => {
-            this.notifyAllWindows();
-        });
+        super('config.json', defaultConfig);
 
         // 当前应用版本
         this.appVersion = app.getVersion();
-
-        // 兼容旧版本配置
-        this.migrateOldConfig();
-    }
-
-    // 兼容旧版本配置
-    migrateOldConfig() {
-        if (this.generalConfig.updateUrl && !this.generalConfig.updateUrls) {
-            this.generalConfig.updateUrls = [
-                "https://api.github.com/repos/skydroplet/mindcomplete/releases/latest",
-                this.generalConfig.updateUrl
-            ];
-            delete this.generalConfig.updateUrl;
-            this.saveGeneralConfig();
-            log.info('已将旧版本updateUrl配置迁移到updateUrls');
-        }
-    }
-
-    // 加载通用配置
-    loadGeneralConfig() {
-        try {
-            if (!fs.existsSync(this.configPath)) {
-                fs.writeFileSync(this.configPath, JSON.stringify(this.defaultConfig, null, 2));
-                return this.defaultConfig;
-            }
-            const data = fs.readFileSync(this.configPath, 'utf8');
-            return JSON.parse(data);
-        } catch (error) {
-            log.error('加载通用配置失败:', error.message);
-            return this.defaultConfig;
-        }
-    }
-
-    // 保存通用配置
-    saveGeneralConfig() {
-        try {
-            fs.writeFileSync(this.configPath, JSON.stringify(this.generalConfig, null, 2));
-            this.notifyAllWindows();
-            this.emit('general-config-updated', this.generalConfig);
-            return true;
-        } catch (error) {
-            log.error('保存通用配置失败:', error.message);
-            return false;
-        }
-    }
-
-    // 获取通用配置
-    getGeneralConfig() {
-        return this.generalConfig;
     }
 
     // 更新语言设置
     setLanguage(language) {
-        this.generalConfig = this.loadGeneralConfig();
-        this.generalConfig.language = language;
-        return this.saveGeneralConfig();
+        this.config = this.loadConfig();
+        this.config.language = language;
+        return this.saveConfig();
     }
 
     // 获取语言设置
     getLanguage() {
-        return this.generalConfig.language;
+        return this.config.language;
     }
 
     // 更新主题设置
     setTheme(theme) {
-        this.generalConfig = this.loadGeneralConfig();
-        this.generalConfig.theme = theme;
-        return this.saveGeneralConfig();
+        this.config = this.loadConfig();
+        this.config.theme = theme;
+        return this.saveConfig();
     }
 
     // 获取主题设置
     getTheme() {
-        return this.generalConfig.theme;
+        return this.config.theme;
     }
 
     /**
@@ -155,15 +80,15 @@ class AppConfig extends EventEmitter {
         try {
             // 检查是否需要更新（默认每24小时检查一次）
             const now = Date.now();
-            const lastCheck = this.generalConfig.lastUpdateCheck;
-            const remindLaterTime = this.generalConfig.remindLaterTime || 0;
+            const lastCheck = this.config.lastUpdateCheck;
+            const remindLaterTime = this.config.remindLaterTime || 0;
 
             // 如果用户选择了稍后提醒，并且还在24小时内，则不检查更新
             if (!force && remindLaterTime && (now - remindLaterTime < 24 * 60 * 60 * 1000)) {
                 log.info('用户选择了稍后提醒，24小时内不再检查更新');
                 return {
                     hasUpdate: false,
-                    version: this.generalConfig.latestVersion?.version || this.appVersion
+                    version: this.config.latestVersion?.version || this.appVersion
                 };
             }
 
@@ -171,26 +96,26 @@ class AppConfig extends EventEmitter {
             if (!force && lastCheck && (now - lastCheck < 24 * 60 * 60 * 1000)) {
                 log.info('使用缓存的更新信息');
 
-                if (this.generalConfig.latestVersion) {
-                    const hasUpdate = this.hasNewVersion(this.appVersion, this.generalConfig.latestVersion.version);
+                if (this.config.latestVersion) {
+                    const hasUpdate = this.hasNewVersion(this.appVersion, this.config.latestVersion.version);
 
                     // 即使使用缓存的结果，也要通知所有窗口更新信息
-                    if (hasUpdate && !this.generalConfig.latestVersion.ignored) {
+                    if (hasUpdate && !this.config.latestVersion.ignored) {
                         this.notifyWindowsAboutUpdate({
                             hasUpdate,
-                            ...this.generalConfig.latestVersion
+                            ...this.config.latestVersion
                         });
                     }
 
                     return {
                         hasUpdate,
-                        ...this.generalConfig.latestVersion
+                        ...this.config.latestVersion
                     };
                 }
             }
 
             // 获取更新URL列表
-            const updateUrls = this.generalConfig.updateUrls || [
+            const updateUrls = this.config.updateUrls || [
                 "https://api.github.com/repos/skydroplet/mindcomplete/releases/latest",
                 "https://api.mindcomplete.me/v1/releases/latest"
             ];
@@ -232,10 +157,10 @@ class AppConfig extends EventEmitter {
                         log.info(`发现新版本: ${updateInfo.version}`);
 
                         // 更新最后检查时间和最新版本信息
-                        this.generalConfig.lastUpdateCheck = now;
+                        this.config.lastUpdateCheck = now;
                         updateInfo.ignored = false;
-                        this.generalConfig.latestVersion = updateInfo;
-                        this.saveGeneralConfig();
+                        this.config.latestVersion = updateInfo;
+                        this.saveConfig();
 
                         // 通知所有窗口更新信息
                         this.notifyWindowsAboutUpdate(updateInfo);
@@ -246,9 +171,9 @@ class AppConfig extends EventEmitter {
                         log.info(`当前版本 ${this.appVersion} 已是最新版本`);
 
                         // 更新最后检查时间和最新版本信息
-                        this.generalConfig.lastUpdateCheck = now;
-                        this.generalConfig.latestVersion = updateInfo;
-                        this.saveGeneralConfig();
+                        this.config.lastUpdateCheck = now;
+                        this.config.latestVersion = updateInfo;
+                        this.saveConfig();
 
                         return updateInfo;
                     }
@@ -298,43 +223,6 @@ class AppConfig extends EventEmitter {
         return false; // 版本相同
     }
 
-    // 窗口注册系统，确保所有窗口保持配置一致
-    registerWindow(webContents) {
-        if (webContents && !webContents.isDestroyed()) {
-            this.registeredWindows.add(webContents);
-            // 同时注册到子管理器
-            modelManager.registerWindow(webContents);
-            mcpManager.registerWindow(webContents);
-
-            // 当窗口关闭时，移除它
-            webContents.on('destroyed', () => {
-                this.unregisterWindow(webContents);
-            });
-        }
-    }
-
-    unregisterWindow(webContents) {
-        this.registeredWindows.delete(webContents);
-        modelManager.unregisterWindow(webContents);
-        mcpManager.unregisterWindow(webContents);
-    }
-
-    notifyAllWindows() {
-        const config = {
-            models: modelManager.getConfig(),
-            mcpConfig: mcpManager.getConfig(),
-            generalConfig: this.generalConfig
-        };
-
-        for (const webContents of this.registeredWindows) {
-            if (!webContents.isDestroyed()) {
-                webContents.send('config-updated', config);
-            }
-        }
-
-        this.emit('config-updated', config);
-    }
-
     /**
      * 通知所有已注册窗口有关更新的信息
      * @param {object} updateInfo 更新信息对象
@@ -353,9 +241,9 @@ class AppConfig extends EventEmitter {
      * 当用户点击"稍后提醒"按钮时调用此方法
      */
     setRemindLaterTime() {
-        this.generalConfig.remindLaterTime = Date.now();
-        this.saveGeneralConfig();
-        log.info('已设置稍后提醒时间:', new Date(this.generalConfig.remindLaterTime).toLocaleString());
+        this.config.remindLaterTime = Date.now();
+        this.saveConfig();
+        log.info('已设置稍后提醒时间:', new Date(this.config.remindLaterTime).toLocaleString());
         return true;
     }
 
@@ -363,8 +251,8 @@ class AppConfig extends EventEmitter {
      * 忽略新版本
      */
     setIgnoreUpdate() {
-        this.generalConfig.latestVersion.ignored = true;
-        this.saveGeneralConfig();
+        this.config.latestVersion.ignored = true;
+        this.saveConfig();
     }
 }
 
