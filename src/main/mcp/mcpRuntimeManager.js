@@ -116,17 +116,6 @@ class McpRuntimeManager {
             let lastTime = Date.now();
             let lastBytes = 0;
 
-            const formatSize = (bytes) => {
-                const units = ['B', 'KB', 'MB', 'GB'];
-                let size = bytes;
-                let unitIndex = 0;
-                while (size >= 1024 && unitIndex < units.length - 1) {
-                    size /= 1024;
-                    unitIndex++;
-                }
-                return `${size.toFixed(2)} ${units[unitIndex]}`;
-            };
-
             https.get(url, (response) => {
                 if (response.statusCode !== 200) {
                     reject(new Error('下载失败: ' + response.statusCode));

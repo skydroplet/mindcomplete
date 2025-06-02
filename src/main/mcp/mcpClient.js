@@ -394,51 +394,7 @@ class MCPClientManager extends EventEmitter {
             return this.createToolResultError(`工具执行失败: ${error.message}`);
         }
     }
-
-    // 测试所有活跃MCP的连接状态
-    async testConnections() {
-        const results = [];
-
-        for (const [serverId, client] of this.mcpClients.entries()) {
-            results.push({
-                serverId,
-                serverName: client.serverName,
-                connected: client.isConnected,
-                toolCount: client.tools ? client.tools.length : 0,
-                toolNames: client.tools ? client.tools.map(t => t.function.name) : [],
-                error: client.error
-            });
-        }
-
-        log.info("MCP连接测试结果:", results);
-        return results;
-    }
-
-    // 测试特定MCP的连接状态
-    async testConnection(serverId) {
-        if (!this.mcpClients.has(serverId)) {
-            return {
-                serverId,
-                connected: false,
-                error: "未连接到此服务"
-            };
-        }
-
-        const client = this.mcpClients.get(serverId);
-        const result = {
-            serverId,
-            serverName: client.serverName,
-            connected: client.isConnected,
-            toolCount: client.tools ? client.tools.length : 0,
-            toolNames: client.tools ? client.tools.map(t => t.function.name) : [],
-            error: client.error
-        };
-
-        log.info(`MCP服务 ${serverId} 连接测试结果:`, result);
-        return result;
-    }
 }
 
 const mcpClientManager = new MCPClientManager();
-
 module.exports = mcpClientManager;
