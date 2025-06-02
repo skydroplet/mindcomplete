@@ -202,6 +202,11 @@ class InputManagerService {
         document.addEventListener('keydown', (e) => {
             // 标签特定的输入框处理
             if (e.target.matches('textarea[id^="message-input-"]')) {
+                // 检查是否在输入法编辑状态
+                if (e.isComposing) {
+                    return;
+                }
+
                 if (e.key === 'Enter') {
                     if (e.ctrlKey) {
                         // Ctrl+Enter 插入换行
