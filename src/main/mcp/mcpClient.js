@@ -6,7 +6,7 @@ const path = require('path');
 const fs = require('fs');
 const { mcpConfig: mcpConfigManager } = require('../config');
 const EventEmitter = require('events');
-const { findExecutableInPath } = require('../utils');
+const mcpRuntimeManager = require("./mcpRuntimeManager");
 
 class MCPClientManager extends EventEmitter {
     constructor() {
@@ -75,7 +75,7 @@ class MCPClientManager extends EventEmitter {
             // 检查是否只有文件名而没有路径
             if (!path.isAbsolute(execPath) && !execPath.includes(path.sep)) {
                 log.info(`MCP可执行文件未指定完整路径, 尝试从PATH环境变量中搜索: ${execPath}`);
-                const pathExecPath = findExecutableInPath(execPath);
+                const pathExecPath = mcpRuntimeManager.findExecutablePath(execPath);
                 if (pathExecPath) {
                     execPath = pathExecPath;
                 }

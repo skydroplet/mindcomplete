@@ -23,15 +23,13 @@ require('./mcp/mcpRuntimeManager');
 const mcp = require('./mcp/mcpClient');
 const { closeConfigWindow } = require('./config/configWindow');
 
-const { findExecutableInPath } = require('./utils');
-
-
 const { mainWindow } = require('./mainWindow');
 
 // 引入各个配置管理器
 const modelConfig = require('./config/modelConfig');
 const promptConfig = require('./config/promptConfig');
 const mcpConfig = require('./config/mcpConfig');
+const mcpRuntimeManager = require('./mcp/mcpRuntimeManager');
 
 /**
  * 创建应用程序菜单
@@ -338,10 +336,7 @@ ipcMain.handle('direct-test-mcp-tool', async (event, serverConfig) => {
         // 检查是否只有文件名而没有路径
         if (!path.isAbsolute(execPath) && !execPath.includes(path.sep)) {
             log.info(`MCP可执行文件未指定完整路径, 尝试从PATH环境变量中搜索: ${execPath}`);
-
-            // 获取MCP实例并使用其内部的findExecutableInPath函数
-            const pathExecPath = findExecutableInPath ? findExecutableInPath(execPath) : null;
-
+            const pathExecPath = mcpRuntimeManager.findExecutablePath(execPath);
             if (pathExecPath) {
                 execPath = pathExecPath;
                 log.info(`在PATH中找到可执行文件: ${execPath}`);

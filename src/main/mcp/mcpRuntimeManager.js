@@ -28,6 +28,64 @@ class McpRuntimeManager {
     }
 
     /**
+     * 获取所有自定义安装文件查找路径
+     * @returns  {string[]}
+     */
+    getExecutableDirs() {
+        let executableDirs = [];
+
+        // 添加 Node.js 安装目录
+        if (fs.existsSync(this.nodeDir)) {
+            const nodeVersions = fs.readdirSync(this.nodeDir, { withFileTypes: true })
+                .filter(d => d.isDirectory())
+                .map(d => d.name);
+
+            for (const version of nodeVersions) {
+                if (!version.startsWith('v')) {
+                    continue;
+                }
+
+                const versionDir = path.join(this.nodeDir, version);
+                const binDir = path.join(versionDir, 'bin');
+                if (fs.existsSync(binDir)) {
+                    executableDirs.push(binDir);
+                }
+                executableDirs.push(versionDir);
+            }
+        }
+
+        // 添加 Python 安装目录
+        if (fs.existsSync(this.pythonDir)) {
+            const pythonVersions = fs.readdirSync(this.pythonDir, { withFileTypes: true })
+                .filter(d => d.isDirectory())
+                .map(d => d.name);
+
+            for (const version of pythonVersions) {
+                if (version === 'venv') {
+                    continue;
+                }
+
+                const versionDir = path.join(this.pythonDir, version);
+                const scriptsDir = path.join(versionDir, 'Scripts');
+                const binDir = path.join(versionDir, 'bin');
+
+                if (fs.existsSync(scriptsDir)) {
+                    executableDirs.push(scriptsDir);
+                }
+
+                if (fs.existsSync(binDir)) {
+                    executableDirs.push(binDir);
+                }
+
+                executableDirs.push(versionDir);
+            }
+        }
+
+        log.info('exe dirs:', executableDirs);
+        return executableDirs;
+    }
+
+    /**
      * 获取当前操作系统平台和CPU架构
      * @returns {{platform: string, arch: string}}
      */
@@ -707,6 +765,53 @@ class McpRuntimeManager {
             node: this.getAllInstalledNodes(),
             python: this.getAllInstalledPythons()
         };
+    }
+
+    /**
+     * 从环境变量PATH、自定义安装目录搜索可执行文件
+     * @param {string} filename 要搜索的可执行文件名
+     * @returns {string|null} 找到的可执行文件的完整路径，如果未找到则返回null
+     */
+    findExecutablePath(filename) {
+        try {
+            // 获取系统PATH环境变量
+            const pathEnv = process.env.PATH || process.env.Path || process.env.path;
+            if (!pathEnv) {
+                log.error('无法获取系统PATH环境变量');
+                return null;
+            }
+
+            // 获取路径分隔符（Windows是分号，Linux/Mac是冒号）
+            const pathSeparator = process.platform === 'win32' ? ';' : ':';
+
+            // 获取可执行文件扩展名（Windows上需要检查.exe等扩展名）
+            const exeExtensions = process.platform === 'win32'
+                ? (process.env.PATHEXT || '.exe;.cmd;.bat').split(pathSeparator)
+                : [''];
+
+            // 搜索每个PATH目录
+            let pathDirs = pathEnv.split(pathSeparator);
+            pathDirs = pathDirs.concat(this.getExecutableDirs())
+
+            for (const dir of pathDirs) {
+                if (!dir) continue;
+
+                // 对于每个可能的扩展名，检查可执行文件是否存在
+                for (const ext of exeExtensions) {
+                    const fullPath = path.join(dir, filename + ext);
+                    if (fs.existsSync(fullPath) && fs.statSync(fullPath).isFile()) {
+                        log.info(`在PATH中找到可执行文件: ${fullPath}`);
+                        return fullPath;
+                    }
+                }
+            }
+
+            log.warn(`在PATH中未找到可执行文件: ${filename}`);
+            return null;
+        } catch (error) {
+            log.error(`搜索可执行文件时出错: ${error.message}`);
+            return null;
+        }
     }
 }
 
