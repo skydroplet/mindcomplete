@@ -102,7 +102,7 @@ class ChatSession {
             modelId: modelConfig.getCurrentModelId(),
             promptId: promptConfig.getCurrentPromptId(),
             mcpServers: mcpConfig.getActiveMcps(),
-            conversationMode: 'single-turn',
+            conversationMode: 'multi-turn',
             messages: []
         }
     }
