@@ -25,6 +25,39 @@ class McpRuntimeManager {
 
         this.pythonDir = path.join(this.mcpDir, 'python');
         fs.mkdirSync(this.pythonDir, { recursive: true });
+
+        // 异步检查并安装缺失的运行环境
+        this.checkAndInstallRuntimes();
+    }
+
+    /**
+     * 检查并安装缺失的运行环境
+     */
+    async checkAndInstallRuntimes() {
+        const nodes = this.getAllInstalledNodes();
+        if (nodes.length === 0) {
+            log.info('start install nodejs...');
+            await this.installNodeWithProgress('v22.16.0', 'v22.16.0', {
+                sender: {
+                    send: (event, data) => {
+                        log.info('nodejs install process:', data);
+                    }
+                }
+            });
+        }
+
+        // 检查 Python
+        const pythons = this.getAllInstalledPythons();
+        if (pythons.length === 0) {
+            log.info('start install python...');
+            await this.installPythonWithProgress('3.11.3', '3.11.3', {
+                sender: {
+                    send: (event, data) => {
+                        log.info('python install process:', data);
+                    }
+                }
+            });
+        }
     }
 
     /**
@@ -791,7 +824,7 @@ class McpRuntimeManager {
 
             // 搜索每个PATH目录
             let pathDirs = pathEnv.split(pathSeparator);
-            pathDirs = pathDirs.concat(this.getExecutableDirs())
+            pathDirs = pathDirs.concat(this.getExecutableDirs());
 
             for (const dir of pathDirs) {
                 if (!dir) continue;

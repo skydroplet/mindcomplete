@@ -92,7 +92,13 @@ class MCPClientManager extends EventEmitter {
             const transport = new StdioClientTransport({
                 command: execPath,
                 args: serverConfig.args || [],
-                env: { ...process.env, ...(serverConfig.envs || {}) }
+                env: { ...process.env, ...(serverConfig.envs || {}) },
+                onStdout: (data) => {
+                    log.info(`[${serverName}] stdout:`, data.toString().trim());
+                },
+                onStderr: (data) => {
+                    log.error(`[${serverName}] stderr:`, data.toString().trim());
+                }
             });
 
             // 创建客户端对象
@@ -107,7 +113,9 @@ class MCPClientManager extends EventEmitter {
             );
 
             // 连接到服务器
+            log.info(`开始连接到MCP服务 ${serverName}...`);
             await client.connect(transport);
+            log.info(`MCP服务 ${serverName} 连接成功`);
 
             // 获取工具列表
             const toolsResult = await client.listTools();
