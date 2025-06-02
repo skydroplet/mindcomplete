@@ -5,10 +5,14 @@
  * 提供简洁的日志记录功能，支持不同级别的日志（info、warn、error），
  * 自动记录调用位置（文件名和行号），便于调试和问题追踪。
  * 支持格式化对象类型的日志内容，提高日志可读性。
+ * 主进程日志会同时输出到控制台和文件，渲染进程只输出到控制台。
  */
 
 const { Buffer } = require('buffer');
 const path = require('path');
+const fs = require('fs');
+const { app } = require('electron');
+const isRenderer = process.type === 'renderer';
 
 /**
  * 日志记录器类
@@ -25,6 +29,48 @@ class Logger {
         this.info = this.info.bind(this);
         this.warn = this.warn.bind(this);
         this.error = this.error.bind(this);
+
+        // 只在主进程中初始化文件日志
+        if (!isRenderer) {
+            this.initFileLogger();
+        }
+    }
+
+    /**
+     * 初始化文件日志
+     */
+    initFileLogger() {
+        const userDataPath = app.getPath('userData');
+        const logDir = path.join(userDataPath, 'user-data', 'logs');
+
+        // 确保日志目录存在
+        if (!fs.existsSync(logDir)) {
+            fs.mkdirSync(logDir, { recursive: true });
+        }
+
+        this.logFilePath = path.join(logDir, `mindcomplete.log`);
+        try {
+            fs.writeFileSync(this.logFilePath, '', 'utf8');
+        } catch (error) {
+            console.error('Failed to initialize log file:', error);
+        }
+    }
+
+    /**
+     * 写入日志到文件
+     * @param {string} message - 要写入的日志消息
+     */
+    writeToFile(message) {
+        if (isRenderer) {
+            return;
+        }
+
+        try {
+            // 使用追加模式写入日志
+            fs.appendFileSync(this.logFilePath, message + '\n', 'utf8');
+        } catch (error) {
+            console.error('Failed to write to log file:', error);
+        }
     }
 
     /**
@@ -32,11 +78,11 @@ class Logger {
      * @param {...any} args - 要记录的消息参数，可以是多个参数
      */
     info(...args) {
-        // 获取调用者的文件名和行号
         const { file, line } = this.getCallerInfo();
         const message = this.formatMessage(args);
         const logMessage = this.encodeMessage(`[${this.getTimestamp()}] [${this.moduleName}] [${file}:${line}] INFO: ${message}`);
         console.log(logMessage);
+        this.writeToFile(logMessage);
     }
 
     /**
@@ -44,11 +90,11 @@ class Logger {
      * @param {...any} args - 要记录的消息参数，可以是多个参数
      */
     warn(...args) {
-        // 获取调用者的文件名和行号
         const { file, line } = this.getCallerInfo();
         const message = this.formatMessage(args);
         const logMessage = this.encodeMessage(`[${this.getTimestamp()}] [${this.moduleName}] [${file}:${line}] WARN: ${message}`);
         console.warn(logMessage);
+        this.writeToFile(logMessage);
     }
 
     /**
@@ -56,11 +102,11 @@ class Logger {
      * @param {...any} args - 要记录的消息参数，可以是多个参数
      */
     error(...args) {
-        // 获取调用者的文件名和行号
         const { file, line } = this.getCallerInfo();
         const message = this.formatMessage(args);
         const logMessage = this.encodeMessage(`[${this.getTimestamp()}] [${this.moduleName}] [${file}:${line}] ERROR: ${message}`);
         console.error(logMessage);
+        this.writeToFile(logMessage);
     }
 
     /**

@@ -29,7 +29,7 @@ class PromptConfig extends BaseConfigManager {
                 'default-prompt-1': emptyPrompt,
                 'default-prompt-2': mcpPrompt,
             },
-            currentPrompt: ' default-prompt-2',
+            currentPrompt: 'default-prompt-2',
         };
         super('prompts.json', defaultConfig);
     }
