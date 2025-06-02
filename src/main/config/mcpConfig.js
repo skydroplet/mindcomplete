@@ -26,14 +26,24 @@ class McpConfig extends BaseConfigManager {
     constructor() {
         const defaultMcp = [
             {
-                name: 'mcp-server-commands',
+                name: '命令行执行',
                 command: 'npx',
                 args: ['-y', 'mcp-server-commands'],
             },
             {
-                name: 'bing-cn',
+                name: '本地文件操作',
+                command: 'npx',
+                args: ['-y', '@modelcontextprotocol/server-filesystem', 'your-allow-path'],
+            },
+            {
+                name: 'bing中文搜索',
                 command: 'npx',
                 args: ['-y', 'bing-cn-mcp'],
+            },
+            {
+                name: '网页信息获取',
+                command: 'uvx',
+                args: ['mcp-server-fetch'],
             },
         ]
 
@@ -43,7 +53,7 @@ class McpConfig extends BaseConfigManager {
         };
 
         for (let i = 0; i < defaultMcp.length; i++) {
-            let id = 'default-mcp-' + i;
+            let id = 'default-mcp-' + (i + 1);
             defaultConfig.servers[id] = {
                 name: defaultMcp[i].name,
                 command: defaultMcp[i].command,
