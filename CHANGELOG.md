@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.0.14](https://github.com/skydroplet/mindcomplete/compare/v0.0.13...v0.0.14) (2025-06-02)
+
+### ✨ 新功能
+
+* 增加用户提示词选择快捷键 ([5e458f6](https://github.com/skydroplet/mindcomplete/commit/5e458f677e4230355a189c8859eadac2279647be))
+* 增加mcp运行环境管理和自动安装 ([c32ba9b](https://github.com/skydroplet/mindcomplete/commit/c32ba9b345ac503f54c7ee892717f361923e8e89))
+* 首次启动自动安装缺少的运行环境 ([2312311](https://github.com/skydroplet/mindcomplete/commit/2312311aab62341c0d5e37234459d01fd4f3e770))
+* 复制后自动选中 添加默认配置数据 ([f53ddec](https://github.com/skydroplet/mindcomplete/commit/f53ddecc878b600059655042d43a72b4ffd52025))
+* 默认添加一些好用的mcp ([c4041f1](https://github.com/skydroplet/mindcomplete/commit/c4041f13a9de50e53ea6378089fff12487ad527d))
+* AI回答过程收到新消息自动中断 ([b4a1714](https://github.com/skydroplet/mindcomplete/commit/b4a17148fb804ff9b3bbd480795f16a55b2883ad))
+
+### 🐛 修复
+
+* 标题栏检查更新缺少中文描述 ([9b7be3a](https://github.com/skydroplet/mindcomplete/commit/9b7be3a6e6160d596e9fe75f1cca747120bd9f39))
+* 更新通知下载没有反应 ([5efa9f3](https://github.com/skydroplet/mindcomplete/commit/5efa9f3f76972b2d07772530bde0a245c087615d))
+* 工具运行失败信息不显示 ([7e02dab](https://github.com/skydroplet/mindcomplete/commit/7e02dab254fdf6a28f7f8da4a68b13f88afb0f1f))
+* 忽略新版本没有生效 ([822734a](https://github.com/skydroplet/mindcomplete/commit/822734a050e65fac064e9ecededfc0201e38bac9))
+* 深色模式部分样式文本和背景色无法区分 ([7f2b02a](https://github.com/skydroplet/mindcomplete/commit/7f2b02a72371ea696e46a93301e1176f62c7ac59))
+
 ## [0.0.13](https://github.com/skydroplet/mindcomplete/compare/v0.0.12...v0.0.13) (2025-05-20)
 
 ### 🐛 修复
