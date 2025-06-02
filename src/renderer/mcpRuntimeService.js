@@ -21,6 +21,36 @@ class McpRuntimeService {
         ipcRenderer.on('python-install-progress', (event, data) => {
             this.handlePythonInstallProgress(data);
         });
+
+        // 初始化时检查并安装缺失的运行环境
+        this.initializeRuntimes();
+    }
+
+    /**
+     * 初始化检查并安装缺失的运行环境
+     */
+    async initializeRuntimes() {
+        try {
+            const info = await ipcRenderer.invoke('get-mcp-runtime-info');
+
+            // 检查Node.js
+            if (!info.node || info.node.length === 0) {
+                log.info('未检测到Node.js环境，开始安装...');
+                const taskKey = 'v22.16.0';
+                this.addNodeInstallRow(taskKey, 'v22.16.0');
+                await this.installNodeRuntimeWithProgress(taskKey, 'v22.16.0');
+            }
+
+            // 检查Python
+            if (!info.python || info.python.length === 0) {
+                log.info('未检测到Python环境，开始安装...');
+                const taskKey = '3.11.9';
+                this.addPythonInstallRow(taskKey, '3.11.9');
+                await this.installPythonRuntimeWithProgress(taskKey, '3.11.9');
+            }
+        } catch (e) {
+            log.error('初始化运行环境失败:', e);
+        }
     }
 
     /**
