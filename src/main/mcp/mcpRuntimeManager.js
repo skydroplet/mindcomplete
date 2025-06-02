@@ -50,7 +50,7 @@ class McpRuntimeManager {
         const pythons = this.getAllInstalledPythons();
         if (pythons.length === 0) {
             log.info('start install python...');
-            await this.installPythonWithProgress('3.11.3', '3.11.3', {
+            await this.installPythonWithProgress('3.11.9', '3.11.9', {
                 sender: {
                     send: (event, data) => {
                         log.info('python install process:', data);
