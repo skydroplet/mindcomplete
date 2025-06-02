@@ -203,19 +203,37 @@ class McpRuntimeManager {
                 message: '正在解压...'
             });
             if (ext === 'zip') {
-                execSync(`powershell -Command "Expand-Archive -Path '${dest}' -DestinationPath '${this.nodeDir}' -Force"`);
-                const baseName = filename.replace('.zip', '');
-                const extractedDir = path.join(this.nodeDir, baseName);
-                if (fs.existsSync(extractedDir)) {
-                    fs.readdirSync(extractedDir).forEach(file => {
-                        const src = path.join(extractedDir, file);
-                        const destPath = path.join(versionDir, file);
-                        fs.renameSync(src, destPath);
+                const { exec } = require('child_process');
+                await new Promise((resolve, reject) => {
+                    exec(`powershell -Command "Expand-Archive -Path '${dest}' -DestinationPath '${this.nodeDir}' -Force"`, (error) => {
+                        if (error) {
+                            reject(error);
+                            return;
+                        }
+                        const baseName = filename.replace('.zip', '');
+                        const extractedDir = path.join(this.nodeDir, baseName);
+                        if (fs.existsSync(extractedDir)) {
+                            fs.readdirSync(extractedDir).forEach(file => {
+                                const src = path.join(extractedDir, file);
+                                const destPath = path.join(versionDir, file);
+                                fs.renameSync(src, destPath);
+                            });
+                            fs.rmdirSync(extractedDir);
+                        }
+                        resolve();
                     });
-                    fs.rmdirSync(extractedDir);
-                }
+                });
             } else {
-                execSync(`tar -xf '${dest}' -C '${versionDir}' --strip-components=1`);
+                const { exec } = require('child_process');
+                await new Promise((resolve, reject) => {
+                    exec(`tar -xf '${dest}' -C '${versionDir}' --strip-components=1`, (error) => {
+                        if (error) {
+                            reject(error);
+                        } else {
+                            resolve();
+                        }
+                    });
+                });
             }
 
             // 配置Node.js环境
@@ -246,7 +264,7 @@ class McpRuntimeManager {
      * @param {string} version Node.js版本号，例如'v22.16.0'
      * @returns {boolean} 是否配置成功
      */
-    configureNode(version) {
+    async configureNode(version) {
         const nodeInfo = this.isNodeInstalled(version);
         if (!nodeInfo.installed) {
             log.warn(`Node.js ${version} 未安装，无法配置`);
@@ -334,14 +352,22 @@ class McpRuntimeManager {
             });
             if (ext === 'exe') {
                 const absTargetDir = path.resolve(versionDir);
-                const { execFileSync } = require('child_process');
-                execFileSync(dest, [
-                    '/quiet',
-                    'InstallAllUsers=0',
-                    `TargetDir=${absTargetDir}`,
-                    'PrependPath=1',
-                    'Include_test=0'
-                ], { stdio: 'inherit' });
+                const { execFile } = require('child_process');
+                await new Promise((resolve, reject) => {
+                    execFile(dest, [
+                        '/quiet',
+                        'InstallAllUsers=0',
+                        `TargetDir=${absTargetDir}`,
+                        'PrependPath=1',
+                        'Include_test=0'
+                    ], (error) => {
+                        if (error) {
+                            reject(error);
+                        } else {
+                            resolve();
+                        }
+                    });
+                });
             } else if (ext === 'pkg') {
                 execSync(`sudo installer -pkg "${dest}" -target /`);
             } else {
@@ -354,6 +380,8 @@ class McpRuntimeManager {
                 status: 'success',
                 message: '安装完成'
             });
+
+            this.configurePythonEnv(version);
         } catch (e) {
             event.sender.send('python-install-progress', {
                 taskKey,
@@ -365,6 +393,44 @@ class McpRuntimeManager {
             });
             throw e;
         }
+    }
+
+    /**
+     * 配置Python环境
+     * @param {String} version 
+     * @returns {Boolean}  是否配置成功
+     */
+    async configurePythonEnv(version) {
+        const versionDir = path.join(this.pythonDir, version);
+        const python = path.join(versionDir, os.platform() === 'win32' ? 'python.exe' : 'python');
+        const pip = path.join(versionDir, os.platform() === 'win32' ? path.join('Scripts', 'pip.exe') : 'pip');
+        const venvDir = path.join(this.pythonDir, 'venv', version);
+        const activate = path.join(this.pythonDir, 'venv', version, 'Scripts', 'activate');
+
+        if (!fs.existsSync(pip)) {
+            log.warn(`cannot find pip: ${pip}`);
+            return false;
+        }
+
+        const commands = [
+            `"${python}" -m venv ${venvDir}`,
+            `"${activate}"`,
+            `"${pip}" config set global.index-url https://mirrors.aliyun.com/pypi/simple`,
+            `"${pip}" install uv`,
+        ]
+
+        try {
+            for (const cmd of commands) {
+                log.info(`run cmd:`, cmd);
+                const result = execSync(cmd, { encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] }).toString().trim();
+                log.info(`cmd result: `, result);
+            }
+        } catch (error) {
+            log.error(`run cmd fail: ${error.message}`);
+            return false;
+        }
+
+        return true;
     }
 
     /**
@@ -468,12 +534,21 @@ class McpRuntimeManager {
     /**
      * 删除指定版本的 Node.js
      * @param {string} version 版本号，例如 'v22.16.0'
+     * @returns {Promise<void>}
      */
-    removeNode(version) {
+    async removeNode(version) {
         const versionDir = path.join(this.nodeDir, version);
         if (fs.existsSync(versionDir)) {
-            fs.rmSync(versionDir, { recursive: true, force: true });
-            log.info(`已删除 Node.js 版本: ${versionDir}`);
+            await new Promise((resolve, reject) => {
+                fs.rm(versionDir, { recursive: true, force: true }, (err) => {
+                    if (err) {
+                        reject(err);
+                    } else {
+                        log.info(`已删除 Node.js 版本: ${versionDir}`);
+                        resolve();
+                    }
+                });
+            });
         } else {
             log.info(`Node.js 版本目录不存在: ${versionDir}`);
         }
@@ -482,24 +557,41 @@ class McpRuntimeManager {
     /**
      * 删除指定版本的 Python
      * @param {string} version 版本号，例如 '3.10.11'
+     * @returns {Promise<void>}
      */
-    removePython(version) {
+    async removePython(version) {
         const versionDir = path.join(this.pythonDir, version);
         const { filename, ext } = this.getPythonDownloadInfo(version);
         const installerPath = path.join(this.downloadDir, filename);
         if (ext === 'exe' && fs.existsSync(installerPath)) {
             // Windows下用安装包静默卸载
-            const { execFileSync } = require('child_process');
+            const { execFile } = require('child_process');
             try {
-                execFileSync(installerPath, ['/uninstall', '/quiet', 'InstallAllUsers=0'], { stdio: 'inherit' });
-                log.info(`已通过安装程序卸载 Python: ${installerPath}`);
+                await new Promise((resolve, reject) => {
+                    execFile(installerPath, ['/uninstall', '/quiet', 'InstallAllUsers=0'], (error) => {
+                        if (error) {
+                            reject(error);
+                        } else {
+                            log.info(`已通过安装程序卸载 Python: ${installerPath}`);
+                            resolve();
+                        }
+                    });
+                });
             } catch (err) {
                 log.warn(`通过安装程序卸载 Python 失败: ${installerPath}`, err.message);
             }
         } else if (fs.existsSync(versionDir)) {
             // 其他平台或无安装包时，仍然尝试物理删除
-            fs.rmSync(versionDir, { recursive: true, force: true });
-            log.info(`已物理删除 Python 版本: ${versionDir}`);
+            await new Promise((resolve, reject) => {
+                fs.rm(versionDir, { recursive: true, force: true }, (err) => {
+                    if (err) {
+                        reject(err);
+                    } else {
+                        log.info(`已物理删除 Python 版本: ${versionDir}`);
+                        resolve();
+                    }
+                });
+            });
         } else {
             log.info(`Python 版本目录不存在: ${versionDir}`);
         }
@@ -677,7 +769,7 @@ ipcMain.handle('uninstall-node-runtime', async (event, version) => {
             version = 'v' + version;
         }
 
-        module.exports.removeNode(version);
+        await module.exports.removeNode(version);
         return { success: true };
     } catch (error) {
         return { success: false, error: error.message };
@@ -687,7 +779,7 @@ ipcMain.handle('uninstall-node-runtime', async (event, version) => {
 // 处理卸载Python运行环境的请求
 ipcMain.handle('uninstall-python-runtime', async (event, version) => {
     try {
-        module.exports.removePython(version);
+        await module.exports.removePython(version);
         return { success: true };
     } catch (error) {
         return { success: false, error: error.message };
