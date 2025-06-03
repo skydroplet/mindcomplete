@@ -146,7 +146,7 @@ class McpRuntimeManager {
             pyPlatform = 'macos11';
             pyArch = arch === 'arm64' ? 'arm64' : 'universal2';
             ext = 'pkg';
-            filename = `python-${version}-macos11.${pyArch}.pkg`;
+            filename = `python-${version}-macos11.pkg`;
             url = `https://www.python.org/ftp/python/${version}/${filename}`;
         } else {
             // Linux
