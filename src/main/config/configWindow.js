@@ -195,17 +195,17 @@ function registerConfigIPC() {
     });
 
     ipcMain.handle('save-mcp-server', async (event, serverData) => {
-        log.info('保存MCP服务请求，数据:', serverData);
+        log.info('save mcp server:', serverId);
         return mcpManager.addMcpServer(serverData.name, serverData);
     });
 
     ipcMain.handle('update-mcp-server', async (event, { serverId, serverData }) => {
-        log.info('更新MCP服务请求，ID:', serverId, '数据:', serverData);
+        log.info('update mcp server:', serverId);
         return mcpManager.updateMcpServer(serverId, serverData);
     });
 
     ipcMain.handle('delete-mcp-server', async (event, serverId) => {
-        log.info('处理删除MCP服务请求，ID:', serverId);
+        log.info('delete mcp server:', serverId);
         return mcpManager.deleteMcpServer(serverId);
     });
 

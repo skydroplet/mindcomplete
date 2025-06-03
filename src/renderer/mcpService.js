@@ -462,7 +462,7 @@ class McpService {
             document.getElementById('copyMcpServerBtn').classList.remove('hidden');
 
             // 更新测试按钮状态
-            this.updateTestButtonState();
+            this.updateConnectButtonState();
 
             // 更新服务列表中的激活状态
             const serverList = document.getElementById('mcpServersList');
@@ -548,9 +548,9 @@ class McpService {
     /**
      * 更新测试按钮状态
      */
-    updateTestButtonState() {
-        const testButton = document.getElementById('test-mcp-button');
-        if (!testButton) {
+    updateConnectButtonState() {
+        const connectMcpButton = document.getElementById('connect-mcp-button');
+        if (!connectMcpButton) {
             log.error('测试按钮元素不存在');
             return;
         }
@@ -558,15 +558,15 @@ class McpService {
         const pathValue = document.getElementById('serverPath')?.value?.trim() || '';
 
         // 路径不为空时才启用测试按钮
-        testButton.disabled = pathValue === '';
+        connectMcpButton.disabled = pathValue === '';
 
         // 添加视觉反馈
         if (pathValue === '') {
-            testButton.style.opacity = '0.5';
-            testButton.title = '请先填写可执行路径';
+            connectMcpButton.style.opacity = '0.5';
+            connectMcpButton.title = '请先填写可执行路径';
         } else {
-            testButton.style.opacity = '1';
-            testButton.title = '测试MCP工具';
+            connectMcpButton.style.opacity = '1';
+            connectMcpButton.title = '测试MCP工具';
         }
     }
 
@@ -665,16 +665,16 @@ class McpService {
     /**
      * 直接测试MCP工具
      */
-    async directTestMcpTool() {
+    async connectMcpServer() {
         try {
-            const testButton = document.getElementById('test-mcp-button');
-            if (!testButton) {
+            const connectButton = document.getElementById('connect-mcp-button');
+            if (!connectButton) {
                 log.error('测试按钮元素不存在');
                 return;
             }
 
-            testButton.disabled = true;
-            testButton.textContent = i18n.t('mcp.toolsList.testing');
+            connectButton.disabled = true;
+            connectButton.textContent = i18n.t('mcp.toolsList.connecting');
 
             // 获取当前表单中的MCP服务配置
             const pathElement = document.getElementById('serverPath');
@@ -723,11 +723,11 @@ class McpService {
                 return row.querySelector('.arg-value')?.value;
             }).filter(arg => arg && arg.trim() !== '');
 
-            log.info('使用当前配置测试MCP工具:', JSON.stringify(serverData, null, 2));
+            log.info('connect mcp server:', JSON.stringify(serverData, null, 2));
 
             // 调用后端接口执行工具，传递当前配置
-            const result = await ipcRenderer.invoke('direct-test-mcp-tool', serverData);
-            log.info('直接测试MCP工具结果:', result);
+            const result = await ipcRenderer.invoke('connect-mcp-server', serverData);
+            log.info('connect mcp server result:', result);
 
             // 显示测试结果
             if (result.success) {
@@ -736,7 +736,7 @@ class McpService {
                     `${tool.name}: ${tool.description}`
                 ).join('\n');
 
-                const resultMessage = `${i18n.t('mcp.toolsList.testSuccess')}
+                const resultMessage = `${i18n.t('mcp.toolsList.connectSuccess')}
 ${i18n.t('mcp.toolsList.serverName')}: ${result.serverName}
 ${i18n.t('mcp.toolsList.toolCount')}: ${result.tools}
 ${i18n.t('mcp.toolsList.toolList')}:
@@ -755,32 +755,27 @@ ${formattedToolList}
                         this.mcpServers[this.currentServerId].autoApprove = [];
                     }
 
-                    // 立即保存到配置文件中
-                    try {
-                        // 准备要更新的服务数据
-                        const updatedServerData = {
-                            ...this.mcpServers[this.currentServerId],
-                            toolDescriptions: result.toolDescriptions
-                        };
+                    // 准备要更新的服务数据
+                    const updatedServerData = {
+                        ...this.mcpServers[this.currentServerId],
+                        toolDescriptions: result.toolDescriptions
+                    };
 
-                        // 更新服务器配置
-                        const success = await ipcRenderer.invoke('update-mcp-server', {
-                            serverId: this.currentServerId,
-                            serverData: updatedServerData
-                        });
+                    // 更新服务器配置
+                    const success = await ipcRenderer.invoke('update-mcp-server', {
+                        serverId: this.currentServerId,
+                        serverData: updatedServerData
+                    });
 
-                        if (success) {
-                            log.info('工具列表已保存到配置文件');
+                    if (success) {
+                        log.info('工具列表已保存到配置文件');
 
-                            // 刷新完整的MCP配置
-                            const updatedMcpConfig = await ipcRenderer.invoke('get-mcp-config');
-                            this.mcpServers = updatedMcpConfig?.servers || {};
-                            this.activeMcps = updatedMcpConfig?.activeMcps || [];
-                        } else {
-                            log.error('保存工具列表到配置文件失败');
-                        }
-                    } catch (error) {
-                        log.error('保存工具列表到配置文件时出错:', error.message);
+                        // 刷新完整的MCP配置
+                        const updatedMcpConfig = await ipcRenderer.invoke('get-mcp-config');
+                        this.mcpServers = updatedMcpConfig?.servers || {};
+                        this.activeMcps = updatedMcpConfig?.activeMcps || [];
+                    } else {
+                        log.error('保存工具列表到配置文件失败');
                     }
                 }
 
@@ -802,11 +797,10 @@ ${formattedToolList}
         } catch (error) {
             log.error('测试MCP工具时出错:', error.message);
         } finally {
-            // 重置测试按钮状态
-            const testButton = document.getElementById('test-mcp-button');
-            if (testButton) {
-                testButton.disabled = false;
-                testButton.textContent = i18n.t('mcp.toolsList.testButton');
+            const connectButton = document.getElementById('connect-mcp-button');
+            if (connectButton) {
+                connectButton.disabled = false;
+                connectButton.textContent = i18n.t('mcp.toolsList.connectButton');
             }
         }
     }
@@ -1034,12 +1028,12 @@ ${formattedToolList}
             const self = this; // 保存this引用以在事件处理程序中使用
             serverPathInput.addEventListener('blur', function () {
                 this.value = self.sanitizePath(this.value);
-                self.updateTestButtonState();
+                self.updateConnectButtonState();
             });
 
             // 添加serverPath输入框事件，监听输入变化实时更新测试按钮状态
             serverPathInput.addEventListener('input', () => {
-                this.updateTestButtonState();
+                this.updateConnectButtonState();
             });
         }
 
@@ -1066,10 +1060,10 @@ ${formattedToolList}
         }
 
         // 测试MCP工具事件
-        const testMcpButton = document.getElementById('test-mcp-button');
-        if (testMcpButton) {
-            testMcpButton.addEventListener('click', () => {
-                this.directTestMcpTool();
+        const connectMcpButton = document.getElementById('connect-mcp-button');
+        if (connectMcpButton) {
+            connectMcpButton.addEventListener('click', () => {
+                this.connectMcpServer();
             });
         }
 
@@ -1098,7 +1092,7 @@ ${formattedToolList}
         }
 
         // 初始化测试按钮状态
-        this.updateTestButtonState();
+        this.updateConnectButtonState();
     }
 
     /**
@@ -1204,9 +1198,9 @@ ${formattedToolList}
                         this.resetMcpServerForm();
                     }
 
-                    // 尝试测试MCP工具以获取工具信息
+                    // 尝试连接MCP工具以获取工具信息
                     try {
-                        const testResult = await ipcRenderer.invoke('direct-test-mcp-tool', {
+                        const connectMcpResult = await ipcRenderer.invoke('connect-mcp-server', {
                             name: serverName,
                             command: this.sanitizePath(serverPath),
                             envs: envVars,
@@ -1214,19 +1208,19 @@ ${formattedToolList}
                         });
 
                         // 如果测试成功，使用测试结果中的工具信息显示工具列表
-                        if (testResult && testResult.success && testResult.toolDescriptions) {
+                        if (connectMcpResult && connectMcpResult.success && connectMcpResult.toolDescriptions) {
                             // 显示工具列表
-                            this.displayToolsFromData(testResult.toolDescriptions);
+                            this.displayToolsFromData(connectMcpResult.toolDescriptions);
 
                             // 将工具描述保存到内存和配置文件中
                             if (this.currentServerId && this.mcpServers[this.currentServerId]) {
                                 // 更新内存中的工具描述
-                                this.mcpServers[this.currentServerId].toolDescriptions = testResult.toolDescriptions;
+                                this.mcpServers[this.currentServerId].toolDescriptions = connectMcpResult.toolDescriptions;
 
                                 // 更新配置文件中的工具描述
                                 const updatedData = {
                                     ...this.mcpServers[this.currentServerId],
-                                    toolDescriptions: testResult.toolDescriptions
+                                    toolDescriptions: connectMcpResult.toolDescriptions
                                 };
 
                                 // 保存到配置文件
@@ -1240,8 +1234,8 @@ ${formattedToolList}
 
                             return;
                         }
-                    } catch (testError) {
-                        log.error('测试MCP服务失败:', testError);
+                    } catch (error) {
+                        log.error('测试MCP服务失败:', error);
                     }
                 } else {
                     throw new Error('保存MCP服务配置失败，返回false');

@@ -106,7 +106,7 @@ function initUIText() {
         '#saveMcpBtn': 'settings.buttons.saveMcpBtn',
         '#cancelMcpBtn': 'settings.buttons.cancelMcpBtn',
         '#deleteMcpServerBtn': 'settings.buttons.deleteMcpServerBtn',
-        '#test-mcp-button': 'settings.buttons.test-mcp-button',
+        '#connect-mcp-button': 'settings.buttons.connect-mcp-button',
         '#add-env-btn': 'settings.buttons.add-env-btn',
         '#add-arg-btn': 'settings.buttons.add-arg-btn'
     };

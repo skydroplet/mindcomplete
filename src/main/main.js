@@ -314,7 +314,7 @@ ipcMain.handle('mkdir-sync', async (event, { path, options }) => {
 });
 
 // 直接测试mcp工具是否能调用成功
-ipcMain.handle('direct-test-mcp-tool', async (event, serverConfig) => {
+ipcMain.handle('connect-mcp-server', async (event, serverConfig) => {
     try {
         log.info('接收到测试MCP服务配置:', serverConfig);
 
