@@ -461,7 +461,7 @@ class McpService {
             document.getElementById('deleteMcpServerBtn').classList.remove('hidden');
             document.getElementById('copyMcpServerBtn').classList.remove('hidden');
 
-            // 更新测试按钮状态
+            // 更新连接按钮状态
             this.updateConnectButtonState();
 
             // 更新服务列表中的激活状态
@@ -546,18 +546,18 @@ class McpService {
     }
 
     /**
-     * 更新测试按钮状态
+     * 更新连接按钮状态
      */
     updateConnectButtonState() {
         const connectMcpButton = document.getElementById('connect-mcp-button');
         if (!connectMcpButton) {
-            log.error('测试按钮元素不存在');
+            log.error('连接按钮元素不存在');
             return;
         }
 
         const pathValue = document.getElementById('serverPath')?.value?.trim() || '';
 
-        // 路径不为空时才启用测试按钮
+        // 路径不为空时才启用连接按钮
         connectMcpButton.disabled = pathValue === '';
 
         // 添加视觉反馈
@@ -566,7 +566,7 @@ class McpService {
             connectMcpButton.title = '请先填写可执行路径';
         } else {
             connectMcpButton.style.opacity = '1';
-            connectMcpButton.title = '测试MCP工具';
+            connectMcpButton.title = '连接MCP服务';
         }
     }
 
@@ -663,13 +663,13 @@ class McpService {
     }
 
     /**
-     * 直接测试MCP工具
+     * 直接连接MCP工具
      */
     async connectMcpServer() {
         try {
             const connectButton = document.getElementById('connect-mcp-button');
             if (!connectButton) {
-                log.error('测试按钮元素不存在');
+                log.error('连接按钮元素不存在');
                 return;
             }
 
@@ -729,7 +729,7 @@ class McpService {
             const result = await ipcRenderer.invoke('connect-mcp-server', serverData);
             log.info('connect mcp server result:', result);
 
-            // 显示测试结果
+            // 显示结果
             if (result.success) {
                 // 格式化工具列表，只显示名称和描述
                 const formattedToolList = result.toolDescriptions.map(tool =>
@@ -795,7 +795,7 @@ ${formattedToolList}
                 }
             }
         } catch (error) {
-            log.error('测试MCP工具时出错:', error.message);
+            log.error('连接MCP服务时出错:', error.message);
         } finally {
             const connectButton = document.getElementById('connect-mcp-button');
             if (connectButton) {
@@ -1031,7 +1031,7 @@ ${formattedToolList}
                 self.updateConnectButtonState();
             });
 
-            // 添加serverPath输入框事件，监听输入变化实时更新测试按钮状态
+            // 添加serverPath输入框事件，监听输入变化实时更新按钮状态
             serverPathInput.addEventListener('input', () => {
                 this.updateConnectButtonState();
             });
@@ -1059,7 +1059,7 @@ ${formattedToolList}
             });
         }
 
-        // 测试MCP工具事件
+        // MCP工具事件
         const connectMcpButton = document.getElementById('connect-mcp-button');
         if (connectMcpButton) {
             connectMcpButton.addEventListener('click', () => {
@@ -1091,7 +1091,7 @@ ${formattedToolList}
             });
         }
 
-        // 初始化测试按钮状态
+        // 初始化按钮状态
         this.updateConnectButtonState();
     }
 
@@ -1198,7 +1198,7 @@ ${formattedToolList}
                         this.resetMcpServerForm();
                     }
 
-                    // 尝试连接MCP工具以获取工具信息
+                    // 尝试连接MCP以获取工具信息
                     try {
                         const connectMcpResult = await ipcRenderer.invoke('connect-mcp-server', {
                             name: serverName,
@@ -1207,7 +1207,7 @@ ${formattedToolList}
                             args: args
                         });
 
-                        // 如果测试成功，使用测试结果中的工具信息显示工具列表
+                        // 如果成功，使用测试结果中的工具信息显示工具列表
                         if (connectMcpResult && connectMcpResult.success && connectMcpResult.toolDescriptions) {
                             // 显示工具列表
                             this.displayToolsFromData(connectMcpResult.toolDescriptions);
@@ -1235,7 +1235,7 @@ ${formattedToolList}
                             return;
                         }
                     } catch (error) {
-                        log.error('测试MCP服务失败:', error);
+                        log.error('连接MCP服务失败:', error);
                     }
                 } else {
                     throw new Error('保存MCP服务配置失败，返回false');
