@@ -16,20 +16,17 @@ const Logger = require('./logger');
 const log = new Logger('main');
 const path = require('path');
 
-// 注册相关回调
-require('./mcp/mcpRuntimeManager');
-
 // 全局MCP实例
 const mcp = require('./mcp/mcpClient');
 const { closeConfigWindow } = require('./config/configWindow');
-
-const { mainWindow } = require('./mainWindow');
 
 // 引入各个配置管理器
 const modelConfig = require('./config/modelConfig');
 const promptConfig = require('./config/promptConfig');
 const mcpConfig = require('./config/mcpConfig');
 const mcpRuntimeManager = require('./mcp/mcpRuntimeManager');
+
+let mainWindow = null;
 
 /**
  * 创建应用程序菜单
@@ -119,8 +116,6 @@ function createMenu() {
                     label: i18n.t('menu.help.checkForUpdates'),
                     click: async () => {
                         try {
-                            const { mainWindow } = require('./mainWindow');
-
                             // 显示检查更新中状态
                             if (mainWindow && mainWindow.webContents) {
                                 mainWindow.webContents.send('checking-for-updates');
@@ -130,7 +125,6 @@ function createMenu() {
                             await appConfig.checkForUpdates(true);
                         } catch (error) {
                             log.error('手动检查更新失败:', error.message);
-                            const { mainWindow } = require('./mainWindow');
                             if (mainWindow && mainWindow.webContents) {
                                 mainWindow.webContents.send('update-check-error', error.message);
                             }
@@ -160,8 +154,7 @@ app.whenReady().then(() => {
     }
 
     // 初始化窗口
-    createWindow();
-
+    mainWindow = createWindow();
     // 将配置管理器注册到主窗口
     if (mainWindow && mainWindow.webContents) {
         appConfig.registerWindow(mainWindow.webContents);
@@ -248,7 +241,7 @@ app.on('window-all-closed', () => {
 
 app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
-        createWindow();
+        mainWindow = createWindow();
     }
 });
 
