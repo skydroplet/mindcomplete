@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.1.0](https://github.com/skydroplet/mindcomplete/compare/v0.0.14...v0.1.0) (2025-06-03)
+
+### ✨ 新版本
+
+* MVP版本发布，支持基本大模型流式对话和本地MCP调用功能，自动化安装MCP运行环境和好用的MCP
+
 ## [0.0.14](https://github.com/skydroplet/mindcomplete/compare/v0.0.13...v0.0.14) (2025-06-02)
 
 ### ✨ 新功能
