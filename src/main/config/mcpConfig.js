@@ -9,6 +9,9 @@
  * - 向所有窗口通知MCP配置变更
  */
 
+const { app } = require('electron');
+const fs = require('fs');
+const path = require('path');
 const BaseConfigManager = require('./baseConfigManager');
 const Logger = require('../logger');
 const log = new Logger('mcpManager');
@@ -24,6 +27,10 @@ class McpConfig extends BaseConfigManager {
      * 创建MCP配置管理器实例
      */
     constructor() {
+        const userDataPath = app.getPath('userData');
+        const tempDir = path.join(userDataPath, 'user-data', 'temp');
+        fs.mkdirSync(tempDir, { recursive: true });
+
         const defaultMcp = [
             {
                 name: '命令行执行',
@@ -33,7 +40,7 @@ class McpConfig extends BaseConfigManager {
             {
                 name: '本地文件操作',
                 command: 'npx',
-                args: ['-y', '@modelcontextprotocol/server-filesystem', 'your-allow-path'],
+                args: ['-y', '@modelcontextprotocol/server-filesystem', tempDir],
             },
             {
                 name: 'bing中文搜索',
