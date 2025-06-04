@@ -55,18 +55,17 @@ class AppConfig extends BaseConfigManager {
     }
 
     /**
-     * 获取要下载的文件后缀
+     * 获取要下载的文件
+     * @param {String} tagName 
      */
-    getDownloadFileSuffix() {
+    getDownloadFileName(tagName) {
         const platform = os.platform();
+        const arch = os.arch();
+
         if (platform === 'win32') {
-            return '.exe';
-        } else if (platform === 'darwin') {
-            return '.dmg';
-        } else if (platform === 'linux') {
-            return '.AppImage';
+            return `mindcomplete-${platform}-${arch}-${tagName}-install.zip`;
         } else {
-            return '';
+            return `mindcomplete-${platform}-${arch}-${tagName}.zip`
         }
     }
 
@@ -136,9 +135,9 @@ class AppConfig extends BaseConfigManager {
                     };
 
                     // 根据操作系统获取要下载的文件后缀
-                    const fileSuffix = this.getDownloadFileSuffix();
+                    const newFile = this.getDownloadFileName(responseData.tag_name);
                     for (const asset of responseData.assets) {
-                        if (asset.name.endsWith(fileSuffix)) {
+                        if (asset.name === newFile) {
                             updateInfo.downloadUrl = asset.browser_download_url;
                             break;
                         }

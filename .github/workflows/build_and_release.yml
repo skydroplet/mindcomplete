@@ -4,67 +4,83 @@ on:
   workflow_dispatch:
   push:
     tags:
-    - "v*"
+      - "v*"
 
 jobs:
   build:
     runs-on: ${{ matrix.os }}
     permissions:
-        contents: write
+      contents: write
     strategy:
       matrix:
         os: [windows-latest, ubuntu-latest]
         node-version: [22]
+        arch: [x64, arm64]
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-    - name: Set up Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: ${{ matrix.node-version }}
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
 
-    - name: Install dependencies
-      run: npm install
+      - name: Install dependencies
+        run: npm install
 
-    - name: Build Electron app
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Required for private repository access
-      run: npm run build --verbose
+      - name: Build Electron app
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run build -- --${{ matrix.arch }}
 
-    - name: Debug build output
-      run: ls -R dist
+      - name: List build output
+        run: ls -R dist
 
-    - name: Upload artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: ${{ matrix.os }}
-        path: |
-          dist/mindcomplete-*.exe
-          dist/mindcomplete-*.AppImage
-          CHANGELOG.md
+      - name: Compress build output linux
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          mkdir -p packaged
+          cd dist
+          zip -r ../packaged/mindcomplete-linux-${{ matrix.arch }}-${{ github.ref_name }}.zip mindcomplete-*.AppImage
+
+      - name: Compress build output windows
+        if: matrix.os == 'windows-latest'
+        run: |
+          mkdir -p packaged
+          cd dist
+          powershell -Command "Compress-Archive -Path 'mindcomplete-*.exe' -DestinationPath '../packaged/mindcomplete-win32-${{ matrix.arch }}-${{ github.ref_name }}-install.zip'"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.os }}-${{ matrix.arch }}
+          path: |
+            packaged/mindcomplete-*.zip
+            CHANGELOG.md
 
   release:
     needs: build
     runs-on: ubuntu-latest
     permissions:
-        contents: write
+      contents: write
     steps:
-    - name: Download all artifacts
-      uses: actions/download-artifact@v4
-      with:
-        path: artifact
-        
-    - name: Display structure of downloaded files
-      run: ls -R artifact
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifact
 
-    - name: Create GitHub Release
-      uses: softprops/action-gh-release@v2
-      with:
-        files: |
-          artifact/ubuntu-latest/dist/mindcomplete-*.AppImage
-          artifact/windows-latest/dist/mindcomplete-*.exe
-        body_path:  artifact/windows-latest/CHANGELOG.md
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Display structure of downloaded files
+        run: ls -R artifact
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            artifact/ubuntu-latest-x64/packaged/mindcomplete-*.zip
+            artifact/ubuntu-latest-arm64/packaged/mindcomplete-*.zip
+            artifact/windows-latest-x64/packaged/mindcomplete-*.zip
+            artifact/windows-latest-arm64/packaged/mindcomplete-*.zip
+          body_path: artifact/windows-latest-x64/CHANGELOG.md
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

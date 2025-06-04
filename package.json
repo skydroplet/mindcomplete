@@ -6,10 +6,8 @@
   "scripts": {
     "start": "node -e \"process.platform === 'win32' ? require('child_process').execSync('chcp 65001') : null\" && electron .",
     "build": "electron-builder",
-    "build:all": "electron-builder -mwl",
-    "build:win": "electron-builder --win",
-    "build:mac": "electron-builder --mac",
-    "build:linux": "electron-builder --linux",
+    "build:x64": "electron-builder --x64",
+    "build:arm64": "electron-builder --arm64",
     "postinstall": "electron-builder install-app-deps",
     "release": "standard-version",
     "test": "jest"
@@ -49,7 +47,7 @@
       "assets/**/*",
       "package.json"
     ],
-    "artifactName": "${productName}-${version}.${ext}",
+    "artifactName": "${productName}-${arch}-v${version}.${ext}",
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
@@ -64,7 +62,14 @@
       "perMachine": false
     },
     "win": {
-      "target": "nsis",
+      "target": [
+        {
+          "target": "nsis"
+        },
+        {
+          "target": "zip"
+        }
+      ],
       "icon": "assets/icons/icon.ico",
       "requestedExecutionLevel": "asInvoker"
     },
@@ -73,7 +78,14 @@
       "icon": "assets/icons/icon.icns"
     },
     "linux": {
-      "target": "AppImage",
+      "target": [
+        {
+          "target": "AppImage"
+        },
+        {
+          "target": "zip"
+        }
+      ],
       "icon": "assets/icons/icon.png"
     }
   },
