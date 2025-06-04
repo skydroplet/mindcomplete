@@ -91,48 +91,6 @@ function createMenu() {
                 { label: i18n.t('menu.window.front'), role: 'front' }
             ]
         },
-        {
-            label: i18n.t('menu.help.label'),
-            submenu: [
-                {
-                    label: i18n.t('menu.help.about'),
-                    click: () => {
-                        // 创建关于窗口
-                        const aboutWindow = new BrowserWindow({
-                            width: 400,
-                            height: 300,
-                            parent: mainWindow,
-                            modal: true,
-                            show: false
-                        });
-                        aboutWindow.loadFile('src/renderer/pages/about.html');
-                        aboutWindow.setMenuBarVisibility(false);
-                        aboutWindow.once('ready-to-show', () => {
-                            aboutWindow.show();
-                        });
-                    }
-                },
-                {
-                    label: i18n.t('menu.help.checkForUpdates'),
-                    click: async () => {
-                        try {
-                            // 显示检查更新中状态
-                            if (mainWindow && mainWindow.webContents) {
-                                mainWindow.webContents.send('checking-for-updates');
-                            }
-
-                            // 强制检查更新
-                            await appConfig.checkForUpdates(true);
-                        } catch (error) {
-                            log.error('手动检查更新失败:', error.message);
-                            if (mainWindow && mainWindow.webContents) {
-                                mainWindow.webContents.send('update-check-error', error.message);
-                            }
-                        }
-                    }
-                }
-            ]
-        }
     ];
 
     // 创建并设置应用程序菜单（仅保留快捷键功能）
