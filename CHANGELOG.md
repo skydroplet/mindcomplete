@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.1.0](https://github.com/skydroplet/mindcomplete/compare/v0.0.14...v0.1.0) (2025-06-03)
+## [0.1.1](https://github.com/skydroplet/mindcomplete/compare/v0.1.0...v0.1.1) (2025-06-05)
 
 ### ✨ 新版本
 
