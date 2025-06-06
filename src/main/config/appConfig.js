@@ -17,8 +17,8 @@ class AppConfig extends BaseConfigManager {
             language: 'zh-CN',
             theme: 'auto',
             updateUrls: [
+                "https://api.mindcomplete.me/v1/latest",
                 "https://api.github.com/repos/skydroplet/mindcomplete/releases/latest",
-                "https://api.mindcomplete.me/v1/latest"
             ],
             latestVersion: {},
             lastUpdateCheck: null,
@@ -114,10 +114,7 @@ class AppConfig extends BaseConfigManager {
             }
 
             // 获取更新URL列表
-            const updateUrls = this.config.updateUrls || [
-                "https://api.github.com/repos/skydroplet/mindcomplete/releases/latest",
-                "https://api.mindcomplete.me/v1/releases/latest"
-            ];
+            const updateUrls = this.config.updateUrls;
 
             // 依次尝试每个更新源
             for (let i = 0; i < updateUrls.length; i++) {
