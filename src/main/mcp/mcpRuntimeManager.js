@@ -794,7 +794,10 @@ class McpRuntimeManager {
             pathDirs = pathDirs.concat(this.getExecutableDirs());
 
             for (const dir of pathDirs) {
-                if (!dir) continue;
+                if (!dir) {
+                    continue;
+                }
+                log.info(`search dir: ${dir}`)
 
                 // 对于每个可能的扩展名，检查可执行文件是否存在
                 for (const ext of exeExtensions) {

@@ -679,8 +679,7 @@ class McpService {
             // 获取当前表单中的MCP服务配置
             const pathElement = document.getElementById('serverPath');
             if (!pathElement) {
-                log.error('服务路径输入框不存在');
-                return;
+                throw new Error("服务路径输入框不存在");
             }
 
             let command = pathElement.value.trim();
@@ -690,14 +689,12 @@ class McpService {
 
             // 如果路径为空，提前返回错误
             if (!command) {
-                log.error(i18n.t('errors.serverConfigIncomplete'));
-                return;
+                throw new Error(i18n.t('errors.serverConfigIncomplete'));
             }
 
             const serverNameElement = document.getElementById('serverName');
             if (!serverNameElement) {
-                log.error('服务名称输入框不存在');
-                return;
+                throw new Error("服务名称输入框不存在");
             }
 
             const serverData = {
@@ -729,73 +726,75 @@ class McpService {
             const result = await ipcRenderer.invoke('connect-mcp-server', serverData);
             log.info('connect mcp server result:', result);
 
-            // 显示结果
-            if (result.success) {
-                // 格式化工具列表，只显示名称和描述
-                const formattedToolList = result.toolDescriptions.map(tool =>
-                    `${tool.name}: ${tool.description}`
-                ).join('\n');
+            if (!result.success) {
+                throw new Error(result.error);
+            }
 
-                const resultMessage = `${i18n.t('mcp.toolsList.connectSuccess')}
+            // 格式化工具列表，只显示名称和描述
+            const formattedToolList = result.toolDescriptions.map(tool =>
+                `${tool.name}: ${tool.description}`
+            ).join('\n');
+
+            const resultMessage = `${i18n.t('mcp.toolsList.connectSuccess')}
 ${i18n.t('mcp.toolsList.serverName')}: ${result.serverName}
 ${i18n.t('mcp.toolsList.toolCount')}: ${result.tools}
 ${i18n.t('mcp.toolsList.toolList')}:
 ${formattedToolList}
 `;
 
-                log.info(resultMessage);
+            log.info(resultMessage);
 
-                // 如果当前有选中的服务，将工具描述保存到服务配置中
-                if (this.currentServerId && this.mcpServers[this.currentServerId]) {
-                    // 将工具描述保存到当前服务配置中
-                    this.mcpServers[this.currentServerId].toolDescriptions = result.toolDescriptions;
+            // 如果当前有选中的服务，将工具描述保存到服务配置中
+            if (this.currentServerId && this.mcpServers[this.currentServerId]) {
+                // 将工具描述保存到当前服务配置中
+                this.mcpServers[this.currentServerId].toolDescriptions = result.toolDescriptions;
 
-                    // 如果当前服务没有自动授权列表，初始化为空数组
-                    if (!this.mcpServers[this.currentServerId].autoApprove) {
-                        this.mcpServers[this.currentServerId].autoApprove = [];
-                    }
-
-                    // 准备要更新的服务数据
-                    const updatedServerData = {
-                        ...this.mcpServers[this.currentServerId],
-                        toolDescriptions: result.toolDescriptions
-                    };
-
-                    // 更新服务器配置
-                    const success = await ipcRenderer.invoke('update-mcp-server', {
-                        serverId: this.currentServerId,
-                        serverData: updatedServerData
-                    });
-
-                    if (success) {
-                        log.info('工具列表已保存到配置文件');
-
-                        // 刷新完整的MCP配置
-                        const updatedMcpConfig = await ipcRenderer.invoke('get-mcp-config');
-                        this.mcpServers = updatedMcpConfig?.servers || {};
-                        this.activeMcps = updatedMcpConfig?.activeMcps || [];
-                    } else {
-                        log.error('保存工具列表到配置文件失败');
-                    }
+                // 如果当前服务没有自动授权列表，初始化为空数组
+                if (!this.mcpServers[this.currentServerId].autoApprove) {
+                    this.mcpServers[this.currentServerId].autoApprove = [];
                 }
 
-                // 显示工具列表
-                if (result.toolDescriptions && result.toolDescriptions.length > 0) {
-                    const toolsList = document.getElementById('toolsList');
-                    if (!toolsList) {
-                        log.error('工具列表元素不存在');
-                        return;
-                    }
+                // 准备要更新的服务数据
+                const updatedServerData = {
+                    ...this.mcpServers[this.currentServerId],
+                    toolDescriptions: result.toolDescriptions
+                };
 
-                    // 清空当前列表
-                    toolsList.innerHTML = '';
+                // 更新服务器配置
+                const success = await ipcRenderer.invoke('update-mcp-server', {
+                    serverId: this.currentServerId,
+                    serverData: updatedServerData
+                });
 
-                    // 使用共享函数显示工具列表
-                    this.displayToolsFromData(result.toolDescriptions);
+                if (success) {
+                    log.info('工具列表已保存到配置文件');
+
+                    // 刷新完整的MCP配置
+                    const updatedMcpConfig = await ipcRenderer.invoke('get-mcp-config');
+                    this.mcpServers = updatedMcpConfig?.servers || {};
+                    this.activeMcps = updatedMcpConfig?.activeMcps || [];
+                } else {
+                    log.error('保存工具列表到配置文件失败');
                 }
+            }
+
+            // 显示工具列表
+            if (result.toolDescriptions && result.toolDescriptions.length > 0) {
+                const toolsList = document.getElementById('toolsList');
+                if (!toolsList) {
+                    log.error('工具列表元素不存在');
+                    return;
+                }
+
+                // 清空当前列表
+                toolsList.innerHTML = '';
+
+                // 使用共享函数显示工具列表
+                this.displayToolsFromData(result.toolDescriptions);
             }
         } catch (error) {
             log.error('连接MCP服务时出错:', error.message);
+            alert(error.message)
         } finally {
             const connectButton = document.getElementById('connect-mcp-button');
             if (connectButton) {
@@ -1039,57 +1038,45 @@ ${formattedToolList}
 
         // 保存MCP服务配置事件
         const saveMcpBtn = document.getElementById('saveMcpBtn');
-        if (saveMcpBtn) {
-            saveMcpBtn.addEventListener('click', async () => {
-                const nameInput = document.getElementById('serverName');
-                if (nameInput && !nameInput.value.trim()) {
-                    nameInput.focus();
-                    return;
-                }
+        saveMcpBtn.addEventListener('click', async () => {
+            const nameInput = document.getElementById('serverName');
+            if (nameInput && !nameInput.value.trim()) {
+                nameInput.focus();
+                return;
+            }
 
-                await this.saveMcpServerConfig();
-            });
-        }
+            await this.saveMcpServerConfig();
+        });
 
         // 删除MCP服务
         const deleteMcpServerBtn = document.getElementById('deleteMcpServerBtn');
-        if (deleteMcpServerBtn) {
-            deleteMcpServerBtn.addEventListener('click', async () => {
-                await this.deleteMcpServer();
-            });
-        }
+        deleteMcpServerBtn.addEventListener('click', async () => {
+            await this.deleteMcpServer();
+        });
 
         // MCP工具事件
         const connectMcpButton = document.getElementById('connect-mcp-button');
-        if (connectMcpButton) {
-            connectMcpButton.addEventListener('click', () => {
-                this.connectMcpServer();
-            });
-        }
+        connectMcpButton.addEventListener('click', () => {
+            this.connectMcpServer();
+        });
 
         // 添加MCP服务按钮事件
         const addMcpServerBtn = document.getElementById('addMcpServerBtn');
-        if (addMcpServerBtn) {
-            addMcpServerBtn.addEventListener('click', () => {
-                this.resetMcpServerForm();
-            });
-        }
+        addMcpServerBtn.addEventListener('click', () => {
+            this.resetMcpServerForm();
+        });
 
         // 取消MCP服务按钮事件
         const cancelMcpBtn = document.getElementById('cancelMcpBtn');
-        if (cancelMcpBtn) {
-            cancelMcpBtn.addEventListener('click', () => {
-                this.resetMcpServerForm();
-            });
-        }
+        cancelMcpBtn.addEventListener('click', () => {
+            this.resetMcpServerForm();
+        });
 
         // 复制MCP服务按钮处理
         const copyMcpServerBtn = document.getElementById('copyMcpServerBtn');
-        if (copyMcpServerBtn) {
-            copyMcpServerBtn.addEventListener('click', async () => {
-                await this.copyMcpServer();
-            });
-        }
+        copyMcpServerBtn.addEventListener('click', async () => {
+            await this.copyMcpServer();
+        });
 
         // 初始化按钮状态
         this.updateConnectButtonState();
