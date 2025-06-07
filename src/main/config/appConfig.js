@@ -17,7 +17,7 @@ class AppConfig extends BaseConfigManager {
             language: 'zh-CN',
             theme: 'auto',
             updateUrls: [
-                "https://api.mindcomplete.me/v1/latest",
+                "https://api.mindcomplete.me/v1/releases/latest",
                 "https://api.github.com/repos/skydroplet/mindcomplete/releases/latest",
             ],
             latestVersion: {},
