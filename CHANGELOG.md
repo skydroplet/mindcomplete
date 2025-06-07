@@ -1,5 +1,17 @@
 # Changelog
 
+
+## [0.1.2](https://github.com/skydroplet/mindcomplete/compare/v0.1.1...v0.1.2) (2025-06-07)
+
+### ✨ 新功能
+
+* 连接失败弹窗提示详细原因 ([81d71a4](https://github.com/skydroplet/mindcomplete/commit/81d71a4df47b09919e8707f2af63aabff6f0ed5e))
+* 优先使用自身域名 ([0e1ed99](https://github.com/skydroplet/mindcomplete/commit/0e1ed99818077c72ffc71ddb3d88d9c7d756421f))
+
+### 🐛 修复
+
+* 保存mcp失败 ([bbf580e](https://github.com/skydroplet/mindcomplete/commit/bbf580e749872b606a461f71208d55492c140aa9))
+
 ## [0.1.1](https://github.com/skydroplet/mindcomplete/compare/v0.1.0...v0.1.1) (2025-06-05)
 
 ### ✨ 新版本

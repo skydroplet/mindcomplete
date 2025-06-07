@@ -794,7 +794,9 @@ ${formattedToolList}
             }
         } catch (error) {
             log.error('连接MCP服务时出错:', error.message);
-            alert(error.message)
+            alert(error.message);
+            // 重置窗口焦点，解决输入框无法聚焦的问题
+            ipcRenderer.invoke('reset-window-focus');
         } finally {
             const connectButton = document.getElementById('connect-mcp-button');
             if (connectButton) {
