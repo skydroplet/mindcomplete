@@ -195,7 +195,7 @@ function registerConfigIPC() {
     });
 
     ipcMain.handle('save-mcp-server', async (event, serverData) => {
-        log.info('save mcp server:', serverId);
+        log.info('save mcp server:', serverData);
         return mcpManager.addMcpServer(serverData.name, serverData);
     });
 
