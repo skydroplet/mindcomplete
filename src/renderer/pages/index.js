@@ -24,6 +24,7 @@ const sidebarService = require('../sidebarService');
 const modelService = require('../modelService');
 const promptService = require('../promptService');
 const mcpServerService = require('../mcpServerService');
+const agentSelectService = require('../agentSelectService');
 const themeService = require('../themeService');
 const aboutService = require('../aboutService');
 const updateService = require('../updateService');
@@ -107,6 +108,11 @@ async function init() {
             await mcpServerService.loadMcpServers(statusElement);
         })(),
 
+        // 加载Agent列表
+        (async () => {
+            await agentSelectService.loadAgents();
+        })(),
+
         // 加载会话
         (async () => {
             // 设置rename会话回调
@@ -159,6 +165,12 @@ async function init() {
 
     // 设置主题相关监听器
     themeService.setupThemeListeners();
+
+    // 增强Agent选择框
+    const agentSelect = document.getElementById('agent-select');
+    if (agentSelect) {
+        enhanceSelectElement(agentSelect);
+    }
 }
 
 // 打开带有特定标签页的设置窗口
@@ -396,6 +408,9 @@ function setupEventListeners() {
     // 设置模型选择监听器
     modelService.setupModelSelectListeners(openSettingsWindowWithTab);
 
+    // 设置Agent选择监听器
+    agentSelectService.setupAgentSelectListeners(openSettingsWindowWithTab);
+
     // 设置提示词选择监听器
     promptService.setupPromptSelectListeners(statusElement, openSettingsWindowWithTab);
 
@@ -549,6 +564,10 @@ ipcRenderer.on('config-updated', (event, data) => {
         mcpServerService.loadMcpServers(statusElement);
     }
 
+    if (data.agents) {
+        agentSelectService.loadAgents();
+    }
+
     if (data.generalConfig) {
         // 更新语言选择
         if (languageSelect && data.generalConfig.language) {
@@ -579,6 +598,15 @@ ipcRenderer.on('mcp-server-updated', async (event, mcpConfig) => {
 ipcRenderer.on('prompts-updated', async () => {
     log.info('收到提示词配置更新事件');
     await promptService.loadPrompts(statusElement);
+
+    // 确保样式一致性
+    setTimeout(ensureConsistentDropdownStyles, 50);
+});
+
+// 监听Agent配置更新事件
+ipcRenderer.on('agents-updated', async () => {
+    log.info('收到Agent配置更新事件');
+    await agentSelectService.loadAgents();
 
     // 确保样式一致性
     setTimeout(ensureConsistentDropdownStyles, 50);

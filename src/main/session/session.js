@@ -57,6 +57,11 @@ class ChatSession {
         this.saveToFile();
     }
 
+    setAgentId(agentId) {
+        this.data.agentId = agentId;
+        this.saveToFile();
+    }
+
     setMcpServers(servers) {
         this.data.mcpServers = servers;
         // 同步保存到配置 新建会话时 以当前使用的配置为准
@@ -101,6 +106,7 @@ class ChatSession {
             messageCount: 0,
             modelId: modelConfig.getCurrentModelId(),
             promptId: promptConfig.getCurrentPromptId(),
+            agentId: null,
             mcpServers: mcpConfig.getActiveMcps(),
             conversationMode: 'multi-turn',
             messages: []
@@ -194,6 +200,7 @@ class ChatSession {
             messageCount: this.data.messageCount,
             modelId: this.data.modelId,
             promptId: this.data.promptId,
+            agentId: this.data.agentId,
             mcpServers: this.data.mcpServers || [],
             conversationMode: this.data.conversationMode || 'single-turn',
             dataFile: this.filePath

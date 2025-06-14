@@ -235,6 +235,24 @@ class SessionManager extends EventEmitter {
     }
 
     /**
+     * 设置会话的Agent ID
+     * @param {string} sessionId 会话ID
+     * @param {string} agentId Agent ID
+     * @returns {boolean} 设置是否成功
+     */
+    setSessionAgentId(sessionId, agentId) {
+        const session = this.loadSession(sessionId);
+        if (!session) {
+            log.error("未找到会话", sessionId)
+            return false;
+        }
+
+        session.setAgentId(agentId);
+        this.updateSessionInfo(session);
+        return true;
+    }
+
+    /**
      * 设置会话的MCP服务
      * @param {string} sessionId 会话ID
      * @param {Array<string>} servers MCP服务ID数组

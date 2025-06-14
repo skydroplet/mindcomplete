@@ -42,6 +42,10 @@ function registerSessionIPC(ipcMain) {
         return sessionManager.setSessionPromptId(sessionId, promptId);
     });
 
+    ipcMain.handle('select-session-agent', (event, sessionId, agentId) => {
+        return sessionManager.setSessionAgentId(sessionId, agentId);
+    });
+
     ipcMain.handle('select-session-mcp-servers', (event, sessionId, servers) => {
         return sessionManager.setSessionMcpServers(sessionId, servers);
     });

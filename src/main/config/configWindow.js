@@ -322,6 +322,12 @@ function registerConfigIPC() {
         log.info('处理设置当前Agent请求:', agentId);
         return agentManager.setCurrentAgent(agentId);
     });
+
+    // Agent选择相关IPC处理
+    ipcMain.handle('select-agent', (event, agentId) => {
+        log.info('处理选择Agent请求:', agentId);
+        return agentManager.setCurrentAgent(agentId);
+    });
 }
 
 module.exports = {
