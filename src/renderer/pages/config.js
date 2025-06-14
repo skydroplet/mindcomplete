@@ -217,8 +217,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             agentService.updateMcpOptions(mcpServers);
         } catch (error) {
             log.error('加载Agent列表失败:', error.message);
-            // 如果加载失败，显示空状态
-            agentService.showEmptyState();
         }
 
         // 初始化主题切换 - 使用themeService

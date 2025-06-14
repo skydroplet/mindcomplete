@@ -109,17 +109,6 @@ class AgentService {
             agentItem.innerHTML = `
                 <div class="config-item-content">
                     <div class="config-item-name">${agent.name}</div>
-                    <div class="config-item-info">
-                        <span class="config-item-meta">
-                            模型: ${this.getModelName(agent.model) || '未设置'}
-                        </span>
-                        <span class="config-item-meta">
-                            提示词: ${this.getPromptName(agent.prompt) || '未设置'}
-                        </span>
-                        <span class="config-item-meta">
-                            MCP服务: ${(agent.mcpServices || []).length} 个
-                        </span>
-                    </div>
                 </div>
             `;
 

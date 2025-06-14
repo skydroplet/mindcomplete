@@ -19,7 +19,7 @@ class AgentConfig extends BaseConfigManager {
             currentAgent: null
         };
 
-        super('agentConfig.json', defaultConfig);
+        super('agents.json', defaultConfig);
         log.info('Agent配置管理器初始化完成');
     }
 
@@ -75,8 +75,8 @@ class AgentConfig extends BaseConfigManager {
             model: agent.model || null,
             prompt: agent.prompt || null,
             mcpServices: agent.mcpServices || [],
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
+            createdAt: new Date().toLocaleString(),
+            updatedAt: new Date().toLocaleString()
         };
 
         this.config.agents[agentId] = newAgent;
@@ -119,7 +119,7 @@ class AgentConfig extends BaseConfigManager {
             model: agent.model || null,
             prompt: agent.prompt || null,
             mcpServices: agent.mcpServices || [],
-            updatedAt: new Date().toISOString()
+            updatedAt: new Date().toLocaleString()
         };
 
         if (this.saveConfig()) {
