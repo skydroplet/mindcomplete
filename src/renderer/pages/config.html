@@ -17,6 +17,7 @@
             <button class="tab-link active" data-target="models" data-tab="models">模型配置</button>
             <button class="tab-link" data-target="prompts" data-tab="prompts">提示词管理</button>
             <button class="tab-link" data-target="mcp-servers" data-tab="mcp">MCP服务</button>
+            <button class="tab-link" data-target="agents" data-tab="agents">Agent配置</button>
             <div style="flex: 1;"></div>
             <button id="import-config-btn" class="import-btn" title="导入配置" data-i18n="settings.buttons.importConfig">
                 导入配置
@@ -234,6 +235,58 @@
                     <button class="copy-btn hidden" id="copyPromptBtn">复制</button>
                     <button class="cancel-btn" id="cancelPromptBtn">取消</button>
                     <button class="save-btn" id="savePromptBtn">保存</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Agent配置标签页 -->
+        <div class="tab-content" id="agents">
+            <div class="model-list">
+                <button class="add-btn" id="addAgentBtn">添加Agent</button>
+                <div id="agentList" class="config-list"></div>
+            </div>
+            <div class="model-form agent-form" style="display: none;">
+                <form id="agentForm">
+                    <div class="form-group">
+                        <label for="agentName">Agent名称</label>
+                        <input type="text" id="agentName" name="agentName" placeholder="输入Agent名称" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="agentModel">关联模型</label>
+                        <select id="agentModel" name="agentModel">
+                            <option value="">请选择模型</option>
+                        </select>
+                        <div class="form-help-text">
+                            选择此Agent使用的默认模型
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="agentPrompt">关联提示词</label>
+                        <select id="agentPrompt" name="agentPrompt">
+                            <option value="">请选择提示词</option>
+                        </select>
+                        <div class="form-help-text">
+                            选择此Agent使用的默认提示词
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="mcpServicesContainer">MCP服务列表</label>
+                        <div id="mcpServicesContainer" class="mcp-services-container">
+                            <!-- MCP服务选择行将由JavaScript动态添加 -->
+                        </div>
+                        <button type="button" class="add-btn" id="addMcpServiceBtn">添加MCP服务</button>
+                        <div class="form-help-text">
+                            选择此Agent可以使用的MCP服务
+                        </div>
+                    </div>
+                </form>
+
+                <!-- Agent配置按钮 -->
+                <div class="form-buttons" id="agent-buttons">
+                    <button class="delete-btn hidden" id="deleteAgentBtn">删除Agent</button>
+                    <button class="copy-btn hidden" id="copyAgentBtn">复制Agent</button>
+                    <button class="cancel-btn" id="cancelAgentBtn">取消</button>
+                    <button class="save-btn" id="saveAgentBtn">保存</button>
                 </div>
             </div>
         </div>

@@ -7,15 +7,17 @@ const appConfig = require('./appConfig');
 const modelConfig = require('./modelConfig');
 const mcpConfig = require('./mcpConfig');
 const promptConfig = require('./promptConfig');
+const agentConfig = require('./agentConfig');
 const { createConfigWindow, registerConfigIPC, openConfigWindowWithTab } = require('./configWindow');
 
 module.exports = {
     appConfig,
     modelConfig,
     mcpConfig,
+    promptConfig,
+    agentConfig,
     createConfigWindow,
     registerConfigIPC,
-    promptConfig,
     openConfigWindowWithTab
 };
 

@@ -192,8 +192,9 @@
         "title": "配置",
         "tabs": {
             "models": "模型配置",
-            "prompts": "提示词管理",
-            "mcp": "MCP管理",
+            "prompts": "提示词配置",
+            "mcp": "MCP配置",
+            "agents": "Agent配置",
             "newSession": "新会话",
             "close": "关闭标签",
             "newTab": "新建标签页",
@@ -209,8 +210,12 @@
             "contextWindowSize": "上下文窗口大小",
             "temperature": "温度",
             "promptName": "提示词名称",
-            "promptContent": "提示词内容",
             "promptType": "提示词类型",
+            "promptContent": "提示词内容",
+            "agentName": "Agent名称",
+            "agentModel": "模型",
+            "agentPrompt": "提示词",
+            "mcpServices": "MCP服务",
             "serverName": "服务名称",
             "serverPath": "可执行文件",
             "envVars": "环境变量",
@@ -218,10 +223,12 @@
         },
         "placeholders": {
             "modelName": "输入模型名称",
-            "apiUrl": "输入API地址",
-            "apiKey": "输入你的API密钥",
+            "modelType": "例如: openai",
+            "apiUrl": "http://localhost:8000/v1",
+            "apiKey": "输入你的 API 密钥",
             "promptName": "输入提示词名称",
             "promptContent": "输入提示词内容",
+            "agentName": "输入Agent名称",
             "serverName": "输入MCP服务名称",
             "serverPath": "输入可执行文件路径"
         },
@@ -249,7 +256,16 @@
             "add-env-btn": "添加环境变量",
             "add-arg-btn": "添加参数",
             "exportConfig": "导出配置",
-            "importConfig": "导入配置"
+            "importConfig": "导入配置",
+            "addAgent": "添加Agent",
+            "deleteAgentBtn": "删除Agent",
+            "copyAgentBtn": "复制Agent",
+            "addMcpService": "添加MCP服务"
+        },
+        "help": {
+            "agentModel": "选择此Agent使用的默认模型",
+            "agentPrompt": "选择此Agent使用的默认提示词",
+            "mcpServices": "选择此Agent可以使用的MCP服务"
         }
     },
     "logs": {
@@ -372,5 +388,22 @@
         "confirm": "确定导入？导入配置项将以新建的方式添加，不会覆盖原有配置。",
         "success": "配置导入成功！已导入{0}。",
         "error": "导入配置失败: {error}"
+    },
+    "agents": {
+        "confirmDelete": "确定要删除Agent \"{name}\" 吗？",
+        "saveSuccess": "Agent配置保存成功",
+        "saveFailed": "保存Agent配置失败: {error}",
+        "deleteSuccess": "Agent配置删除成功",
+        "deleteFailed": "删除Agent配置失败: {error}",
+        "copySuccess": "Agent配置复制成功",
+        "copyFailed": "复制Agent配置失败: {error}",
+        "nameRequired": "请输入Agent名称",
+        "loadFailed": "加载Agent列表失败: {error}",
+        "noModel": "未设置",
+        "noPrompt": "未设置",
+        "mcpServicesCount": "{count} 个",
+        "selectModel": "请选择模型",
+        "selectPrompt": "请选择提示词",
+        "selectMcpService": "请选择MCP服务"
     }
 }

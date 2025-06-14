@@ -18,9 +18,13 @@ const mcpService = require('../mcpService');
 const exportService = require('../exportService');
 const ImportService = require('../importService');
 const mcpRuntimeService = require('../mcpRuntimeService');
+const AgentService = require('../agentService');
 
 // 创建导入服务实例
 const importService = new ImportService();
+
+// 创建Agent服务实例
+const agentService = new AgentService();
 
 // 初始化UI文本的函数
 function initUIText() {
@@ -125,6 +129,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         window.models = {};
         window.mcpConfig = {};
         window.prompts = {};
+        window.agents = {};
 
         // 获取当前语言设置并应用
         try {
@@ -172,6 +177,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         // 初始化全局变量
         window.currentModelId = null;
         window.currentPromptId = null;
+        window.currentAgentId = null;
 
         // 初始化MCP设置
         await mcpService.initMcpSettings();
@@ -190,6 +196,29 @@ document.addEventListener('DOMContentLoaded', async () => {
             promptService.updatePromptList(prompts);
         } catch (error) {
             log.error('加载提示词列表失败:', error.message);
+        }
+
+        // 初始化Agent配置相关事件
+        await agentService.initAgentEventListeners();
+
+        // 加载Agent列表
+        try {
+            const agents = await ipcRenderer.invoke('get-agents');
+            log.info('Agent列表:', agents);
+            window.agents = agents;
+            agentService.updateAgentList(agents);
+
+            // 更新Agent服务中的选项数据
+            agentService.updateModelOptions(models);
+            agentService.updatePromptOptions(prompts);
+
+            // 获取MCP服务列表并更新Agent服务选项
+            const mcpServers = mcpService.mcpServers || {};
+            agentService.updateMcpOptions(mcpServers);
+        } catch (error) {
+            log.error('加载Agent列表失败:', error.message);
+            // 如果加载失败，显示空状态
+            agentService.showEmptyState();
         }
 
         // 初始化主题切换 - 使用themeService
