@@ -18,13 +18,10 @@ const mcpServerService = require('../mcpServerService');
 const exportService = require('../exportService');
 const ImportService = require('../importService');
 const mcpRuntimeService = require('../mcpRuntimeService');
-const AgentService = require('../agentService');
+const agentService = require('../agentService');
 
 // 创建导入服务实例
 const importService = new ImportService();
-
-// 创建Agent服务实例
-const agentService = new AgentService();
 
 // 初始化UI文本的函数
 function initUIText() {

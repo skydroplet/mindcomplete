@@ -52,7 +52,9 @@ class AgentService {
         const cancelAgentBtn = document.getElementById('cancelAgentBtn');
         if (cancelAgentBtn) {
             cancelAgentBtn.addEventListener('click', () => {
-                this.hideAgentForm();
+                this.clearAgentForm();
+                this.showAgentForm();
+                this.currentAgentId = null;
             });
         }
 
@@ -62,6 +64,9 @@ class AgentService {
             deleteAgentBtn.addEventListener('click', async () => {
                 if (this.currentAgentId) {
                     await this.deleteAgent(this.currentAgentId);
+                    this.clearAgentForm();
+                    this.showAgentForm();
+                    this.currentAgentId = null;
                 }
             });
         }
@@ -73,14 +78,6 @@ class AgentService {
                 if (this.currentAgentId) {
                     await this.copyAgent(this.currentAgentId);
                 }
-            });
-        }
-
-        // 添加MCP服务按钮
-        const addMcpServiceBtn = document.getElementById('addMcpServiceBtn');
-        if (addMcpServiceBtn) {
-            addMcpServiceBtn.addEventListener('click', () => {
-                this.addMcpServiceRow();
             });
         }
     }
@@ -234,20 +231,17 @@ class AgentService {
         mcpServersContainer.innerHTML = '';
 
         mcpServers.forEach((mcpId, index) => {
-            this.addMcpServiceRow(mcpId);
+            this.addMcpServerRow(mcpId);
         });
 
-        // 如果没有MCP服务，添加一个空行
-        if (mcpServers.length === 0) {
-            this.addMcpServiceRow();
-        }
+        this.checkAndAddEmptyMcpRow();
     }
 
     /**
      * 添加MCP服务选择行
      * @param {string} selectedMcpId - 选中的MCP服务ID
      */
-    addMcpServiceRow(selectedMcpId = '') {
+    addMcpServerRow(selectedMcpId = '') {
         const mcpServersContainer = document.getElementById('mcpServersContainer');
         if (!mcpServersContainer) {
             return;
@@ -271,17 +265,43 @@ class AgentService {
             select.appendChild(option);
         });
 
+        // 为选择框添加change事件监听器
+        select.addEventListener('change', () => {
+            this.checkAndAddEmptyMcpRow();
+        });
+
         const deleteBtn = document.createElement('button');
         deleteBtn.type = 'button';
         deleteBtn.className = 'delete-mcp-server-btn';
         deleteBtn.textContent = '删除';
         deleteBtn.addEventListener('click', () => {
             row.remove();
+            this.checkAndAddEmptyMcpRow();
         });
 
         row.appendChild(select);
         row.appendChild(deleteBtn);
         mcpServersContainer.appendChild(row);
+    }
+
+    /**
+     * 检查是否需要自动添加空的MCP服务行
+     */
+    checkAndAddEmptyMcpRow() {
+        const mcpSelects = document.querySelectorAll('.mcp-server-select');
+        let hasEmptyRow = false;
+
+        // 检查是否存在空的选择框
+        mcpSelects.forEach(select => {
+            if (!select.value) {
+                hasEmptyRow = true;
+            }
+        });
+
+        // 如果所有选择框都有值，自动添加一个空行
+        if (!hasEmptyRow && mcpSelects.length > 0) {
+            this.addMcpServerRow();
+        }
     }
 
     /**
@@ -310,7 +330,7 @@ class AgentService {
         const mcpServersContainer = document.getElementById('mcpServersContainer');
         if (mcpServersContainer) {
             mcpServersContainer.innerHTML = '';
-            this.addMcpServiceRow(); // 添加一个空行
+            this.addMcpServerRow(); // 添加一个空行
         }
 
         // 清除列表选中状态
@@ -349,12 +369,29 @@ class AgentService {
         log.info('保存Agent配置');
 
         try {
-            const agentName = document.getElementById('agentName')?.value;
-            const agentModel = document.getElementById('agentModel')?.value;
-            const agentPrompt = document.getElementById('agentPrompt')?.value;
+            const agentNameInput = document.getElementById('agentName');
+            const agentModelSelect = document.getElementById('agentModel');
+            const agentPromptSelect = document.getElementById('agentPrompt');
 
+            const agentName = agentNameInput?.value?.trim();
+            const agentModel = agentModelSelect?.value;
+            const agentPrompt = agentPromptSelect?.value;
+
+            // 验证必填字段
             if (!agentName) {
-                alert('请输入Agent名称');
+                log.warn('Agent名称不能为空');
+                if (agentNameInput) {
+                    agentNameInput.focus();
+                    agentNameInput.select();
+                }
+                return;
+            }
+
+            if (!agentModel) {
+                log.warn('必须选择一个模型');
+                if (agentModelSelect) {
+                    agentModelSelect.focus();
+                }
                 return;
             }
 
@@ -368,7 +405,7 @@ class AgentService {
 
             const agentData = {
                 name: agentName,
-                model: agentModel || null,
+                model: agentModel,
                 prompt: agentPrompt || null,
                 mcpServers: mcpServers
             };
@@ -392,16 +429,15 @@ class AgentService {
                 const agents = await ipcRenderer.invoke('get-agents');
                 this.updateAgentList(agents);
 
-                // 如果是新添加的Agent，选中它
+                // 如果是新添加的Agent或更新现有Agent，选中它
                 if (this.currentAgentId) {
                     this.selectAgent(this.currentAgentId);
                 }
             } else {
-                alert('保存Agent配置失败');
+                log.error('保存Agent配置失败');
             }
         } catch (error) {
             log.error('保存Agent配置出错:', error.message);
-            alert(`保存Agent配置失败: ${error.message}`);
         }
     }
 
@@ -546,8 +582,15 @@ class AgentService {
                 }
                 select.appendChild(option);
             });
+
+            // 重新绑定change事件监听器
+            select.removeEventListener('change', this.handleMcpSelectChange);
+            select.addEventListener('change', () => {
+                this.checkAndAddEmptyMcpRow();
+            });
         });
     }
 }
 
-module.exports = AgentService; 
+const agentService = new AgentService();
+module.exports = agentService; 
