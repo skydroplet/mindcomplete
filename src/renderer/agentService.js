@@ -548,60 +548,6 @@ class AgentService {
             });
         });
     }
-
-    /**
-     * 显示空状态提示
-     */
-    showEmptyState() {
-        const agentForm = document.querySelector('.agent-form');
-        if (agentForm) {
-            agentForm.style.display = 'flex';
-            agentForm.innerHTML = `
-                <div class="empty-state">
-                    <div class="empty-state-icon">🤖</div>
-                    <h3>暂无Agent配置</h3>
-                    <p>Agent可以组合模型、提示词和MCP服务，为不同场景提供专门的AI助手。</p>
-                    <button class="add-btn" id="addAgentFromEmpty">创建第一个Agent</button>
-                </div>
-            `;
-
-            // 绑定事件
-            const addBtn = document.getElementById('addAgentFromEmpty');
-            if (addBtn) {
-                addBtn.addEventListener('click', () => {
-                    this.clearAgentForm();
-                    this.showAgentForm();
-                });
-            }
-        }
-    }
-
-    /**
-     * 显示添加提示界面
-     */
-    showAddPrompt() {
-        const agentForm = document.querySelector('.agent-form');
-        if (agentForm) {
-            agentForm.style.display = 'flex';
-            agentForm.innerHTML = `
-                <div class="add-prompt-state">
-                    <div class="add-prompt-icon">➕</div>
-                    <h3>添加新的Agent</h3>
-                    <p>选择左侧的Agent进行编辑，或点击下面的按钮创建新的Agent配置。</p>
-                    <button class="add-btn" id="addNewAgentPrompt">添加Agent</button>
-                </div>
-            `;
-
-            // 绑定事件
-            const addBtn = document.getElementById('addNewAgentPrompt');
-            if (addBtn) {
-                addBtn.addEventListener('click', () => {
-                    this.clearAgentForm();
-                    this.showAgentForm();
-                });
-            }
-        }
-    }
 }
 
 module.exports = AgentService; 
