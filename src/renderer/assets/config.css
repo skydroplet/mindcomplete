@@ -1169,7 +1169,7 @@ textarea {
     display: flex;
 }
 
-.mcp-services-container {
+.mcp-servers-container {
     border: 1px solid var(--input-border);
     border-radius: 4px;
     padding: 10px;
@@ -1178,18 +1178,18 @@ textarea {
     background-color: var(--input-bg);
 }
 
-.mcp-service-row {
+.mcp-server-row {
     display: flex;
     align-items: center;
     gap: 8px;
     margin-bottom: 8px;
 }
 
-.mcp-service-row:last-child {
+.mcp-server-row:last-child {
     margin-bottom: 0;
 }
 
-.mcp-service-select {
+.mcp-server-select {
     flex: 1;
     padding: 6px;
     border: 1px solid var(--input-border);
@@ -1198,7 +1198,7 @@ textarea {
     color: var(--text-color);
 }
 
-.delete-mcp-service-btn {
+.delete-mcp-server-btn {
     padding: 4px 8px;
     background: #ff6666;
     color: white;
@@ -1208,7 +1208,7 @@ textarea {
     font-size: 12px;
 }
 
-.delete-mcp-service-btn:hover {
+.delete-mcp-server-btn:hover {
     background: #ff4444;
 }
 

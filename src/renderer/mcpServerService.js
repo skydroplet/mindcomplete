@@ -1,5 +1,5 @@
 /**
- * mcpService.js
+ * mcpServer.js
  * MCP服务模块 - 合并了mcpSettingsService功能
  * 
  * 该模块负责处理与MCP服务相关的所有功能，包括：
@@ -14,7 +14,7 @@
 
 const { ipcRenderer } = require('electron');
 const Logger = require('../main/logger');
-const log = new Logger('mcpService');
+const log = new Logger('mcpServer');
 const i18n = require('../locales/i18n');
 
 /**
@@ -1375,5 +1375,5 @@ ${formattedToolList}
 }
 
 // 创建单例实例并导出
-const mcpService = new McpService();
-module.exports = mcpService;
+const mcpServer = new McpService();
+module.exports = mcpServer;

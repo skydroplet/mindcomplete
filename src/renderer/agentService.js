@@ -218,27 +218,27 @@ class AgentService {
         }
 
         // 设置MCP服务列表
-        this.fillMcpServicesList(agent.mcpServices || []);
+        this.fillMcpServicesList(agent.mcpServers || []);
     }
 
     /**
      * 填充MCP服务列表
-     * @param {Array} mcpServices - MCP服务ID列表
+     * @param {Array} mcpServers - MCP服务ID列表
      */
-    fillMcpServicesList(mcpServices) {
-        const mcpServicesContainer = document.getElementById('mcpServicesContainer');
-        if (!mcpServicesContainer) {
+    fillMcpServicesList(mcpServers) {
+        const mcpServersContainer = document.getElementById('mcpServersContainer');
+        if (!mcpServersContainer) {
             return;
         }
 
-        mcpServicesContainer.innerHTML = '';
+        mcpServersContainer.innerHTML = '';
 
-        mcpServices.forEach((mcpId, index) => {
+        mcpServers.forEach((mcpId, index) => {
             this.addMcpServiceRow(mcpId);
         });
 
         // 如果没有MCP服务，添加一个空行
-        if (mcpServices.length === 0) {
+        if (mcpServers.length === 0) {
             this.addMcpServiceRow();
         }
     }
@@ -248,17 +248,17 @@ class AgentService {
      * @param {string} selectedMcpId - 选中的MCP服务ID
      */
     addMcpServiceRow(selectedMcpId = '') {
-        const mcpServicesContainer = document.getElementById('mcpServicesContainer');
-        if (!mcpServicesContainer) {
+        const mcpServersContainer = document.getElementById('mcpServersContainer');
+        if (!mcpServersContainer) {
             return;
         }
 
         const row = document.createElement('div');
-        row.className = 'mcp-service-row';
+        row.className = 'mcp-server-row';
 
         const select = document.createElement('select');
-        select.className = 'mcp-service-select';
-        select.innerHTML = '<option value="">请选择MCP服务</option>';
+        select.className = 'mcp-server-select';
+        select.innerHTML = '<option value="">请选择Agent可用的MCP服务</option>';
 
         // 填充MCP服务选项
         Object.entries(this.mcpServers).forEach(([mcpId, mcpServer]) => {
@@ -273,7 +273,7 @@ class AgentService {
 
         const deleteBtn = document.createElement('button');
         deleteBtn.type = 'button';
-        deleteBtn.className = 'delete-mcp-service-btn';
+        deleteBtn.className = 'delete-mcp-server-btn';
         deleteBtn.textContent = '删除';
         deleteBtn.addEventListener('click', () => {
             row.remove();
@@ -281,7 +281,7 @@ class AgentService {
 
         row.appendChild(select);
         row.appendChild(deleteBtn);
-        mcpServicesContainer.appendChild(row);
+        mcpServersContainer.appendChild(row);
     }
 
     /**
@@ -307,9 +307,9 @@ class AgentService {
         }
 
         // 清空MCP服务列表
-        const mcpServicesContainer = document.getElementById('mcpServicesContainer');
-        if (mcpServicesContainer) {
-            mcpServicesContainer.innerHTML = '';
+        const mcpServersContainer = document.getElementById('mcpServersContainer');
+        if (mcpServersContainer) {
+            mcpServersContainer.innerHTML = '';
             this.addMcpServiceRow(); // 添加一个空行
         }
 
@@ -359,10 +359,10 @@ class AgentService {
             }
 
             // 获取MCP服务列表
-            const mcpServices = [];
-            document.querySelectorAll('.mcp-service-select').forEach(select => {
+            const mcpServers = [];
+            document.querySelectorAll('.mcp-server-select').forEach(select => {
                 if (select.value) {
-                    mcpServices.push(select.value);
+                    mcpServers.push(select.value);
                 }
             });
 
@@ -370,7 +370,7 @@ class AgentService {
                 name: agentName,
                 model: agentModel || null,
                 prompt: agentPrompt || null,
-                mcpServices: mcpServices
+                mcpServers: mcpServers
             };
 
             let result;
@@ -496,7 +496,7 @@ class AgentService {
             return;
         }
 
-        agentModelSelect.innerHTML = '<option value="">请选择模型</option>';
+        agentModelSelect.innerHTML = '<option value="">请选择使用的模型</option>';
         Object.entries(this.models).forEach(([modelId, model]) => {
             const option = document.createElement('option');
             option.value = modelId;
@@ -516,7 +516,7 @@ class AgentService {
             return;
         }
 
-        agentPromptSelect.innerHTML = '<option value="">请选择提示词</option>';
+        agentPromptSelect.innerHTML = '<option value="">请选择系统提示词</option>';
         Object.entries(this.prompts).forEach(([promptId, prompt]) => {
             const option = document.createElement('option');
             option.value = promptId;
@@ -533,9 +533,9 @@ class AgentService {
         this.mcpServers = mcpServers || {};
 
         // 更新所有MCP服务选择框
-        document.querySelectorAll('.mcp-service-select').forEach(select => {
+        document.querySelectorAll('.mcp-server-select').forEach(select => {
             const currentValue = select.value;
-            select.innerHTML = '<option value="">请选择MCP服务</option>';
+            select.innerHTML = '<option value="">请选择Agent可用的MCP服务</option>';
 
             Object.entries(this.mcpServers).forEach(([mcpId, mcpServer]) => {
                 const option = document.createElement('option');

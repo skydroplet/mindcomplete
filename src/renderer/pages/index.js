@@ -23,7 +23,7 @@ const sidebarSession = require('../sidebarSession');
 const sidebarService = require('../sidebarService');
 const modelService = require('../modelService');
 const promptService = require('../promptService');
-const mcpService = require('../mcpService');
+const mcpServerService = require('../mcpServerService');
 const themeService = require('../themeService');
 const aboutService = require('../aboutService');
 const updateService = require('../updateService');
@@ -104,7 +104,7 @@ async function init() {
 
         // 加载MCP服务列表
         (async () => {
-            await mcpService.loadMcpServers(statusElement);
+            await mcpServerService.loadMcpServers(statusElement);
         })(),
 
         // 加载会话
@@ -155,7 +155,7 @@ async function init() {
     statusElement.textContent = i18n.t('ui.status.ready');
 
     // 设置MCP下拉菜单监听器
-    mcpService.setupMcpDropdownListeners(openSettingsWindowWithTab);
+    mcpServerService.setupMcpDropdownListeners(openSettingsWindowWithTab);
 
     // 设置主题相关监听器
     themeService.setupThemeListeners();
@@ -400,7 +400,7 @@ function setupEventListeners() {
     promptService.setupPromptSelectListeners(statusElement, openSettingsWindowWithTab);
 
     // 设置MCP下拉菜单监听器
-    mcpService.setupMcpDropdownListeners(openSettingsWindowWithTab);
+    mcpServerService.setupMcpDropdownListeners(openSettingsWindowWithTab);
 
     // 重命名对话框事件监听
     const renameCancelBtn = document.getElementById('rename-cancel-btn');
@@ -546,7 +546,7 @@ ipcRenderer.on('config-updated', (event, data) => {
     }
 
     if (data.mcpConfig) {
-        mcpService.loadMcpServers(statusElement);
+        mcpServerService.loadMcpServers(statusElement);
     }
 
     if (data.generalConfig) {
@@ -569,7 +569,7 @@ ipcRenderer.on('config-updated', (event, data) => {
 // 监听MCP服务更新事件
 ipcRenderer.on('mcp-server-updated', async (event, mcpConfig) => {
     log.info('收到MCP服务更新:', mcpConfig);
-    await mcpService.loadMcpServers(statusElement);
+    await mcpServerService.loadMcpServers(statusElement);
 
     // 确保样式一致性
     setTimeout(ensureConsistentDropdownStyles, 50);
@@ -603,8 +603,8 @@ ipcRenderer.on('prompt-selection-changed', (event, promptId) => {
 // 监听MCP服务选择变更事件
 ipcRenderer.on('mcp-selection-changed', (event, mcpServerIds) => {
     log.info('收到MCP服务选择变更事件:', mcpServerIds);
-    if (mcpServerIds && mcpService) {
-        mcpService.setActiveMcpServers(mcpServerIds);
+    if (mcpServerIds && mcpServerService) {
+        mcpServerService.setActiveMcpServers(mcpServerIds);
     }
 });
 
@@ -640,7 +640,7 @@ function ensureConsistentDropdownStyles() {
     log.info('确保下拉选择框样式一致性');
 
     // 确保MCP下拉菜单样式一致性
-    mcpService.ensureMcpDropdownStyles();
+    mcpServerService.ensureMcpDropdownStyles();
 
     // 确保model-selector容器正确使用CSS样式
     const modelSelector = document.querySelector('.model-selector');
@@ -811,5 +811,5 @@ window.handleTabClick = handleTabClick;
 window.tabManager = tabManager;
 window.modelService = modelService;
 window.promptService = promptService;
-window.mcpService = mcpService;
+window.mcpServer = mcpServerService;
 window.openSettingsWindowWithTab = openSettingsWindowWithTab;

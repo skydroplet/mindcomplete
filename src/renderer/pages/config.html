@@ -248,24 +248,24 @@
             <div class="model-form agent-form" style="display: none;">
                 <form id="agentForm">
                     <div class="form-group">
-                        <label for="agentName">Agent名称</label>
+                        <label for="agentName">名称</label>
                         <input type="text" id="agentName" name="agentName" placeholder="输入Agent名称" required>
                     </div>
                     <div class="form-group">
                         <label for="agentModel">模型</label>
                         <select id="agentModel" name="agentModel">
-                            <option value="">请选择模型</option>
+                            <option value="">请选择使用的模型</option>
                         </select>
                     </div>
                     <div class="form-group">
                         <label for="agentPrompt">提示词</label>
                         <select id="agentPrompt" name="agentPrompt">
-                            <option value="">请选择提示词</option>
+                            <option value="">请选择系统提示词</option>
                         </select>
                     </div>
                     <div class="form-group">
-                        <label for="mcpServices">MCP服务列表</label>
-                        <div id="mcpServicesContainer" class="mcp-services-container">
+                        <label for="mcpServers">MCP服务列表</label>
+                        <div id="mcpServersContainer" class="mcp-servers-container">
                             <!-- MCP服务选择行将由JavaScript动态添加 -->
                         </div>
                         <button type="button" class="add-btn" id="addMcpServiceBtn">添加MCP服务</button>

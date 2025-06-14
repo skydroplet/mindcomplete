@@ -801,7 +801,7 @@ class TabManagerService {
     async initMcpDropdown(tabId, session) {
         const mcpDropdownBtn = document.getElementById(`mcp-dropdown-btn-${tabId}`);
         const mcpDropdownContent = document.getElementById(`mcp-dropdown-content-${tabId}`);
-        if (!mcpDropdownBtn || !mcpDropdownContent || !window.mcpService) return;
+        if (!mcpDropdownBtn || !mcpDropdownContent || !window.mcpServer) return;
 
         try {
             // 初始化下拉内容

@@ -215,7 +215,7 @@
             "agentName": "Agent名称",
             "agentModel": "模型",
             "agentPrompt": "提示词",
-            "mcpServices": "MCP服务",
+            "mcpServers": "MCP服务",
             "serverName": "服务名称",
             "serverPath": "可执行文件",
             "envVars": "环境变量",
@@ -396,9 +396,9 @@
         "loadFailed": "加载Agent列表失败: {error}",
         "noModel": "未设置",
         "noPrompt": "未设置",
-        "mcpServicesCount": "{count} 个",
-        "selectModel": "请选择模型",
-        "selectPrompt": "请选择提示词",
-        "selectMcpService": "请选择MCP服务"
+        "mcpServersCount": "{count} 个",
+        "selectModel": "请选择使用的模型",
+        "selectPrompt": "请选择系统提示提示词",
+        "selectMcpService": "请添加可用的MCP服务"
     }
 }
