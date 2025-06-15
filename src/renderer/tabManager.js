@@ -16,6 +16,7 @@ const i18n = require('../locales/i18n');
 const ChatSessionService = require('./chatSession');
 const InputManagerService = require('./inputManager');
 const sidebarSessionService = require('./sidebarSession');
+const agentSelectService = require('./agentSelectService');
 
 /**
  * 标签管理服务类
@@ -543,45 +544,6 @@ class TabManagerService {
     }
 
     /**
-     * 通用方法：初始化和更新Agent下拉选择器
-     * @param {HTMLSelectElement} select 下拉元素
-     * @param {string} tabId 标签ID
-     * @returns {Promise<void>}
-     */
-    async setAgentDropdown(select, tabId) {
-        try {
-            // 获取所有Agent
-            const agents = await ipcRenderer.invoke('get-agents');
-            log.info("Agent列表：", agents);
-
-            // 清空并重新填充下拉框
-            select.innerHTML = `
-                <option value="free-mode">自由组合</option>
-                <option value="add_new">+ 添加Agent</option>
-            `;
-
-            if (Object.keys(agents || {}).length > 0) {
-                // 添加所有Agent
-                Object.entries(agents || {}).forEach(([agentId, agent]) => {
-                    const option = document.createElement('option');
-                    option.value = agentId;
-                    option.textContent = agent.name;
-                    select.appendChild(option);
-                });
-            }
-
-            // 获取当前会话选择的Agent
-            const session = this.tabSessions.get(tabId);
-            const sessionConfig = await session.getConfig();
-            select.value = sessionConfig.agentId || 'free-mode';
-            log.info(`当前会话 ${session.data.id} ${session.data.name} 使用的Agent：${sessionConfig.agentId || 'free-mode'}`);
-        } catch (error) {
-            log.error("初始化或刷新Agent下拉菜单时出错:", error.message);
-            throw error;
-        }
-    }
-
-    /**
      * 初始化Agent下拉菜单
      * @param {string} tabId 标签ID
      * @param {ChatSessionService} session 会话实例
@@ -592,66 +554,38 @@ class TabManagerService {
 
         try {
             // 初始化下拉框
-            await this.setAgentDropdown(agentSelect, tabId);
+            await agentSelectService.setTabAgentDropdown(agentSelect, tabId, session);
 
-            // 添加选择事件监听器
-            agentSelect.addEventListener('change', async (e) => {
-                const agentId = e.target.value;
-
-                if (agentId === "add_new") {
-                    // 重置选择框
-                    const session = this.tabSessions.get(tabId);
-                    const sessionConfig = await session.getConfig();
-                    agentSelect.value = sessionConfig.agentId || 'free-mode';
-
-                    // 打开配置窗口的Agent标签页
-                    window.openSettingsWindowWithTab('agents');
-                } else if (agentId === 'free-mode') {
-                    // 自由组合模式，保持原有配置显示
-                    log.info(`选择自由组合模式 ${session.data.id} ${session.data.name}`);
-                    await ipcRenderer.invoke('select-session-agent', session.data.id, null);
-                } else if (agentId) {
-                    // 选择特定Agent，更新相关配置
-                    log.info(`选择Agent ${session.data.id} ${session.data.name} ${agentId}`);
-                    await ipcRenderer.invoke('select-session-agent', session.data.id, agentId);
-
-                    // 获取Agent配置并更新其他选择框
-                    const agents = await ipcRenderer.invoke('get-agents');
-                    const agent = agents[agentId];
-                    if (agent) {
-                        // 更新模型选择
-                        const modelSelect = document.getElementById(`model-select-${tabId}`);
-                        if (modelSelect && agent.model) {
-                            await this.setModelDropdown(modelSelect, tabId);
-                            modelSelect.value = agent.model;
-                            await ipcRenderer.invoke('select-session-model', session.data.id, agent.model);
-                        }
-
-                        // 更新提示词选择
-                        const promptSelect = document.getElementById(`prompt-select-${tabId}`);
-                        if (promptSelect && agent.prompt) {
-                            await this.setPromptDropdown(promptSelect, tabId);
-                            promptSelect.value = agent.prompt;
-                            await ipcRenderer.invoke('select-session-prompt', session.data.id, agent.prompt);
-                        }
-
-                        // 更新MCP服务选择
-                        if (agent.mcpServers && agent.mcpServers.length > 0) {
-                            const mcpDropdownBtn = document.getElementById(`mcp-dropdown-btn-${tabId}`);
-                            const mcpDropdownContent = document.getElementById(`mcp-dropdown-content-${tabId}`);
-                            if (mcpDropdownBtn && mcpDropdownContent) {
-                                await this.setMcpDropdown(mcpDropdownBtn, mcpDropdownContent, tabId);
-                                await ipcRenderer.invoke('select-session-mcp-servers', session.data.id, agent.mcpServers);
-                                this.updateMcpButtonDisplay(mcpDropdownBtn, mcpDropdownContent);
-                            }
-                        }
+            // 设置事件监听器
+            agentSelectService.setupTabAgentSelectListeners(tabId, session, async (agent, tabId, session) => {
+                // 更新其他选择框的回调函数
+                if (agent.model) {
+                    const modelSelect = document.getElementById(`model-select-${tabId}`);
+                    if (modelSelect) {
+                        await this.setModelDropdown(modelSelect, tabId);
+                        modelSelect.value = agent.model;
+                        await ipcRenderer.invoke('select-session-model', session.data.id, agent.model);
                     }
                 }
-            });
 
-            // 添加点击事件监听器，在下拉框打开时刷新Agent列表
-            agentSelect.addEventListener('mousedown', async (event) => {
-                await this.setAgentDropdown(agentSelect, tabId);
+                if (agent.prompt) {
+                    const promptSelect = document.getElementById(`prompt-select-${tabId}`);
+                    if (promptSelect) {
+                        await this.setPromptDropdown(promptSelect, tabId);
+                        promptSelect.value = agent.prompt;
+                        await ipcRenderer.invoke('select-session-prompt', session.data.id, agent.prompt);
+                    }
+                }
+
+                if (agent.mcpServers && agent.mcpServers.length > 0) {
+                    const mcpDropdownBtn = document.getElementById(`mcp-dropdown-btn-${tabId}`);
+                    const mcpDropdownContent = document.getElementById(`mcp-dropdown-content-${tabId}`);
+                    if (mcpDropdownBtn && mcpDropdownContent) {
+                        await this.setMcpDropdown(mcpDropdownBtn, mcpDropdownContent, tabId);
+                        await ipcRenderer.invoke('select-session-mcp-servers', session.data.id, agent.mcpServers);
+                        this.updateMcpButtonDisplay(mcpDropdownBtn, mcpDropdownContent);
+                    }
+                }
             });
         } catch (error) {
             log.error(`初始化标签 ${tabId} 的Agent下拉菜单时出错:`, error.message);
