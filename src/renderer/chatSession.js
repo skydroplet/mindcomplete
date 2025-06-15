@@ -213,16 +213,16 @@ class ChatSessionService {
 
         // 只更新配置信息
         this.data.name = session.name;
+        this.data.agentId = session.agentId;
         this.data.modelId = session.modelId;
         this.data.promptId = session.promptId;
-        this.data.agentId = session.agentId;
         this.data.mcpServers = session.mcpServers;
 
         return {
             name: session.name,
+            agentId: session.agentId,
             modelId: session.modelId,
             promptId: session.promptId,
-            agentId: session.agentId,
             mcpServers: session.mcpServers
         }
     }
