@@ -553,71 +553,43 @@ class TabManagerService {
 
         // 设置事件监听器
         agentSelectService.setupTabAgentSelectListeners(tabId, session, async (agent, tabId, session) => {
-            // 获取其他下拉列表元素
-            const modelSelect = document.getElementById(`model-select-${tabId}`);
-            const promptSelect = document.getElementById(`prompt-select-${tabId}`);
-
-            // 检查是否选择了具体的Agent（非自由组合模式）
             const sessionConfig = await session.getConfig();
-            const isSpecificAgent = sessionConfig.agentId && sessionConfig.agentId !== 'free-mode';
-
-            if (isSpecificAgent) {
-                modelSelect.style.display = 'none';
-                promptSelect.style.display = 'none';
-                log.info(`标签 ${tabId} 选择了具体Agent，隐藏模型、提示词、MCP下拉列表`);
-            } else {
-                modelSelect.style.display = '';
-                promptSelect.style.display = '';
-                log.info(`标签 ${tabId} 选择了自由组合模式，显示模型、提示词、MCP下拉列表`);
-            }
-
-            // 更新其他选择框的回调函数（仅在具体Agent模式下执行）
-            if (isSpecificAgent && agent) {
-                if (agent.model) {
-                    const modelSelect = document.getElementById(`model-select-${tabId}`);
-                    if (modelSelect) {
-                        await this.setModelDropdown(modelSelect, tabId);
-                        modelSelect.value = agent.model;
-                        await ipcRenderer.invoke('select-session-model', session.data.id, agent.model);
-                    }
-                }
-
-                if (agent.prompt) {
-                    const promptSelect = document.getElementById(`prompt-select-${tabId}`);
-                    if (promptSelect) {
-                        await this.setPromptDropdown(promptSelect, tabId);
-                        promptSelect.value = agent.prompt;
-                        await ipcRenderer.invoke('select-session-prompt', session.data.id, agent.prompt);
-                    }
-                }
-
-                if (agent.mcpServers && agent.mcpServers.length > 0) {
-                    const mcpDropdownBtn = document.getElementById(`mcp-dropdown-btn-${tabId}`);
-                    const mcpDropdownContent = document.getElementById(`mcp-dropdown-content-${tabId}`);
-                    if (mcpDropdownBtn && mcpDropdownContent) {
-                        await this.setMcpDropdown(mcpDropdownBtn, mcpDropdownContent, tabId);
-                        await ipcRenderer.invoke('select-session-mcp-servers', session.data.id, agent.mcpServers);
-                        this.updateMcpButtonDisplay(mcpDropdownBtn, mcpDropdownContent);
-                    }
-                }
-            }
+            await this.setTabSelectors(tabId, sessionConfig.agentId)
         });
 
         // 初始化时也需要检查当前状态并设置显示/隐藏
         const sessionConfig = await session.getConfig();
-        const isSpecificAgent = sessionConfig.agentId && sessionConfig.agentId !== 'free-mode';
+        await this.setTabSelectors(tabId, sessionConfig.agentId)
+    }
+
+    /**
+     * @param {string} tabId  
+     * @param {string} agentId 
+     */
+    async setTabSelectors(tabId, agentId) {
+        log.info(`设置标签 ${tabId} 显示配置列表, agentId: ${agentId}`);
+
+        const isSpecificAgent = agentId && agentId !== 'free-mode';
 
         const modelSelect = document.getElementById(`model-select-${tabId}`);
         const promptSelect = document.getElementById(`prompt-select-${tabId}`);
+        const mcpDropdownBtn = document.getElementById(`mcp-dropdown-btn-${tabId}`);
+        const mcpDropdownContent = document.getElementById(`mcp-dropdown-content-${tabId}`);
 
         if (isSpecificAgent) {
             modelSelect.style.display = 'none';
             promptSelect.style.display = 'none';
-            log.info(`标签 ${tabId} 初始化时检测到具体Agent，隐藏模型、提示词、MCP下拉列表`);
+            mcpDropdownBtn.style.display = 'none';
         } else {
             modelSelect.style.display = '';
             promptSelect.style.display = '';
-            log.info(`标签 ${tabId} 初始化时检测到自由组合模式，显示模型、提示词、MCP下拉列表`);
+            mcpDropdownBtn.style.display = '';
+
+            // 更新下拉列表数据
+            await this.setModelDropdown(modelSelect, tabId);
+            await this.setPromptDropdown(promptSelect, tabId);
+            await this.setMcpDropdown(mcpDropdownBtn, mcpDropdownContent, tabId);
+            this.updateMcpButtonDisplay(mcpDropdownBtn, mcpDropdownContent);
         }
     }
 

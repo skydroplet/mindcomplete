@@ -127,6 +127,9 @@ class AgentSelectService {
         if (agentId === 'free-mode') {
             log.info(`标签 ${tabId} 选择自由组合模式`);
             await ipcRenderer.invoke('select-session-agent', session.data.id, null);
+
+            // 选择自由模式时也需要调用回调函数来更新UI显示
+            await updateOtherSelects(null, tabId, session);
             return;
         }
 
@@ -140,9 +143,7 @@ class AgentSelectService {
             await ipcRenderer.invoke('select-session-agent', session.data.id, agentId);
 
             // 如果Agent有配置，更新其他选择框
-            if (agent && updateOtherSelects) {
-                await updateOtherSelects(agent, tabId, session);
-            }
+            await updateOtherSelects(agent, tabId, session);
         }
     }
 
