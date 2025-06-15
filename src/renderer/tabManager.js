@@ -509,38 +509,34 @@ class TabManagerService {
      * @param {string} tabId 标签ID
      */
     async initTabSpecificDropdowns(tabId) {
-        try {
-            const session = this.tabSessions.get(tabId);
-            if (!session) return;
+        const session = this.tabSessions.get(tabId);
+        if (!session) return;
 
-            // 初始化Agent下拉菜单
-            await this.initAgentDropdown(tabId, session);
+        // 初始化Agent下拉菜单
+        await this.initAgentDropdown(tabId, session);
 
-            // 初始化模型下拉菜单
-            await this.initModelDropdown(tabId, session);
+        // 初始化模型下拉菜单
+        await this.initModelDropdown(tabId, session);
 
-            // 初始化提示词下拉菜单
-            await this.initPromptDropdown(tabId, session);
+        // 初始化提示词下拉菜单
+        await this.initPromptDropdown(tabId, session);
 
-            // 初始化MCP下拉菜单
-            await this.initMcpDropdown(tabId, session);
+        // 初始化MCP下拉菜单
+        await this.initMcpDropdown(tabId, session);
 
-            // 初始化对话模式切换
-            await this.initConversationModeToggle(tabId, session);
+        // 初始化对话模式切换
+        await this.initConversationModeToggle(tabId, session);
 
-            // 初始化新建会话按钮
-            const newSessionBtn = document.getElementById(`new-session-btn-${tabId}`);
-            if (newSessionBtn) {
-                newSessionBtn.addEventListener('click', () => {
-                    this.createNewTab();
-                    sidebarSessionService.loadSessions();
-                });
-            }
-
-            log.info(`标签 ${tabId} 的下拉菜单初始化完成`);
-        } catch (error) {
-            log.error(`初始化标签 ${tabId} 的下拉菜单时出错:`, error.message);
+        // 初始化新建会话按钮
+        const newSessionBtn = document.getElementById(`new-session-btn-${tabId}`);
+        if (newSessionBtn) {
+            newSessionBtn.addEventListener('click', () => {
+                this.createNewTab();
+                sidebarSessionService.loadSessions();
+            });
         }
+
+        log.info(`标签 ${tabId} 的下拉菜单初始化完成`);
     }
 
     /**
@@ -560,7 +556,6 @@ class TabManagerService {
             // 获取其他下拉列表元素
             const modelSelect = document.getElementById(`model-select-${tabId}`);
             const promptSelect = document.getElementById(`prompt-select-${tabId}`);
-            const mcpDropdown = document.getElementById(`mcp-dropdown-${tabId}`);
 
             // 检查是否选择了具体的Agent（非自由组合模式）
             const sessionConfig = await session.getConfig();
@@ -569,12 +564,10 @@ class TabManagerService {
             if (isSpecificAgent) {
                 modelSelect.style.display = 'none';
                 promptSelect.style.display = 'none';
-                mcpDropdown.style.display = 'none';
                 log.info(`标签 ${tabId} 选择了具体Agent，隐藏模型、提示词、MCP下拉列表`);
             } else {
                 modelSelect.style.display = '';
                 promptSelect.style.display = '';
-                mcpDropdown.style.display = '';
                 log.info(`标签 ${tabId} 选择了自由组合模式，显示模型、提示词、MCP下拉列表`);
             }
 
@@ -616,17 +609,14 @@ class TabManagerService {
 
         const modelSelect = document.getElementById(`model-select-${tabId}`);
         const promptSelect = document.getElementById(`prompt-select-${tabId}`);
-        const mcpDropdown = document.getElementById(`mcp-dropdown-${tabId}`);
 
         if (isSpecificAgent) {
             modelSelect.style.display = 'none';
             promptSelect.style.display = 'none';
-            mcpDropdown.style.display = 'none';
             log.info(`标签 ${tabId} 初始化时检测到具体Agent，隐藏模型、提示词、MCP下拉列表`);
         } else {
             modelSelect.style.display = '';
             promptSelect.style.display = '';
-            mcpDropdown.style.display = '';
             log.info(`标签 ${tabId} 初始化时检测到自由组合模式，显示模型、提示词、MCP下拉列表`);
         }
     }
