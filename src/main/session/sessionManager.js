@@ -23,7 +23,6 @@ class SessionManager extends EventEmitter {
         this.sessionDataMap = {};
         this.sessionInfoMap = {}; // 除了对话信息的其他信息
         this.sessionInfoFile = path.join(this.sessionDir, 'session-info-list.json');
-
         this.loadSessions();
     }
 

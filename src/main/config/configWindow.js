@@ -270,33 +270,18 @@ function registerConfigIPC() {
         return agentManager.getAgents();
     });
 
-    ipcMain.handle('get-agent-config', () => {
-        log.info('处理获取Agent配置请求');
-        return agentManager.getConfig();
-    });
-
     ipcMain.handle('add-agent', async (event, agent) => {
         log.info('处理添加Agent请求, Agent数据:', JSON.stringify(agent, null, 2));
-        try {
-            const result = agentManager.addAgent(agent);
-            log.info('添加Agent结果:', result);
-            return result;
-        } catch (error) {
-            log.error('添加Agent失败:', error.message);
-            throw error;
-        }
+        const result = agentManager.addAgent(agent);
+        log.info('添加Agent结果:', result);
+        return result;
     });
 
     ipcMain.handle('update-agent', async (event, { agentId, agent }) => {
         log.info('处理更新Agent请求, agentId:', agentId, 'Agent数据:', JSON.stringify(agent, null, 2));
-        try {
-            const result = agentManager.updateAgent(agentId, agent);
-            log.info('更新Agent结果:', result);
-            return result;
-        } catch (error) {
-            log.error('更新Agent失败:', error.message);
-            throw error;
-        }
+        const result = agentManager.updateAgent(agentId, agent);
+        log.info('更新Agent结果:', result);
+        return result;
     });
 
     ipcMain.handle('delete-agent', async (event, agentId) => {
@@ -311,22 +296,6 @@ function registerConfigIPC() {
         const result = agentManager.copyAgent(agentId);
         log.info('复制Agent结果:', result);
         return result;
-    });
-
-    ipcMain.handle('get-current-agent', () => {
-        log.info('处理获取当前Agent请求');
-        return agentManager.getCurrentAgent();
-    });
-
-    ipcMain.handle('set-current-agent', (event, agentId) => {
-        log.info('处理设置当前Agent请求:', agentId);
-        return agentManager.setCurrentAgent(agentId);
-    });
-
-    // Agent选择相关IPC处理
-    ipcMain.handle('select-agent', (event, agentId) => {
-        log.info('处理选择Agent请求:', agentId);
-        return agentManager.setCurrentAgent(agentId);
     });
 }
 
