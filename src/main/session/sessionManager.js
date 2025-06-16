@@ -23,6 +23,10 @@ class SessionManager extends EventEmitter {
         this.sessionDataMap = {};
         this.sessionInfoMap = {}; // 除了对话信息的其他信息
         this.sessionInfoFile = path.join(this.sessionDir, 'session-info-list.json');
+
+        // 当前激活的会话ID
+        this.currentSessionId = null;
+
         this.loadSessions();
     }
 
@@ -67,10 +71,19 @@ class SessionManager extends EventEmitter {
     }
 
     /**
+     * 设置当前激活的会话
+     * @param {string} sessionId - 激活的会话ID
+     */
+    setActiveSession(sessionId) {
+        this.currentSessionId = sessionId;
+    }
+
+    /**
      * 创建新会话
      */
     createSession() {
-        const session = new ChatSession();
+        const currentSession = this.sessionDataMap[this.currentSessionId];
+        const session = new ChatSession(null, currentSession);
         this.sessionDataMap[session.data.id] = session;
 
         this.updateSessionInfo(session);
@@ -188,7 +201,21 @@ class SessionManager extends EventEmitter {
             session.remove();
             delete this.sessionDataMap[sessionId];
             delete this.sessionInfoMap[sessionId];
-            fs.writeFileSync(this.sessionInfoFile, JSON.stringify(this.sessionInfoMap, null, 2))
+            fs.writeFileSync(this.sessionInfoFile, JSON.stringify(this.sessionInfoMap, null, 2));
+
+            // 如果删除的是当前激活会话，需要重新设置激活会话
+            if (this.currentSessionId === sessionId) {
+                const remainingSessions = Object.keys(this.sessionInfoMap);
+                if (remainingSessions.length > 0) {
+                    // 选择第一个剩余会话作为激活会话
+                    this.setActiveSession(remainingSessions[0]);
+                    log.info(`删除激活会话 ${sessionId}，设置新的激活会话: ${remainingSessions[0]}`);
+                } else {
+                    // 没有剩余会话，清空激活会话
+                    this.currentSessionId = null;
+                    log.info(`删除最后一个会话 ${sessionId}，清空激活会话`);
+                }
+            }
 
             return true;
         } catch (err) {

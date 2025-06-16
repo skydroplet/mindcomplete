@@ -160,39 +160,6 @@ class AgentConfig extends BaseConfigManager {
     }
 
     /**
-     * 获取当前Agent配置
-     * @returns {Object|null} 当前Agent配置对象，如果没有则返回null
-     */
-    getCurrentAgent() {
-        if (!this.config.currentAgent || !this.config.agents) {
-            return null;
-        }
-        return this.config.agents[this.config.currentAgent] || null;
-    }
-
-    /**
-     * 设置当前Agent
-     * @param {string} agentId - 要设置为当前的Agent ID
-     * @returns {boolean} 设置是否成功
-     */
-    setCurrentAgent(agentId) {
-        if (!this.config.agents || !this.config.agents[agentId]) {
-            log.error('要设置的Agent不存在:', agentId);
-            return false;
-        }
-
-        this.config.currentAgent = agentId;
-
-        if (this.saveConfig()) {
-            log.info('设置当前Agent成功:', agentId);
-            return true;
-        } else {
-            log.error('保存Agent配置失败');
-            return false;
-        }
-    }
-
-    /**
      * 复制Agent配置
      * @param {string} agentId - 要复制的Agent ID
      * @returns {string|null} 新创建的Agent ID，失败时返回null

@@ -14,12 +14,15 @@ function registerSessionIPC(ipcMain) {
 
     // 创建新会话
     ipcMain.handle('create-session', (event) => {
-        return sessionManager.createSession();
+        const session = sessionManager.createSession();
+        sessionManager.setActiveSession(session.id)
+        return session;
     });
 
     // 加载会话
     ipcMain.handle('load-session', (event, sessionId) => {
         const session = sessionManager.loadSession(sessionId);
+        sessionManager.setActiveSession(sessionId);
         return session.data;
     });
 

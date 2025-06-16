@@ -22,7 +22,7 @@ function getFormattedDate(date) {
  * 单个对话
  */
 class ChatSession {
-    constructor(filePath) {
+    constructor(filePath, sessionTemplate) {
         try {
             if (filePath) {
                 const data = fs.readFileSync(filePath, 'utf8');
@@ -32,6 +32,14 @@ class ChatSession {
                 log.info("加载会话: ", filePath)
             } else {
                 this.newSession();
+                if (sessionTemplate) {
+                    this.data.agentId = sessionTemplate.data.agentId;
+                    this.data.modelId = sessionTemplate.data.modelId;
+                    this.data.promptId = sessionTemplate.data.promptId;
+                    this.data.mcpServers = sessionTemplate.data.mcpServers;
+                    this.data.conversationMode = sessionTemplate.data.conversationMode;
+                }
+
                 this.saveToFile();
                 log.info("创建新会话")
             }
@@ -78,12 +86,6 @@ class ChatSession {
         this.saveToFile();
     }
 
-    setConfig() {
-        this.data.modelId = modelConfig.getCurrentModelId();
-        this.data.promptId = promptConfig.getCurrentPromptId();
-        this.data.mcpServers = mcpConfig.getActiveMcps();
-    }
-
     /**
      * 生成不重复的随机会话ID
      */
@@ -104,10 +106,6 @@ class ChatSession {
             createdAt: now,
             updatedAt: now,
             messageCount: 0,
-            modelId: modelConfig.getCurrentModelId(),
-            promptId: promptConfig.getCurrentPromptId(),
-            agentId: null,
-            mcpServers: mcpConfig.getActiveMcps(),
             conversationMode: 'multi-turn',
             messages: []
         }
@@ -198,9 +196,9 @@ class ChatSession {
             createdAt: this.data.createdAt,
             updatedAt: this.data.updatedAt,
             messageCount: this.data.messageCount,
+            agentId: this.data.agentId,
             modelId: this.data.modelId,
             promptId: this.data.promptId,
-            agentId: this.data.agentId,
             mcpServers: this.data.mcpServers || [],
             conversationMode: this.data.conversationMode || 'single-turn',
             dataFile: this.filePath
