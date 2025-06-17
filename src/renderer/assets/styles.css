@@ -351,6 +351,18 @@ body {
     /* Remove default margins */
 }
 
+/* Agent模式下的特殊布局 */
+.model-selector.agent-mode select[id*="agent-select"] {
+    flex: 3 1 auto;
+    min-width: 200px;
+}
+
+.model-selector.agent-mode select[id*="model-select"],
+.model-selector.agent-mode select[id*="prompt-select"],
+.model-selector.agent-mode .mcp-dropdown {
+    display: none !important;
+}
+
 /* Standard settings for all dropdown elements */
 .model-selector select,
 .model-selector .mcp-dropdown-btn {

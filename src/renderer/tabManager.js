@@ -592,19 +592,20 @@ class TabManagerService {
 
         const isSpecificAgent = agentId && agentId !== 'free-mode';
 
+        const agentSelect = document.getElementById(`agent-select-${tabId}`);
         const modelSelect = document.getElementById(`model-select-${tabId}`);
         const promptSelect = document.getElementById(`prompt-select-${tabId}`);
         const mcpDropdownBtn = document.getElementById(`mcp-dropdown-btn-${tabId}`);
         const mcpDropdownContent = document.getElementById(`mcp-dropdown-content-${tabId}`);
 
         if (isSpecificAgent) {
-            modelSelect.style.display = 'none';
-            promptSelect.style.display = 'none';
-            mcpDropdownBtn.style.display = 'none';
+            // 隐藏模型、提示词、mcp列表
+            const modelSelector = agentSelect.parentNode;
+            modelSelector.classList.add('agent-mode');
         } else {
-            modelSelect.style.display = '';
-            promptSelect.style.display = '';
-            mcpDropdownBtn.style.display = '';
+            // 移除Agent模式的CSS类
+            const modelSelector = agentSelect.parentNode;
+            modelSelector.classList.remove('agent-mode');
 
             // 更新下拉列表数据
             await this.setModelDropdown(modelSelect, tabId);
