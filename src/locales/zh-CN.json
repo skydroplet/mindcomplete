@@ -75,7 +75,12 @@
         "saveMcpServerFailed": "保存MCP服务激活状态失败: {error}",
         "loadMcpServerListFailed": "加载MCP服务列表失败: {error}",
         "languageChangeFailed": "切换语言失败: {error}",
-        "openAboutWindowFailed": "打开关于窗口失败: {error}"
+        "openAboutWindowFailed": "打开关于窗口失败: {error}",
+        "agentNotFound": "Agent配置不存在: {agentId}",
+        "agentIdRequired": "Agent ID不能为空，请选择一个Agent或设置为自由模式",
+        "modelNotConfigured": "模型配置缺失，请检查Agent配置或会话配置",
+        "modelNotFound": "模型不存在: {modelId}",
+        "modelClientNotFound": "无法创建模型客户端，请检查模型配置"
     },
     "menu": {
         "file": "文件",
