@@ -5,20 +5,32 @@
  * 提供简洁的日志记录功能，支持不同级别的日志（info、warn、error），
  * 自动记录调用位置（文件名和行号），便于调试和问题追踪。
  * 支持格式化对象类型的日志内容，提高日志可读性。
- * 主进程日志会同时输出到控制台和文件，渲染进程只输出到控制台。
+ * 主进程日志会同时输出到控制台和文件，渲染进程通过IPC调用主进程将日志保存到文件。
  */
 
 const { Buffer } = require('buffer');
 const path = require('path');
 const fs = require('fs');
-const { app } = require('electron');
+const { app, ipcMain } = require('electron');
 const isRenderer = process.type === 'renderer';
+
+// 在渲染进程中导入ipcRenderer
+let ipcRenderer = null;
+if (isRenderer) {
+    const { ipcRenderer: renderer } = require('electron');
+    ipcRenderer = renderer;
+}
 
 /**
  * 日志记录器类
  * 支持记录不同级别的日志信息，并自动包含文件名和行号
  */
 class Logger {
+    // 静态变量，确保IPC监听器只注册一次
+    static ipcHandlersSetup = false;
+    // 缓存日志文件路径，避免重复计算
+    static logFilePath = null;
+
     /**
      * 创建日志记录器实例
      * @param {string} moduleName - 模块名称，将显示在日志中
@@ -33,7 +45,25 @@ class Logger {
         // 只在主进程中初始化文件日志
         if (!isRenderer) {
             this.initFileLogger();
+            // 只设置一次IPC监听器
+            if (!Logger.ipcHandlersSetup) {
+                this.setupIpcHandlers();
+                Logger.ipcHandlersSetup = true;
+            }
         }
+    }
+
+    /**
+     * 获取或初始化日志文件路径（静态方法）
+     * @returns {string} 日志文件路径
+     */
+    static getLogFilePath() {
+        if (!Logger.logFilePath) {
+            const userDataPath = app.getPath('userData');
+            const logDir = path.join(userDataPath, 'user-data', 'logs');
+            Logger.logFilePath = path.join(logDir, 'mindcomplete.log');
+        }
+        return Logger.logFilePath;
     }
 
     /**
@@ -48,12 +78,18 @@ class Logger {
             fs.mkdirSync(logDir, { recursive: true });
         }
 
-        this.logFilePath = path.join(logDir, `mindcomplete.log`);
-        try {
-            fs.writeFileSync(this.logFilePath, '', 'utf8');
-        } catch (error) {
-            console.error('Failed to initialize log file:', error);
-        }
+        this.logFilePath = Logger.getLogFilePath();
+        fs.writeFileSync(this.logFilePath, '', 'utf8');
+    }
+
+    /**
+     * 设置IPC处理器（仅在主进程中调用一次）
+     */
+    setupIpcHandlers() {
+        // 监听来自渲染进程的日志消息
+        ipcMain.on('log-to-file', (event, logMessage) => {
+            Logger.writeToFileDirectly(logMessage);
+        });
     }
 
     /**
@@ -62,15 +98,25 @@ class Logger {
      */
     writeToFile(message) {
         if (isRenderer) {
+            // 渲染进程通过IPC发送日志消息到主进程
+            if (ipcRenderer) {
+                ipcRenderer.send('log-to-file', message);
+            }
             return;
         }
 
-        try {
-            // 使用追加模式写入日志
-            fs.appendFileSync(this.logFilePath, message + '\n', 'utf8');
-        } catch (error) {
-            console.error('Failed to write to log file:', error);
-        }
+        // 主进程直接写入文件
+        Logger.writeToFileDirectly(message);
+    }
+
+    /**
+     * 直接写入日志到文件（静态方法，仅在主进程中调用）
+     * @param {string} message - 要写入的日志消息
+     */
+    static writeToFileDirectly(message) {
+        const logFilePath = Logger.getLogFilePath();
+        // 使用追加模式写入日志
+        fs.appendFileSync(logFilePath, message + '\n', 'utf8');
     }
 
     /**
