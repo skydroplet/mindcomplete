@@ -202,10 +202,13 @@
             "agents": "Agent配置",
             "newSession": "新会话",
             "close": "关闭标签",
-            "newTab": "新建标签页",
+            "newTab": "新标签",
             "loadingSession": "加载中...",
             "dropdown": "更多标签",
-            "noTabs": "没有标签"
+            "noTabs": "没有标签",
+            "stateRestored": "标签页状态已恢复",
+            "stateRestorationFailed": "标签页状态恢复失败",
+            "stateSaved": "标签页状态已保存"
         },
         "labels": {
             "modelName": "模型名称",
@@ -273,14 +276,21 @@
         "modelList": "模型列表:",
         "currentModel": "当前模型:",
         "loadModelListFailed": "加载模型列表失败:",
-        "loadSessionList": "加载会话列表",
+        "loadSessionList": "正在加载会话列表",
         "sessionListLoadFailed": "加载会话列表失败:",
         "createSessionFailed": "创建新会话失败:",
+        "loadSession": "加载会话",
         "loadSessionFailed": "加载会话失败:",
         "renameSessionFailed": "重命名会话失败:",
         "modelConfigUpdated": "模型配置已更新，重置客户端",
         "mcpToolList": "可用MCP工具列表:",
-        "getMcpToolFailed": "获取MCP工具失败:"
+        "getMcpToolFailed": "获取MCP工具失败:",
+        "tabStateRestored": "标签页状态已成功恢复",
+        "tabStateRestorationFailed": "标签页状态恢复失败",
+        "tabStateSaved": "标签页状态已保存",
+        "tabStateSaveFailed": "保存标签页状态失败",
+        "restoringTab": "正在恢复标签",
+        "restoredTab": "标签恢复完成"
     },
     "toolCalls": {
         "executing": "**⚙️ 正在执行工具调用...**",

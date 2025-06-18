@@ -17,6 +17,7 @@ const ChatSessionService = require('./chatSession');
 const InputManagerService = require('./inputManager');
 const sidebarSessionService = require('./sidebarSession');
 const agentSelectService = require('./agentSelectService');
+const { ipcRenderer } = require('electron');
 
 /**
  * 标签管理服务类
@@ -61,6 +62,10 @@ class TabManagerService {
 
         // 初始化事件监听器
         this.initEventListeners();
+
+        // 防抖延迟保存标签页状态
+        this.saveStateTimeout = null;
+        this.saveStateDelay = 1000; // 1秒延迟保存
     }
 
     /**
@@ -1015,6 +1020,9 @@ class TabManagerService {
         // 更新标签可见性
         this.updateTabsVisibility();
 
+        // 保存标签页状态
+        this.saveTabState();
+
         return tabId;
     }
 
@@ -1205,6 +1213,9 @@ class TabManagerService {
 
         // 确保活动标签可见
         this.ensureActiveTabVisible();
+
+        // 保存标签页状态
+        this.saveTabState();
     }
 
     /**
@@ -1293,6 +1304,9 @@ class TabManagerService {
 
         // 更新标签可见性
         this.updateTabsVisibility();
+
+        // 保存标签页状态
+        this.saveTabState();
     }
 
     /**
@@ -1312,6 +1326,9 @@ class TabManagerService {
 
         // 如果标签在下拉菜单中，也更新下拉菜单中的名称
         this.updateTabsDropdownMenu();
+
+        // 保存标签页状态
+        this.saveTabState();
     }
 
     /**
@@ -1447,6 +1464,142 @@ class TabManagerService {
         } catch (error) {
             log.error(`设置会话 ${tabId} 的对话模式时出错:`, error.message);
         }
+    }
+
+    /**
+     * 保存当前标签页状态到配置文件
+     */
+    async saveTabState() {
+        // 如果有待保存的任务，清除它
+        if (this.saveStateTimeout) {
+            clearTimeout(this.saveStateTimeout);
+        }
+
+        // 延迟保存，避免频繁写入
+        this.saveStateTimeout = setTimeout(async () => {
+            const openTabs = [];
+
+            // 收集所有打开的标签信息
+            this.tabSessionIds.forEach((sessionId, tabId) => {
+                const tabElement = document.getElementById(tabId);
+                if (tabElement) {
+                    const tabName = tabElement.querySelector('.tab-name')?.textContent || i18n.t('tabs.newSession');
+                    openTabs.push({
+                        tabId: tabId,
+                        sessionId: sessionId,
+                        tabName: tabName
+                    });
+                }
+            });
+
+            const tabState = {
+                openTabs: openTabs,
+                activeTabId: this.activeTabId,
+                tabCounter: this.tabCounter
+            };
+
+            log.info(i18n.t('logs.tabStateSaved'), tabState);
+            await ipcRenderer.invoke('save-tab-state', tabState);
+            this.saveStateTimeout = null;
+        }, this.saveStateDelay);
+    }
+
+    /**
+     * 从配置文件恢复标签页状态
+     */
+    async restoreTabState() {
+        const tabState = await ipcRenderer.invoke('get-tab-state');
+        if (!tabState || !tabState.openTabs || tabState.openTabs.length === 0) {
+            log.info('没有找到标签页状态，使用默认初始化');
+            return false;
+        }
+
+        log.info(i18n.t('logs.tabStateRestored'), tabState);
+
+        // 恢复标签计数器
+        if (tabState.tabCounter) {
+            this.tabCounter = tabState.tabCounter;
+        }
+
+        // 清除现有标签（除了默认内容）
+        this.clearAllTabs();
+
+        // 恢复每个标签
+        for (const tabInfo of tabState.openTabs) {
+            await this.restoreTab(tabInfo);
+        }
+
+        // 激活之前的活动标签
+        if (tabState.activeTabId && document.getElementById(tabState.activeTabId)) {
+            this.activateTab(tabState.activeTabId);
+        } else if (tabState.openTabs.length > 0) {
+            // 如果活动标签不存在，激活第一个标签
+            this.activateTab(tabState.openTabs[0].tabId);
+        }
+
+        // 更新标签可见性
+        this.updateTabsVisibility();
+
+        log.info(i18n.t('logs.tabStateRestored'));
+        return true;
+    }
+
+    /**
+     * 恢复单个标签
+     */
+    async restoreTab(tabInfo) {
+        const { tabId, sessionId, tabName } = tabInfo;
+
+        log.info(i18n.t('logs.restoringTab'), `${tabId} (${sessionId})`);
+
+        // 创建标签DOM元素
+        const tabElement = this.createTabElement(tabId, tabName);
+        this.tabsContainer.insertBefore(tabElement, this.newTabButton);
+
+        // 创建内容区域
+        const contentElement = this.createTabContentElement(tabId);
+        this.tabsContent.appendChild(contentElement);
+
+        // 创建会话实例并加载
+        const chatSession = new ChatSessionService(sessionId);
+        await chatSession.loadSession();
+
+        // 设置会话回调
+        chatSession.setSessionNameChangeCallback((sessionId, newSessionName) => {
+            this.updateSessionName(sessionId, newSessionName);
+            sidebarSessionService.loadSessions();
+        });
+
+        chatSession.setTabId(tabId);
+        this.tabSessions.set(tabId, chatSession);
+        this.tabSessionIds.set(tabId, sessionId);
+
+        // 初始化标签特定的下拉菜单
+        await this.initTabSpecificDropdowns(tabId);
+
+        log.info(i18n.t('logs.restoredTab'), `${tabId}`);
+    }
+
+    /**
+     * 清除所有标签（保留默认内容）
+     */
+    clearAllTabs() {
+        // 清除所有标签DOM元素
+        const tabs = this.tabsContainer.querySelectorAll('.tab');
+        tabs.forEach(tab => tab.remove());
+
+        // 清除所有内容DOM元素（除了默认内容）
+        const contents = this.tabsContent.querySelectorAll('.tab-content:not(#tab-content-default)');
+        contents.forEach(content => content.remove());
+
+        // 清除映射关系
+        this.tabSessions.clear();
+        this.tabSessionIds.clear();
+        this.showingTabs.clear();
+        this.hiddenTabs.clear();
+
+        // 重置活动标签
+        this.activeTabId = null;
     }
 }
 

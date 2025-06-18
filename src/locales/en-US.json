@@ -199,7 +199,10 @@
             "newTab": "New Tab",
             "loadingSession": "Loading...",
             "dropdown": "More Tabs",
-            "noTabs": "No Tabs"
+            "noTabs": "No Tabs",
+            "stateRestored": "Tab state restored",
+            "stateRestorationFailed": "Tab state restoration failed",
+            "stateSaved": "Tab state saved"
         },
         "labels": {
             "modelName": "Model Name",
@@ -259,11 +262,18 @@
         "loadSessionList": "Loading session list",
         "sessionListLoadFailed": "Failed to load session list:",
         "createSessionFailed": "Failed to create new session:",
+        "loadSession": "Load session",
         "loadSessionFailed": "Failed to load session:",
         "renameSessionFailed": "Failed to rename session:",
         "modelConfigUpdated": "Model configuration updated, resetting client",
         "mcpToolList": "Available MCP tools list:",
-        "getMcpToolFailed": "Failed to get MCP tools:"
+        "getMcpToolFailed": "Failed to get MCP tools:",
+        "tabStateRestored": "Tab state successfully restored",
+        "tabStateRestorationFailed": "Tab state restoration failed",
+        "tabStateSaved": "Tab state saved",
+        "tabStateSaveFailed": "Failed to save tab state",
+        "restoringTab": "Restoring tab",
+        "restoredTab": "Tab restoration completed"
     },
     "toolCalls": {
         "executing": "**⚙️ Executing tool call...**",

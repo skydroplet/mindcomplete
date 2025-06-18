@@ -33,7 +33,6 @@ const tabManager = require('../tabManager');
 // 导入 UI 初始化模块
 const uiInit = require('../ui-init');
 const ChatSessionService = require('../chatSession');
-let chatSession = null; // 全局会话变量移除，使用tabManager管理
 
 const messageInput = document.getElementById('message-input');
 const statusElement = document.getElementById('status');
@@ -129,23 +128,56 @@ async function init() {
                 tabManager.openSessionInTab(sessionId);
             });
 
-            // 获取会话列表并初始化标签系统
+            // 获取会话列表
             const sessions = await sidebarSession.loadSessions();
-            if (sessions.length > 0) {
-                // 创建初始会话实例
-                chatSession = new ChatSessionService(sessions[0].id);
-                await chatSession.loadSession();
-            } else {
-                // 如果没有会话，创建一个新的
-                chatSession = new ChatSessionService();
-                await chatSession.createNewSession();
-            }
 
             // 初始化标签管理器
-            await tabManager.initTabManager(chatSession);
+            let tabManagerInitialized = false;
+            let initialSession = null;
+
+            // 尝试恢复标签页状态
+            if (sessions.length > 0) {
+                // 先创建一个临时的初始会话实例用于初始化标签管理器
+                initialSession = new ChatSessionService(sessions[0].id);
+                await initialSession.loadSession();
+
+                // 初始化标签管理器
+                await tabManager.initTabManager(initialSession);
+
+                // 尝试恢复标签页状态
+                const restored = await tabManager.restoreTabState();
+
+                if (restored) {
+                    log.info('成功恢复标签页状态');
+                    tabManagerInitialized = true;
+                } else {
+                    log.info('没有找到保存的标签页状态，使用默认初始化');
+                    // 如果恢复失败，清除临时标签并重新初始化
+                    tabManager.clearAllTabs();
+                    tabManagerInitialized = false;
+                }
+            }
+
+            // 如果没有恢复成功，使用默认初始化
+            if (!tabManagerInitialized) {
+                if (sessions.length > 0) {
+                    // 创建初始会话实例
+                    if (!initialSession) {
+                        initialSession = new ChatSessionService(sessions[0].id);
+                        await initialSession.loadSession();
+                    }
+                } else {
+                    // 如果没有会话，创建一个新的
+                    initialSession = new ChatSessionService();
+                    await initialSession.createNewSession();
+                }
+
+                // 初始化标签管理器
+                await tabManager.initTabManager(initialSession);
+            }
 
             // 移除引用，让标签管理器全权管理会话
-            chatSession = null;
+            initialSession = null;
         })()
     ]);
 
@@ -533,9 +565,10 @@ ipcRenderer.on('locale-updated', async () => {
     // 重新加载会话列表
     sidebarSession.loadSessions();
 
-    // 如果有当前会话，重新加载会话内容
-    if (chatSession) {
-        await chatSession.loadSession();
+    // 重新加载当前活动会话的内容
+    const activeSession = tabManager.getActiveSession();
+    if (activeSession) {
+        await activeSession.loadSession();
     }
 });
 
