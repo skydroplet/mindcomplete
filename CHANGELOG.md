@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.3](https://github.com/skydroplet/mindcomplete/compare/v0.1.2...v0.1.3) (2025-06-18)
+
+### ✨ 新功能
+
+* 支持创建Agent ([4e1591f](https://github.com/skydroplet/mindcomplete/commit/4e1591fdc1521b8ea1626d663b910f6c0b5ef375))
+* 支持和Agent进行对话 ([bcdecba](https://github.com/skydroplet/mindcomplete/commit/bcdecbae54935e747d5064ba231fab97dbc0b769))
+* 保存标签状态 重启后恢复 ([cfb1046](https://github.com/skydroplet/mindcomplete/commit/cfb1046072bb37a8cfdb129059c268d56e160c15))
 
 ## [0.1.2](https://github.com/skydroplet/mindcomplete/compare/v0.1.1...v0.1.2) (2025-06-07)
 
