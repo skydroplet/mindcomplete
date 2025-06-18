@@ -54,6 +54,22 @@ class AppConfig extends BaseConfigManager {
         return this.config.theme || 'auto';
     }
 
+    // 保存标签页状态
+    saveTabState(tabState) {
+        this.config = this.loadConfig();
+        this.config.tabState = {
+            ...tabState,
+            lastUpdated: Date.now()
+        };
+        return this.saveConfig();
+    }
+
+    // 获取标签页状态
+    getTabState() {
+        this.config = this.loadConfig();
+        return this.config.tabState || null;
+    }
+
     /**
      * 获取要下载的文件
      * @param {String} tagName 

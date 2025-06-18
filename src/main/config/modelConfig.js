@@ -104,14 +104,6 @@ class ModelConfig extends BaseConfigManager {
     }
 
     /**
-     * 获取当前选中的模型ID
-     * @returns {string|null} 当前模型ID
-     */
-    getCurrentModelId() {
-        return this.config.currentModel;
-    }
-
-    /**
      * 选择当前使用的模型
      * @param {string} modelId - 要选择的模型ID
      * @returns {boolean} 选择是否成功

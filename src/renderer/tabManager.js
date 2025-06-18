@@ -16,6 +16,8 @@ const i18n = require('../locales/i18n');
 const ChatSessionService = require('./chatSession');
 const InputManagerService = require('./inputManager');
 const sidebarSessionService = require('./sidebarSession');
+const agentSelectService = require('./agentSelectService');
+const { ipcRenderer } = require('electron');
 
 /**
  * 标签管理服务类
@@ -60,6 +62,10 @@ class TabManagerService {
 
         // 初始化事件监听器
         this.initEventListeners();
+
+        // 防抖延迟保存标签页状态
+        this.saveStateTimeout = null;
+        this.saveStateDelay = 1000; // 1秒延迟保存
     }
 
     /**
@@ -508,25 +514,109 @@ class TabManagerService {
      * @param {string} tabId 标签ID
      */
     async initTabSpecificDropdowns(tabId) {
-        try {
-            log.info(`初始化标签 ${tabId} 的下拉菜单`);
+        const session = this.tabSessions.get(tabId);
+        if (!session) return;
+
+        // 初始化模型下拉菜单
+        await this.initModelDropdown(tabId, session);
+
+        // 初始化提示词下拉菜单
+        await this.initPromptDropdown(tabId, session);
+
+        // 初始化MCP下拉菜单
+        await this.initMcpDropdown(tabId, session);
+
+        // 初始化对话模式切换
+        await this.initConversationModeToggle(tabId, session);
+
+        // 初始化Agent下拉菜单
+        await this.initAgentDropdown(tabId, session);
+
+        // 初始化新建会话按钮
+        const newSessionBtn = document.getElementById(`new-session-btn-${tabId}`);
+        newSessionBtn.addEventListener('click', () => {
+            this.createNewTab();
+            sidebarSessionService.loadSessions();
+        });
+
+        log.info(`标签 ${tabId} 的下拉菜单初始化完成`);
+    }
+
+    /**
+     * 初始化Agent下拉菜单
+     * @param {string} tabId 标签ID
+     * @param {ChatSessionService} session 会话实例
+     */
+    async initAgentDropdown(tabId, session) {
+        // 初始化Agent下拉框
+        const sessionConfig = await session.getConfig();
+        await agentSelectService.setTabAgentDropdown(tabId, sessionConfig.agentId);
+
+        // 初始化关联下拉框
+        await this.setTabSelectors(tabId, sessionConfig.agentId)
+
+        // 设置监听回调
+        const agentSelect = document.getElementById(`agent-select-${tabId}`);
+        agentSelect.addEventListener('change', async (e) => {
+            const agentId = e.target.value;
+
+            // 如果是添加新Agent，重置选择框
+            if (agentId === "add_new") {
+                // 保留会话原有的配置
+                const session = this.tabSessions.get(tabId);
+                const sessionConfig = await session.getConfig();
+                agentSelect.value = sessionConfig.agentId;
+
+                openSettingsWindowWithTab('agents');
+            } else if (agentId) {
+                // 标签页模式
+                log.info(`标签 ${tabId} 会话 ${session.data.id} 选择Agent: ${agentId}`);
+                await ipcRenderer.invoke('select-session-agent', session.data.id, agentId);
+
+                // 更新关联下拉框
+                await this.setTabSelectors(tabId, agentId)
+            } else {
+                log.warn('未选择Agent')
+            }
+        });
+
+        // 点击刷新下拉列表
+        agentSelect.addEventListener('mousedown', async (event) => {
             const session = this.tabSessions.get(tabId);
+            const sessionConfig = await session.getConfig();
+            await agentSelectService.setTabAgentDropdown(tabId, sessionConfig.agentId);
+        });
+    }
 
-            // 初始化各类下拉菜单
-            await this.initModelDropdown(tabId, session);
-            await this.initPromptDropdown(tabId, session);
-            await this.initMcpDropdown(tabId, session);
-            await this.initConversationModeToggle(tabId, session);
+    /**
+     * @param {string} tabId  
+     * @param {string} agentId 
+     */
+    async setTabSelectors(tabId, agentId) {
+        log.info(`设置标签 ${tabId} 显示配置列表, agentId: ${agentId}`);
 
-            const newSessionBtn = document.getElementById(`new-session-btn-${tabId}`);
-            newSessionBtn.addEventListener('click', () => {
-                this.createNewTab();
-                sidebarSessionService.loadSessions();
-            });
+        const isSpecificAgent = agentId && agentId !== 'free-mode';
 
-            log.info(`标签 ${tabId} 的下拉菜单初始化完成`);
-        } catch (error) {
-            log.error(`初始化标签 ${tabId} 下拉菜单时出错:`, error.message);
+        const agentSelect = document.getElementById(`agent-select-${tabId}`);
+        const modelSelect = document.getElementById(`model-select-${tabId}`);
+        const promptSelect = document.getElementById(`prompt-select-${tabId}`);
+        const mcpDropdownBtn = document.getElementById(`mcp-dropdown-btn-${tabId}`);
+        const mcpDropdownContent = document.getElementById(`mcp-dropdown-content-${tabId}`);
+
+        if (isSpecificAgent) {
+            // 隐藏模型、提示词、mcp列表
+            const modelSelector = agentSelect.parentNode;
+            modelSelector.classList.add('agent-mode');
+        } else {
+            // 移除Agent模式的CSS类
+            const modelSelector = agentSelect.parentNode;
+            modelSelector.classList.remove('agent-mode');
+
+            // 更新下拉列表数据
+            await this.setModelDropdown(modelSelect, tabId);
+            await this.setPromptDropdown(promptSelect, tabId);
+            await this.setMcpDropdown(mcpDropdownBtn, mcpDropdownContent, tabId);
+            this.updateMcpButtonDisplay(mcpDropdownBtn, mcpDropdownContent);
         }
     }
 
@@ -537,31 +627,26 @@ class TabManagerService {
      * @returns {Promise<void>}
      */
     async setModelDropdown(select, tabId) {
-        try {
-            // 获取所有模型
-            const models = await ipcRenderer.invoke('get-models');
-            log.info("模型列表：", models);
+        // 获取所有模型
+        const models = await ipcRenderer.invoke('get-models');
+        log.info("模型列表：", models);
 
-            // 清空并重新填充下拉框
-            select.innerHTML = `<option value="add_new">${i18n.t('settings.buttons.addModelOption')}</option>`;
+        // 清空并重新填充下拉框
+        select.innerHTML = `<option value="add_new">${i18n.t('settings.buttons.addModelOption')}</option>`;
 
-            // 添加所有模型
-            Object.entries(models || {}).forEach(([modelId, model]) => {
-                const option = document.createElement('option');
-                option.value = modelId;
-                option.textContent = model.name;
-                select.appendChild(option);
-            });
+        // 添加所有模型
+        Object.entries(models || {}).forEach(([modelId, model]) => {
+            const option = document.createElement('option');
+            option.value = modelId;
+            option.textContent = model.name;
+            select.appendChild(option);
+        });
 
-            // 获取当前会话选择的模型
-            const session = this.tabSessions.get(tabId);
-            const sessionConfig = await session.getConfig();
-            select.value = sessionConfig.modelId;
-            log.info(`当前会话 ${session.data.id} ${session.data.name} 使用的模型：${sessionConfig.modelId}`);
-        } catch (error) {
-            log.error("初始化或刷新模型下拉菜单时出错:", error.message);
-            throw error;
-        }
+        // 获取当前会话选择的模型
+        const session = this.tabSessions.get(tabId);
+        const sessionConfig = await session.getConfig();
+        select.value = sessionConfig.modelId;
+        log.info(`当前会话 ${session.data.id} ${session.data.name} 使用的模型：${sessionConfig.modelId}`);
     }
 
     /**
@@ -573,35 +658,31 @@ class TabManagerService {
         const modelSelect = document.getElementById(`model-select-${tabId}`);
         if (!modelSelect || !window.modelService) return;
 
-        try {
-            // 初始化下拉框
+        // 初始化下拉框
+        await this.setModelDropdown(modelSelect, tabId);
+
+        // 添加选择事件监听器
+        modelSelect.addEventListener('change', async (e) => {
+            const modelId = e.target.value;
+
+            if (modelId === "add_new") {
+                // 重置选择框
+                const session = this.tabSessions.get(tabId);
+                const sessionConfig = await session.getConfig();
+                modelSelect.value = sessionConfig.modelId;
+
+                // 打开配置窗口的模型标签页
+                window.openSettingsWindowWithTab('models');
+            } else if (modelId) {
+                log.info(`选择模型 ${session.data.id} ${session.data.name} ${modelId}`);
+                await ipcRenderer.invoke('select-session-model', session.data.id, modelId);
+            }
+        });
+
+        // 添加点击事件监听器，在下拉框打开时刷新模型列表
+        modelSelect.addEventListener('mousedown', async (event) => {
             await this.setModelDropdown(modelSelect, tabId);
-
-            // 添加选择事件监听器
-            modelSelect.addEventListener('change', async (e) => {
-                const modelId = e.target.value;
-
-                if (modelId === "add_new") {
-                    // 重置选择框
-                    const session = this.tabSessions.get(tabId);
-                    const sessionConfig = await session.getConfig();
-                    modelSelect.value = sessionConfig.modelId;
-
-                    // 打开配置窗口的模型标签页
-                    window.openSettingsWindowWithTab('models');
-                } else if (modelId) {
-                    log.info(`选择模型 ${session.data.id} ${session.data.name} ${modelId}`);
-                    await ipcRenderer.invoke('select-session-model', session.data.id, modelId);
-                }
-            });
-
-            // 添加点击事件监听器，在下拉框打开时刷新模型列表
-            modelSelect.addEventListener('mousedown', async (event) => {
-                await this.setModelDropdown(modelSelect, tabId);
-            });
-        } catch (error) {
-            log.error(`初始化标签 ${tabId} 的模型下拉菜单时出错:`, error.message);
-        }
+        });
     }
 
     /**
@@ -801,7 +882,7 @@ class TabManagerService {
     async initMcpDropdown(tabId, session) {
         const mcpDropdownBtn = document.getElementById(`mcp-dropdown-btn-${tabId}`);
         const mcpDropdownContent = document.getElementById(`mcp-dropdown-content-${tabId}`);
-        if (!mcpDropdownBtn || !mcpDropdownContent || !window.mcpService) return;
+        if (!mcpDropdownBtn || !mcpDropdownContent || !window.mcpServer) return;
 
         try {
             // 初始化下拉内容
@@ -939,6 +1020,9 @@ class TabManagerService {
         // 更新标签可见性
         this.updateTabsVisibility();
 
+        // 保存标签页状态
+        this.saveTabState();
+
         return tabId;
     }
 
@@ -1007,6 +1091,7 @@ class TabManagerService {
             inputContainer.className = 'chat-input-container';
             inputContainer.innerHTML = `
                 <div class="model-selector">
+                    <select id="agent-select-${tabId}" class="settings-select" title="选择Agent配置"></select>
                     <select id="model-select-${tabId}" class="settings-select"></select>
                     <select id="prompt-select-${tabId}" class="settings-select" title="选择提示词作为system message"></select>
                     
@@ -1035,6 +1120,11 @@ class TabManagerService {
             const messagesDiv = contentElement.querySelector('.chat-messages');
             if (messagesDiv) {
                 messagesDiv.id = `chat-messages-${tabId}`;
+            }
+
+            const agentSelect = contentElement.querySelector('#agent-select');
+            if (agentSelect) {
+                agentSelect.id = `agent-select-${tabId}`;
             }
 
             const modelSelect = contentElement.querySelector('#model-select');
@@ -1123,6 +1213,9 @@ class TabManagerService {
 
         // 确保活动标签可见
         this.ensureActiveTabVisible();
+
+        // 保存标签页状态
+        this.saveTabState();
     }
 
     /**
@@ -1211,6 +1304,9 @@ class TabManagerService {
 
         // 更新标签可见性
         this.updateTabsVisibility();
+
+        // 保存标签页状态
+        this.saveTabState();
     }
 
     /**
@@ -1230,6 +1326,9 @@ class TabManagerService {
 
         // 如果标签在下拉菜单中，也更新下拉菜单中的名称
         this.updateTabsDropdownMenu();
+
+        // 保存标签页状态
+        this.saveTabState();
     }
 
     /**
@@ -1365,6 +1464,142 @@ class TabManagerService {
         } catch (error) {
             log.error(`设置会话 ${tabId} 的对话模式时出错:`, error.message);
         }
+    }
+
+    /**
+     * 保存当前标签页状态到配置文件
+     */
+    async saveTabState() {
+        // 如果有待保存的任务，清除它
+        if (this.saveStateTimeout) {
+            clearTimeout(this.saveStateTimeout);
+        }
+
+        // 延迟保存，避免频繁写入
+        this.saveStateTimeout = setTimeout(async () => {
+            const openTabs = [];
+
+            // 收集所有打开的标签信息
+            this.tabSessionIds.forEach((sessionId, tabId) => {
+                const tabElement = document.getElementById(tabId);
+                if (tabElement) {
+                    const tabName = tabElement.querySelector('.tab-name')?.textContent || i18n.t('tabs.newSession');
+                    openTabs.push({
+                        tabId: tabId,
+                        sessionId: sessionId,
+                        tabName: tabName
+                    });
+                }
+            });
+
+            const tabState = {
+                openTabs: openTabs,
+                activeTabId: this.activeTabId,
+                tabCounter: this.tabCounter
+            };
+
+            log.info(i18n.t('logs.tabStateSaved'), tabState);
+            await ipcRenderer.invoke('save-tab-state', tabState);
+            this.saveStateTimeout = null;
+        }, this.saveStateDelay);
+    }
+
+    /**
+     * 从配置文件恢复标签页状态
+     */
+    async restoreTabState() {
+        const tabState = await ipcRenderer.invoke('get-tab-state');
+        if (!tabState || !tabState.openTabs || tabState.openTabs.length === 0) {
+            log.info('没有找到标签页状态，使用默认初始化');
+            return false;
+        }
+
+        log.info(i18n.t('logs.tabStateRestored'), tabState);
+
+        // 恢复标签计数器
+        if (tabState.tabCounter) {
+            this.tabCounter = tabState.tabCounter;
+        }
+
+        // 清除现有标签（除了默认内容）
+        this.clearAllTabs();
+
+        // 恢复每个标签
+        for (const tabInfo of tabState.openTabs) {
+            await this.restoreTab(tabInfo);
+        }
+
+        // 激活之前的活动标签
+        if (tabState.activeTabId && document.getElementById(tabState.activeTabId)) {
+            this.activateTab(tabState.activeTabId);
+        } else if (tabState.openTabs.length > 0) {
+            // 如果活动标签不存在，激活第一个标签
+            this.activateTab(tabState.openTabs[0].tabId);
+        }
+
+        // 更新标签可见性
+        this.updateTabsVisibility();
+
+        log.info(i18n.t('logs.tabStateRestored'));
+        return true;
+    }
+
+    /**
+     * 恢复单个标签
+     */
+    async restoreTab(tabInfo) {
+        const { tabId, sessionId, tabName } = tabInfo;
+
+        log.info(i18n.t('logs.restoringTab'), `${tabId} (${sessionId})`);
+
+        // 创建标签DOM元素
+        const tabElement = this.createTabElement(tabId, tabName);
+        this.tabsContainer.insertBefore(tabElement, this.newTabButton);
+
+        // 创建内容区域
+        const contentElement = this.createTabContentElement(tabId);
+        this.tabsContent.appendChild(contentElement);
+
+        // 创建会话实例并加载
+        const chatSession = new ChatSessionService(sessionId);
+        await chatSession.loadSession();
+
+        // 设置会话回调
+        chatSession.setSessionNameChangeCallback((sessionId, newSessionName) => {
+            this.updateSessionName(sessionId, newSessionName);
+            sidebarSessionService.loadSessions();
+        });
+
+        chatSession.setTabId(tabId);
+        this.tabSessions.set(tabId, chatSession);
+        this.tabSessionIds.set(tabId, sessionId);
+
+        // 初始化标签特定的下拉菜单
+        await this.initTabSpecificDropdowns(tabId);
+
+        log.info(i18n.t('logs.restoredTab'), `${tabId}`);
+    }
+
+    /**
+     * 清除所有标签（保留默认内容）
+     */
+    clearAllTabs() {
+        // 清除所有标签DOM元素
+        const tabs = this.tabsContainer.querySelectorAll('.tab');
+        tabs.forEach(tab => tab.remove());
+
+        // 清除所有内容DOM元素（除了默认内容）
+        const contents = this.tabsContent.querySelectorAll('.tab-content:not(#tab-content-default)');
+        contents.forEach(content => content.remove());
+
+        // 清除映射关系
+        this.tabSessions.clear();
+        this.tabSessionIds.clear();
+        this.showingTabs.clear();
+        this.hiddenTabs.clear();
+
+        // 重置活动标签
+        this.activeTabId = null;
     }
 }
 

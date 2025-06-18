@@ -3,7 +3,7 @@
  * 配置窗口管理模块
  *
  * 负责创建和管理应用程序的配置窗口，处理配置相关的IPC通信
- * 包括模型配置、MCP服务配置和提示词配置的界面交互
+ * 包括模型配置、MCP服务配置、提示词配置和Agent配置的界面交互
  */
 
 const { BrowserWindow, ipcMain } = require('electron');
@@ -14,6 +14,7 @@ const appConfig = require('./appConfig');
 const modelManager = require('./modelConfig');
 const mcpManager = require('./mcpConfig');
 const promptManager = require('./promptConfig');
+const agentManager = require('./agentConfig');
 
 // 配置窗口实例引用
 let configWindow;
@@ -107,6 +108,7 @@ function closeConfigWindow() {
  * - 模型配置管理
  * - MCP服务配置管理
  * - 提示词配置管理
+ * - Agent配置管理
  */
 function registerConfigIPC() {
     // 配置相关IPC处理
@@ -260,6 +262,40 @@ function registerConfigIPC() {
     ipcMain.handle('delete-prompt', (event, promptId) => {
         log.info('处理删除提示词请求, promptId:', promptId);
         return promptManager.deletePrompt(promptId);
+    });
+
+    // Agent配置相关IPC处理
+    ipcMain.handle('get-agents', () => {
+        log.info('处理获取Agent列表请求');
+        return agentManager.getAgents();
+    });
+
+    ipcMain.handle('add-agent', async (event, agent) => {
+        log.info('处理添加Agent请求, Agent数据:', JSON.stringify(agent, null, 2));
+        const result = agentManager.addAgent(agent);
+        log.info('添加Agent结果:', result);
+        return result;
+    });
+
+    ipcMain.handle('update-agent', async (event, { agentId, agent }) => {
+        log.info('处理更新Agent请求, agentId:', agentId, 'Agent数据:', JSON.stringify(agent, null, 2));
+        const result = agentManager.updateAgent(agentId, agent);
+        log.info('更新Agent结果:', result);
+        return result;
+    });
+
+    ipcMain.handle('delete-agent', async (event, agentId) => {
+        log.info('处理删除Agent请求, agentId:', agentId);
+        const result = agentManager.deleteAgent(agentId);
+        log.info('删除Agent结果:', result);
+        return result;
+    });
+
+    ipcMain.handle('copy-agent', async (event, agentId) => {
+        log.info('处理复制Agent请求, agentId:', agentId);
+        const result = agentManager.copyAgent(agentId);
+        log.info('复制Agent结果:', result);
+        return result;
     });
 }
 

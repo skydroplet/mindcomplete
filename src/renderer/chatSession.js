@@ -20,7 +20,7 @@ const hljs = require('highlight.js');
 const sidebarSessionService = require('./sidebarSession');
 const modelService = require('./modelService');
 const promptService = require('./promptService');
-const mcpService = require('./mcpService');
+const mcpServer = require('./mcpServerService');
 
 /**
  * 聊天服务类
@@ -198,7 +198,7 @@ class ChatSessionService {
         // 仅更新UI显示，不发送IPC消息
         this.modelSelect.value = this.data.modelId;
         this.promptSelect.value = this.data.promptId;
-        mcpService.updateMcpUIForSession(this.data.mcpServers);
+        mcpServer.updateMcpUIForSession(this.data.mcpServers);
 
         this.statusElement.textContent = i18n.t('ui.status.sessionLoaded', { name: this.data.name });
     }
@@ -213,12 +213,14 @@ class ChatSessionService {
 
         // 只更新配置信息
         this.data.name = session.name;
+        this.data.agentId = session.agentId;
         this.data.modelId = session.modelId;
         this.data.promptId = session.promptId;
         this.data.mcpServers = session.mcpServers;
 
         return {
             name: session.name,
+            agentId: session.agentId,
             modelId: session.modelId,
             promptId: session.promptId,
             mcpServers: session.mcpServers

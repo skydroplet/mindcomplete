@@ -21,9 +21,10 @@ const hljs = require('highlight.js');
 // 导入服务模块
 const sidebarSession = require('../sidebarSession');
 const sidebarService = require('../sidebarService');
+const agentService = require('../agentService');
 const modelService = require('../modelService');
 const promptService = require('../promptService');
-const mcpService = require('../mcpService');
+const mcpServerService = require('../mcpServerService');
 const themeService = require('../themeService');
 const aboutService = require('../aboutService');
 const updateService = require('../updateService');
@@ -32,7 +33,6 @@ const tabManager = require('../tabManager');
 // 导入 UI 初始化模块
 const uiInit = require('../ui-init');
 const ChatSessionService = require('../chatSession');
-let chatSession = null; // 全局会话变量移除，使用tabManager管理
 
 const messageInput = document.getElementById('message-input');
 const statusElement = document.getElementById('status');
@@ -104,7 +104,7 @@ async function init() {
 
         // 加载MCP服务列表
         (async () => {
-            await mcpService.loadMcpServers(statusElement);
+            await mcpServerService.loadMcpServers(statusElement);
         })(),
 
         // 加载会话
@@ -128,23 +128,56 @@ async function init() {
                 tabManager.openSessionInTab(sessionId);
             });
 
-            // 获取会话列表并初始化标签系统
+            // 获取会话列表
             const sessions = await sidebarSession.loadSessions();
-            if (sessions.length > 0) {
-                // 创建初始会话实例
-                chatSession = new ChatSessionService(sessions[0].id);
-                await chatSession.loadSession();
-            } else {
-                // 如果没有会话，创建一个新的
-                chatSession = new ChatSessionService();
-                await chatSession.createNewSession();
-            }
 
             // 初始化标签管理器
-            await tabManager.initTabManager(chatSession);
+            let tabManagerInitialized = false;
+            let initialSession = null;
+
+            // 尝试恢复标签页状态
+            if (sessions.length > 0) {
+                // 先创建一个临时的初始会话实例用于初始化标签管理器
+                initialSession = new ChatSessionService(sessions[0].id);
+                await initialSession.loadSession();
+
+                // 初始化标签管理器
+                await tabManager.initTabManager(initialSession);
+
+                // 尝试恢复标签页状态
+                const restored = await tabManager.restoreTabState();
+
+                if (restored) {
+                    log.info('成功恢复标签页状态');
+                    tabManagerInitialized = true;
+                } else {
+                    log.info('没有找到保存的标签页状态，使用默认初始化');
+                    // 如果恢复失败，清除临时标签并重新初始化
+                    tabManager.clearAllTabs();
+                    tabManagerInitialized = false;
+                }
+            }
+
+            // 如果没有恢复成功，使用默认初始化
+            if (!tabManagerInitialized) {
+                if (sessions.length > 0) {
+                    // 创建初始会话实例
+                    if (!initialSession) {
+                        initialSession = new ChatSessionService(sessions[0].id);
+                        await initialSession.loadSession();
+                    }
+                } else {
+                    // 如果没有会话，创建一个新的
+                    initialSession = new ChatSessionService();
+                    await initialSession.createNewSession();
+                }
+
+                // 初始化标签管理器
+                await tabManager.initTabManager(initialSession);
+            }
 
             // 移除引用，让标签管理器全权管理会话
-            chatSession = null;
+            initialSession = null;
         })()
     ]);
 
@@ -155,7 +188,7 @@ async function init() {
     statusElement.textContent = i18n.t('ui.status.ready');
 
     // 设置MCP下拉菜单监听器
-    mcpService.setupMcpDropdownListeners(openSettingsWindowWithTab);
+    mcpServerService.setupMcpDropdownListeners(openSettingsWindowWithTab);
 
     // 设置主题相关监听器
     themeService.setupThemeListeners();
@@ -400,7 +433,7 @@ function setupEventListeners() {
     promptService.setupPromptSelectListeners(statusElement, openSettingsWindowWithTab);
 
     // 设置MCP下拉菜单监听器
-    mcpService.setupMcpDropdownListeners(openSettingsWindowWithTab);
+    mcpServerService.setupMcpDropdownListeners(openSettingsWindowWithTab);
 
     // 重命名对话框事件监听
     const renameCancelBtn = document.getElementById('rename-cancel-btn');
@@ -532,9 +565,10 @@ ipcRenderer.on('locale-updated', async () => {
     // 重新加载会话列表
     sidebarSession.loadSessions();
 
-    // 如果有当前会话，重新加载会话内容
-    if (chatSession) {
-        await chatSession.loadSession();
+    // 重新加载当前活动会话的内容
+    const activeSession = tabManager.getActiveSession();
+    if (activeSession) {
+        await activeSession.loadSession();
     }
 });
 
@@ -546,7 +580,7 @@ ipcRenderer.on('config-updated', (event, data) => {
     }
 
     if (data.mcpConfig) {
-        mcpService.loadMcpServers(statusElement);
+        mcpServerService.loadMcpServers(statusElement);
     }
 
     if (data.generalConfig) {
@@ -569,7 +603,7 @@ ipcRenderer.on('config-updated', (event, data) => {
 // 监听MCP服务更新事件
 ipcRenderer.on('mcp-server-updated', async (event, mcpConfig) => {
     log.info('收到MCP服务更新:', mcpConfig);
-    await mcpService.loadMcpServers(statusElement);
+    await mcpServerService.loadMcpServers(statusElement);
 
     // 确保样式一致性
     setTimeout(ensureConsistentDropdownStyles, 50);
@@ -603,8 +637,8 @@ ipcRenderer.on('prompt-selection-changed', (event, promptId) => {
 // 监听MCP服务选择变更事件
 ipcRenderer.on('mcp-selection-changed', (event, mcpServerIds) => {
     log.info('收到MCP服务选择变更事件:', mcpServerIds);
-    if (mcpServerIds && mcpService) {
-        mcpService.setActiveMcpServers(mcpServerIds);
+    if (mcpServerIds && mcpServerService) {
+        mcpServerService.setActiveMcpServers(mcpServerIds);
     }
 });
 
@@ -640,7 +674,7 @@ function ensureConsistentDropdownStyles() {
     log.info('确保下拉选择框样式一致性');
 
     // 确保MCP下拉菜单样式一致性
-    mcpService.ensureMcpDropdownStyles();
+    mcpServerService.ensureMcpDropdownStyles();
 
     // 确保model-selector容器正确使用CSS样式
     const modelSelector = document.querySelector('.model-selector');
@@ -811,5 +845,5 @@ window.handleTabClick = handleTabClick;
 window.tabManager = tabManager;
 window.modelService = modelService;
 window.promptService = promptService;
-window.mcpService = mcpService;
+window.mcpServer = mcpServerService;
 window.openSettingsWindowWithTab = openSettingsWindowWithTab;

@@ -237,6 +237,25 @@ ipcMain.handle('set-locale', (event, locale) => {
     return true;
 });
 
+// 处理标签页状态保存和恢复
+ipcMain.handle('save-tab-state', (event, tabState) => {
+    try {
+        return appConfig.saveTabState(tabState);
+    } catch (error) {
+        log.error('保存标签页状态失败:', error.message);
+        return false;
+    }
+});
+
+ipcMain.handle('get-tab-state', (event) => {
+    try {
+        return appConfig.getTabState();
+    } catch (error) {
+        log.error('获取标签页状态失败:', error.message);
+        return null;
+    }
+});
+
 // 添加文件系统相关的 IPC 处理
 ipcMain.handle('read-file', async (event, path) => {
     try {

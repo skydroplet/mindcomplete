@@ -9,6 +9,7 @@ const i18n = require('../../locales/i18n');
 const modelConfig = require('../config/modelConfig');
 const promptConfig = require('../config/promptConfig');
 const mcpConfig = require('../config/mcpConfig');
+const agentConfig = require('../config/agentConfig');
 const mcp = require('../mcp/mcpClient');
 
 function getFormattedDate(date) {
@@ -22,7 +23,7 @@ function getFormattedDate(date) {
  * 单个对话
  */
 class ChatSession {
-    constructor(filePath) {
+    constructor(filePath, sessionTemplate) {
         try {
             if (filePath) {
                 const data = fs.readFileSync(filePath, 'utf8');
@@ -32,6 +33,14 @@ class ChatSession {
                 log.info("加载会话: ", filePath)
             } else {
                 this.newSession();
+                if (sessionTemplate) {
+                    this.data.agentId = sessionTemplate.data.agentId;
+                    this.data.modelId = sessionTemplate.data.modelId;
+                    this.data.promptId = sessionTemplate.data.promptId;
+                    this.data.mcpServers = sessionTemplate.data.mcpServers;
+                    this.data.conversationMode = sessionTemplate.data.conversationMode;
+                }
+
                 this.saveToFile();
                 log.info("创建新会话")
             }
@@ -57,6 +66,11 @@ class ChatSession {
         this.saveToFile();
     }
 
+    setAgentId(agentId) {
+        this.data.agentId = agentId;
+        this.saveToFile();
+    }
+
     setMcpServers(servers) {
         this.data.mcpServers = servers;
         // 同步保存到配置 新建会话时 以当前使用的配置为准
@@ -71,12 +85,6 @@ class ChatSession {
     setConversationMode(mode) {
         this.data.conversationMode = mode;
         this.saveToFile();
-    }
-
-    setConfig() {
-        this.data.modelId = modelConfig.getCurrentModelId();
-        this.data.promptId = promptConfig.getCurrentPromptId();
-        this.data.mcpServers = mcpConfig.getActiveMcps();
     }
 
     /**
@@ -99,9 +107,6 @@ class ChatSession {
             createdAt: now,
             updatedAt: now,
             messageCount: 0,
-            modelId: modelConfig.getCurrentModelId(),
-            promptId: promptConfig.getCurrentPromptId(),
-            mcpServers: mcpConfig.getActiveMcps(),
             conversationMode: 'multi-turn',
             messages: []
         }
@@ -192,6 +197,7 @@ class ChatSession {
             createdAt: this.data.createdAt,
             updatedAt: this.data.updatedAt,
             messageCount: this.data.messageCount,
+            agentId: this.data.agentId,
             modelId: this.data.modelId,
             promptId: this.data.promptId,
             mcpServers: this.data.mcpServers || [],
@@ -252,6 +258,93 @@ class ChatSession {
         }
     }
 
+    /**
+     * 根据agentId获取配置信息
+     * @returns {Object} 配置对象 {modelId, promptId, mcpServers}
+     */
+    getSessionConfig() {
+        if (this.data.agentId && this.data.agentId !== 'free-mode') {
+            // 使用agent配置
+            const agent = agentConfig.getAgent(this.data.agentId);
+            if (!agent) {
+                throw new Error(i18n.t('errors.agentNotFound', { agentId: this.data.agentId }));
+            }
+            const config = {
+                modelId: agent.model,
+                promptId: agent.prompt,
+                mcpServers: agent.mcpServers || []
+            };
+            return config;
+        } else {
+            // 使用自定义配置
+            const config = {
+                modelId: this.data.modelId,
+                promptId: this.data.promptId,
+                mcpServers: this.data.mcpServers || []
+            };
+            return config;
+        }
+    }
+
+    /**
+     * 获取系统提示词消息
+     * @param {string} promptId 提示词ID
+     * @returns {Array} 提示词消息数组
+     */
+    getPromptMessages(promptId) {
+        const messages = [];
+
+        if (promptId) {
+            const prompt = promptConfig.getPromptById(promptId);
+            if (prompt) {
+                const promptType = prompt.type || 'system';
+                messages.push({
+                    role: promptType,
+                    content: prompt.content
+                });
+            }
+        }
+
+        return messages;
+    }
+
+    /**
+     * 获取MCP工具列表
+     * @param {Array} mcpServers MCP服务器列表
+     * @returns {Array} 工具列表
+     */
+    getMcpTools(mcpServers) {
+        let tools = [];
+        if (mcpServers && mcpServers.length > 0) {
+            tools = mcp.getToolsForServer(mcpServers);
+        }
+
+        return tools;
+    }
+
+    /**
+     * 获取模型配置和客户端
+     * @param {string} modelId 模型ID
+     * @returns {Object} 模型配置和客户端 {model, modelClient}
+     */
+    getModelConfigAndClient(modelId) {
+        if (!modelId) {
+            throw new Error(i18n.t('errors.modelNotConfigured'));
+        }
+
+        const model = modelConfig.getModelById(modelId);
+        if (!model) {
+            throw new Error(i18n.t('errors.modelNotFound', { modelId }));
+        }
+
+        const modelClient = modelConfig.getModelClient(modelId);
+        if (!modelClient) {
+            throw new Error(i18n.t('errors.modelClientNotFound'));
+        }
+
+        return { model, modelClient };
+    }
+
     async sendMessage(event, requestId, message) {
         try {
             // 如果存在旧的中断控制器，先中断它
@@ -265,29 +358,18 @@ class ChatSession {
             // 创建新的中断控制器
             this.abortController = new AbortController();
 
+            // 获取配置信息
+            const config = this.getSessionConfig();
+
+            // 构建消息列表
             let messages = [];
 
-            // 有系统提示词 添加系统提示词
-            if (this.data.promptId) {
-                const prompt = promptConfig.getPromptById(this.data.promptId);
-                const promptType = prompt.type || 'system';
-                messages.push({
-                    role: promptType,
-                    content: prompt.content
-                });
-                log.info("添加系统提示词：", prompt.content)
-            }
+            // 添加系统提示词
+            const promptMessages = this.getPromptMessages(config.promptId);
+            messages = messages.concat(promptMessages);
 
-            let tools = [];
-            try {
-                if (this.data.mcpServers && this.data.mcpServers.length > 0) {
-                    tools = mcp.getToolsForServer(this.data.mcpServers);
-                    log.info("添加Mcp工具：", tools)
-                }
-            } catch (err) {
-                log.error(i18n.t('logs.getMcpToolFailed'), err.message);
-                tools = [];
-            }
+            // 获取MCP工具
+            const tools = this.getMcpTools(config.mcpServers);
 
             // 如果有活动会话，加载会话历史
             let historyMessages = this.getMessagesForAi() || [];
@@ -298,13 +380,15 @@ class ChatSession {
             // 添加当前用户消息
             messages.push({ role: 'user', content: message });
             // 保存到文件
-            this.addMessage({ role: 'user', content: message })
+            this.addMessage({ role: 'user', content: message });
             if (this.data.messageCount === 1) {
                 this.data.name = message.slice(0, 64);
                 event.sender.send("session-name-change-" + this.data.id, this.data.name);
             }
 
-            const model = modelConfig.getModelById(this.data.modelId)
+            // 获取模型配置和客户端
+            const { model, modelClient } = this.getModelConfigAndClient(config.modelId);
+
             // 构建API请求参数
             const requestParams = {
                 model: model.type,
@@ -318,11 +402,6 @@ class ChatSession {
             if (tools && tools.length > 0) {
                 requestParams.tools = tools;
                 requestParams.tool_choice = "auto";
-            }
-
-            const modelClient = modelConfig.getModelClient(this.data.modelId)
-            if (!modelClient) {
-                throw new Error("can't find model client");
             }
 
             // 添加中断控制器信号

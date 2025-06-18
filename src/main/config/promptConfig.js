@@ -38,15 +38,6 @@ class PromptConfig extends BaseConfigManager {
     getPrompts() {
         return this.config.prompts;
     }
-
-    /**
-     * 获取当前选中的提示词ID
-     * @returns {string|null} 当前提示词ID
-     */
-    getCurrentPromptId() {
-        return this.config.currentPrompt;
-    }
-
     /**
      * 根据类型获取提示词
      * @param {string} type 提示词类型，可选值为'system'或'user'

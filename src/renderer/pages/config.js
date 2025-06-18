@@ -14,10 +14,11 @@ const i18n = require('../../locales/i18n');
 const themeService = require('../themeService');
 const modelService = require('../modelService');
 const promptService = require('../promptService');
-const mcpService = require('../mcpService');
+const mcpServerService = require('../mcpServerService');
 const exportService = require('../exportService');
 const ImportService = require('../importService');
 const mcpRuntimeService = require('../mcpRuntimeService');
+const agentService = require('../agentService');
 
 // 创建导入服务实例
 const importService = new ImportService();
@@ -125,6 +126,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         window.models = {};
         window.mcpConfig = {};
         window.prompts = {};
+        window.agents = {};
 
         // 获取当前语言设置并应用
         try {
@@ -149,7 +151,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                 // 隐藏工具列表，除非正在切换到MCP服务选项卡并且已经有工具数据
                 if (target !== 'mcp-servers') {
-                    mcpService.hideToolsList();
+                    mcpServerService.hideToolsList();
                 }
 
                 // 切换内容区域显示
@@ -172,12 +174,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         // 初始化全局变量
         window.currentModelId = null;
         window.currentPromptId = null;
+        window.currentAgentId = null;
 
         // 初始化MCP设置
-        await mcpService.initMcpSettings();
+        await mcpServerService.initMcpSettings();
 
         // 同步MCP全局变量与服务
-        window.mcpConfig = mcpService.getMcpConfig();
+        window.mcpConfig = mcpServerService.getMcpConfig();
 
         // 初始化提示词相关事件
         promptService.initPromptEventListeners();
@@ -190,6 +193,27 @@ document.addEventListener('DOMContentLoaded', async () => {
             promptService.updatePromptList(prompts);
         } catch (error) {
             log.error('加载提示词列表失败:', error.message);
+        }
+
+        // 初始化Agent配置相关事件
+        await agentService.initAgentEventListeners();
+
+        // 加载Agent列表
+        try {
+            const agents = await ipcRenderer.invoke('get-agents');
+            log.info('Agent列表:', agents);
+            window.agents = agents;
+            agentService.updateAgentList(agents);
+
+            // 更新Agent服务中的选项数据
+            agentService.updateModelOptions(models);
+            agentService.updatePromptOptions(prompts);
+
+            // 获取MCP服务列表并更新Agent服务选项
+            const mcpServers = mcpServerService.mcpServers || {};
+            agentService.updateMcpOptions(mcpServers);
+        } catch (error) {
+            log.error('加载Agent列表失败:', error.message);
         }
 
         // 初始化主题切换 - 使用themeService
@@ -263,18 +287,18 @@ ipcRenderer.on('config-updated', (event, data) => {
         modelService.updateModelList(data.models.models || {});
     }
     if (data.mcpConfig) {
-        mcpService.setMcpConfig(data.mcpConfig);
-        mcpService.updateMcpServerList();
-        window.mcpConfig = mcpService.getMcpConfig();
+        mcpServerService.setMcpConfig(data.mcpConfig);
+        mcpServerService.updateMcpServerList();
+        window.mcpConfig = mcpServerService.getMcpConfig();
     } else if (data.mcpServers) {
         // 兼容旧版数据格式
         const mcpConfig = {
             servers: data.mcpServers,
             activeMcps: []
         };
-        mcpService.setMcpConfig(mcpConfig);
-        mcpService.updateMcpServerList();
-        window.mcpConfig = mcpService.getMcpConfig();
+        mcpServerService.setMcpConfig(mcpConfig);
+        mcpServerService.updateMcpServerList();
+        window.mcpConfig = mcpServerService.getMcpConfig();
     }
 });
 
