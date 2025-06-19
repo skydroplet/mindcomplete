@@ -835,6 +835,20 @@ class TabManagerService {
                     log.info(`切换MCP服务 ${serverId} 状态为: ${isChecked}`);
 
                     try {
+                        // 更新连接状态
+                        const statusIndicator = option.querySelector('.mcp-status-indicator');
+                        if (statusIndicator) {
+                            if (isChecked) {
+                                // 激活时设置为连接中状态
+                                this.setMcpConnectionState(statusIndicator, 'connecting');
+                                // 检查连接状态
+                                setTimeout(() => this.checkMcpServerConnection(serverId, statusIndicator), 500);
+                            } else {
+                                // 停用时设置为断开状态
+                                this.setMcpConnectionState(statusIndicator, 'disconnected');
+                            }
+                        }
+
                         // 获取当前所有选中的服务ID
                         const allCheckedServerIds = Array.from(
                             mcpDropdownContent.querySelectorAll('.mcp-server-checkbox:checked')
@@ -859,11 +873,60 @@ class TabManagerService {
                 nameSpan.textContent = server.name;
                 nameSpan.className = 'mcp-server-name';
 
+                // 创建连接状态指示器
+                const statusIndicator = document.createElement('div');
+                statusIndicator.className = 'mcp-status-indicator status-disconnected';
+
+                // 状态圆点
+                const statusDot = document.createElement('div');
+                statusDot.className = 'status-dot';
+
+                // 阻止圆点的点击事件冒泡
+                statusDot.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                });
+
+                // 状态箭头（hover时显示）
+                const statusArrow = document.createElement('div');
+                statusArrow.className = 'status-arrow';
+                statusArrow.innerHTML = '↻'; // 重新连接箭头符号
+
+                // 阻止箭头的点击事件冒泡
+                statusArrow.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                });
+
+                statusIndicator.appendChild(statusDot);
+                statusIndicator.appendChild(statusArrow);
+
+                // 添加状态指示器点击事件
+                statusIndicator.addEventListener('click', async (e) => {
+                    e.stopPropagation(); // 防止触发复选框事件
+                    e.preventDefault(); // 防止默认行为
+                    e.stopImmediatePropagation(); // 立即停止事件冒泡
+
+                    await this.reconnectMcpServer(serverId, statusIndicator);
+                });
+
                 container.appendChild(checkbox);
                 container.appendChild(nameSpan);
+                container.appendChild(statusIndicator);
                 option.appendChild(container);
 
                 mcpDropdownContent.appendChild(option);
+
+                // 初始化连接状态
+                if (sessionMcpServers.includes(serverId)) {
+                    // 对于选中的服务，先设置为连接中状态，然后检查实际连接状态
+                    this.setMcpConnectionState(statusIndicator, 'connecting');
+                    setTimeout(() => this.checkMcpServerConnection(serverId, statusIndicator), 100);
+                } else {
+                    this.setMcpConnectionState(statusIndicator, 'disconnected');
+                }
             });
 
             // 更新按钮显示
@@ -1581,25 +1644,124 @@ class TabManagerService {
     }
 
     /**
-     * 清除所有标签（保留默认内容）
+     * 清除所有标签
+     * 用于重置界面状态
      */
     clearAllTabs() {
-        // 清除所有标签DOM元素
-        const tabs = this.tabsContainer.querySelectorAll('.tab');
-        tabs.forEach(tab => tab.remove());
-
-        // 清除所有内容DOM元素（除了默认内容）
-        const contents = this.tabsContent.querySelectorAll('.tab-content:not(#tab-content-default)');
-        contents.forEach(content => content.remove());
-
-        // 清除映射关系
+        // 清除所有标签页
         this.tabSessions.clear();
         this.tabSessionIds.clear();
+
+        // 清除DOM元素
+        const tabs = this.tabsContainer.querySelectorAll('.tab');
+        tabs.forEach(tab => {
+            if (tab !== this.newTabButton) {
+                tab.remove();
+            }
+        });
+
+        const contents = this.tabsContent.querySelectorAll('.tab-content');
+        contents.forEach(content => content.remove());
+
+        // 重置计数器和状态
+        this.tabCounter = 0;
+        this.activeTabId = null;
         this.showingTabs.clear();
         this.hiddenTabs.clear();
 
-        // 重置活动标签
-        this.activeTabId = null;
+        // 更新下拉菜单
+        this.updateTabsDropdownMenu();
+    }
+
+    /**
+     * 设置MCP服务连接状态
+     * @param {HTMLElement} statusIndicator - 状态指示器元素
+     * @param {string} status - 连接状态: 'connected', 'connecting', 'error', 'disconnected'
+     * @param {string} error - 错误信息（可选）
+     */
+    setMcpConnectionState(statusIndicator, status, error = null) {
+        if (!statusIndicator) return;
+
+        // 更新状态类
+        statusIndicator.className = `mcp-status-indicator status-${status}`;
+
+        // 设置tooltip
+        let tooltipText = '';
+        switch (status) {
+            case 'connected':
+                tooltipText = i18n.t('mcp.status.connected') || '已连接';
+                break;
+            case 'connecting':
+                tooltipText = i18n.t('mcp.status.connecting') || '连接中';
+                break;
+            case 'error':
+                tooltipText = error ? `${i18n.t('mcp.status.error') || '连接失败'}: ${error}` : (i18n.t('mcp.status.error') || '连接失败');
+                break;
+            default:
+                tooltipText = i18n.t('mcp.status.disconnected') || '未连接';
+                break;
+        }
+        statusIndicator.title = tooltipText;
+    }
+
+    /**
+     * 检查MCP服务连接状态
+     * @param {string} serverId - 服务ID
+     * @param {HTMLElement} statusIndicator - 状态指示器元素
+     */
+    async checkMcpServerConnection(serverId, statusIndicator) {
+        try {
+            const result = await ipcRenderer.invoke('check-mcp-connection', serverId);
+
+            if (result && result.connected) {
+                this.setMcpConnectionState(statusIndicator, 'connected');
+            } else {
+                this.setMcpConnectionState(statusIndicator, 'error', '连接失败');
+            }
+        } catch (error) {
+            log.error(`检查MCP连接状态失败 [${serverId}]:`, error.message);
+            this.setMcpConnectionState(statusIndicator, 'error', error.message);
+        }
+    }
+
+    /**
+     * 重新连接MCP服务
+     * @param {string} serverId - 服务ID
+     * @param {HTMLElement} statusIndicator - 状态指示器元素
+     */
+    async reconnectMcpServer(serverId, statusIndicator) {
+        try {
+            log.info('重新连接MCP服务:', serverId);
+
+            // 获取服务配置
+            const mcpServers = await ipcRenderer.invoke('get-mcp-servers');
+            const serverConfig = mcpServers[serverId];
+            if (!serverConfig) {
+                throw new Error(`MCP服务配置不存在: ${serverId}`);
+            }
+
+            // 设置连接中状态
+            this.setMcpConnectionState(statusIndicator, 'connecting');
+
+            // 重置MCP客户端
+            await ipcRenderer.invoke('reset-mcp-client', serverId);
+
+            // 重新连接
+            const result = await ipcRenderer.invoke('reconnect-mcp-server', {
+                serverId,
+                serverData: serverConfig
+            });
+
+            if (result && result.success) {
+                this.setMcpConnectionState(statusIndicator, 'connected');
+                log.info(`MCP服务 ${serverId} 重新连接成功`);
+            } else {
+                throw new Error(result?.error || '重新连接失败');
+            }
+        } catch (error) {
+            log.error(`重新连接MCP服务失败 [${serverId}]:`, error.message);
+            this.setMcpConnectionState(statusIndicator, 'error', error.message);
+        }
     }
 }
 

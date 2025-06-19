@@ -260,6 +260,8 @@
     background-color: var(--dropdown-bg);
     font-size: 14px;
     /* Match font size with settings-select */
+    gap: 8px;
+    /* 元素之间的间距 */
 }
 
 .mcp-server-name {
@@ -323,8 +325,23 @@
 .mcp-server-container {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     width: 100%;
+    padding: 8px 12px;
     cursor: pointer;
+}
+
+.mcp-server-container input[type="checkbox"] {
+    margin-right: 8px;
+    flex-shrink: 0;
+}
+
+.mcp-server-name {
+    flex-grow: 1;
+    margin-right: 8px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .no-server {
@@ -496,4 +513,96 @@
 [data-theme="dark"] .custom-dialog button {
     background: var(--button-bg, #2196F3);
     color: var(--button-text, #fff);
+}
+
+/* MCP连接状态指示器样式 */
+.mcp-status-indicator {
+    position: relative;
+    width: 16px;
+    height: 16px;
+    margin-left: auto;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.mcp-status-indicator .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+    display: block;
+}
+
+.mcp-status-indicator .status-arrow {
+    width: 12px;
+    height: 12px;
+    display: none;
+    font-size: 12px;
+    line-height: 12px;
+    text-align: center;
+    color: var(--text-color);
+    font-weight: bold;
+    transition: all 0.2s ease;
+}
+
+/* 连接状态颜色 */
+.mcp-status-indicator.status-connected .status-dot {
+    background-color: #4caf50;
+    /* 绿色 - 连接成功 */
+    box-shadow: 0 0 4px rgba(76, 175, 80, 0.4);
+}
+
+.mcp-status-indicator.status-connecting .status-dot {
+    background-color: #ff9800;
+    /* 黄色 - 正在连接 */
+    box-shadow: 0 0 4px rgba(255, 152, 0, 0.4);
+    animation: pulse 1.5s infinite;
+}
+
+.mcp-status-indicator.status-error .status-dot {
+    background-color: #f44336;
+    /* 红色 - 连接失败 */
+    box-shadow: 0 0 4px rgba(244, 67, 54, 0.4);
+}
+
+.mcp-status-indicator.status-disconnected .status-dot {
+    background-color: #9e9e9e;
+    /* 灰色 - 未连接 */
+    box-shadow: 0 0 2px rgba(158, 158, 158, 0.3);
+}
+
+/* Hover效果：显示箭头，隐藏圆点 */
+.mcp-status-indicator:hover .status-dot {
+    display: none;
+}
+
+.mcp-status-indicator:hover .status-arrow {
+    display: block;
+    color: var(--text-color);
+}
+
+.mcp-status-indicator:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+    border-radius: 50%;
+}
+
+/* 脉冲动画 */
+@keyframes pulse {
+    0% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 0.7;
+        transform: scale(1.1);
+    }
+
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
 }

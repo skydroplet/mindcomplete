@@ -198,7 +198,7 @@ class ChatSessionService {
         // 仅更新UI显示，不发送IPC消息
         this.modelSelect.value = this.data.modelId;
         this.promptSelect.value = this.data.promptId;
-        mcpServer.updateMcpUIForSession(this.data.mcpServers);
+        // MCP UI现在由tabManager管理，无需在此处更新
 
         this.statusElement.textContent = i18n.t('ui.status.sessionLoaded', { name: this.data.name });
     }

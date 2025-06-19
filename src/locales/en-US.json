@@ -291,15 +291,21 @@
         "addServer": "+ Add MCP Server",
         "noServer": "No MCP Server available, please add one first",
         "server": "MCP Server",
-        "selectedServers": "{count} Server selected",
+        "selectedServers": "Selected {count} servers",
         "toggleFailed": "Failed to toggle MCP Server: {error}",
+        "status": {
+            "connected": "Connected",
+            "connecting": "Connecting",
+            "error": "Connection Failed",
+            "disconnected": "Disconnected"
+        },
         "toolsList": {
-            "title": "Tool List",
-            "index": "No.",
+            "title": "Tools List",
+            "index": "Index",
             "name": "Name",
             "description": "Description",
             "autoApprove": "Auto Approve",
-            "noDescription": "No description",
+            "noDescription": "No Description",
             "unnamedTool": "Unnamed Tool",
             "connectButton": "Connect",
             "connecting": "Connecting...",
@@ -310,28 +316,28 @@
         },
         "buttons": {
             "addServer": "Add",
+            "copy": "Copy",
             "deleteServer": "Delete",
             "cancel": "Cancel",
             "save": "Save",
-            "copy": "Copy",
             "addEnvVar": "Add Environment Variable",
             "addParam": "Add Parameter"
         },
         "labels": {
             "serverName": "Server Name",
-            "executablePath": "Executable File",
+            "executablePath": "Executable Path",
             "envVars": "Environment Variables",
             "cmdArgs": "Command Line Arguments"
         },
         "authorization": {
             "title": "Tool Authorization Request",
-            "message": "**AI is requesting to use \"{serverName}\" tool \"{name}\" which is not in the auto-approve list.**",
-            "onetime": "Authorize Once",
-            "auto": "Authorize Always",
+            "message": "\n**AI requests to use tool `{name}` from \"{serverName}\", which is not in the auto-approval list.**\n",
+            "onetime": "Approve Once",
+            "auto": "Always Approve",
             "deny": "Deny",
             "success": "Tool authorization status updated",
             "error": "Failed to update authorization status: {error}",
-            "denied": "Tool execution request was denied"
+            "denied": "Tool execution request denied"
         }
     },
     "export": {

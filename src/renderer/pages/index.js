@@ -86,11 +86,7 @@ async function init() {
     // 确保下拉选择框样式一致性
     ensureConsistentDropdownStyles();
 
-    // 设置事件监听器
-    setupEventListeners();
-
-    // 9. 并行加载数据以提高性能
-    // 创建一个并行加载函数，同时执行多个异步任务
+    // 并行加载数据以提高性能
     const loadPromise = Promise.all([
         // 加载模型列表
         (async () => {
@@ -102,12 +98,7 @@ async function init() {
             await promptService.loadPrompts(statusElement);
         })(),
 
-        // 加载MCP服务列表
-        (async () => {
-            await mcpServerService.loadMcpServers(statusElement);
-        })(),
-
-        // 加载会话
+        // 初始化标签管理和会话
         (async () => {
             // 设置rename会话回调
             sidebarSession.setRenameSessionCallback((sessionId, newName) => {
@@ -184,11 +175,11 @@ async function init() {
     // 等待所有并行任务完成
     await loadPromise;
 
+    // 设置事件监听器
+    setupEventListeners();
+
     // 更新状态栏，表示应用程序已准备就绪
     statusElement.textContent = i18n.t('ui.status.ready');
-
-    // 设置MCP下拉菜单监听器
-    mcpServerService.setupMcpDropdownListeners(openSettingsWindowWithTab);
 
     // 设置主题相关监听器
     themeService.setupThemeListeners();
@@ -432,8 +423,7 @@ function setupEventListeners() {
     // 设置提示词选择监听器
     promptService.setupPromptSelectListeners(statusElement, openSettingsWindowWithTab);
 
-    // 设置MCP下拉菜单监听器
-    mcpServerService.setupMcpDropdownListeners(openSettingsWindowWithTab);
+    // MCP下拉菜单现在由tabManager管理，无需单独设置监听器
 
     // 重命名对话框事件监听
     const renameCancelBtn = document.getElementById('rename-cancel-btn');
@@ -579,9 +569,7 @@ ipcRenderer.on('config-updated', (event, data) => {
         modelService.loadModels();
     }
 
-    if (data.mcpConfig) {
-        mcpServerService.loadMcpServers(statusElement);
-    }
+    // MCP配置现在由tabManager管理，无需单独处理
 
     if (data.generalConfig) {
         // 更新语言选择
@@ -603,7 +591,7 @@ ipcRenderer.on('config-updated', (event, data) => {
 // 监听MCP服务更新事件
 ipcRenderer.on('mcp-server-updated', async (event, mcpConfig) => {
     log.info('收到MCP服务更新:', mcpConfig);
-    await mcpServerService.loadMcpServers(statusElement);
+    // MCP服务现在由tabManager管理，无需单独处理
 
     // 确保样式一致性
     setTimeout(ensureConsistentDropdownStyles, 50);
@@ -637,9 +625,7 @@ ipcRenderer.on('prompt-selection-changed', (event, promptId) => {
 // 监听MCP服务选择变更事件
 ipcRenderer.on('mcp-selection-changed', (event, mcpServerIds) => {
     log.info('收到MCP服务选择变更事件:', mcpServerIds);
-    if (mcpServerIds && mcpServerService) {
-        mcpServerService.setActiveMcpServers(mcpServerIds);
-    }
+    // MCP服务选择现在由tabManager管理，无需单独处理
 });
 
 // 发送消息函数
@@ -673,9 +659,6 @@ async function sendMessage() {
 function ensureConsistentDropdownStyles() {
     log.info('确保下拉选择框样式一致性');
 
-    // 确保MCP下拉菜单样式一致性
-    mcpServerService.ensureMcpDropdownStyles();
-
     // 确保model-selector容器正确使用CSS样式
     const modelSelector = document.querySelector('.model-selector');
     if (modelSelector) {
@@ -685,10 +668,12 @@ function ensureConsistentDropdownStyles() {
     }
 
     // 移除所有下拉元素的固定宽度，使用CSS控制
-    const dropdowns = modelSelector.querySelectorAll('select, .mcp-dropdown-btn');
-    dropdowns.forEach(dropdown => {
-        dropdown.style.removeProperty('width');
-    });
+    const dropdowns = modelSelector?.querySelectorAll('select, .mcp-dropdown-btn');
+    if (dropdowns) {
+        dropdowns.forEach(dropdown => {
+            dropdown.style.removeProperty('width');
+        });
+    }
 }
 
 // 将openSettingsWindow函数暴露到全局，以便在HTML中调用
