@@ -3,14 +3,17 @@
  * 提示词服务模块
  * 
  * 该模块负责处理与提示词相关的功能，包括：
- * - 从主进程获取提示词列表
- * - 更新提示词选择下拉框
- * - 处理提示词选择事件
+ * - 管理提示词列表
+ * - 处理提示词选择和编辑
+ * - 提示词的增删改查操作
  */
 
 const { ipcRenderer } = require('electron');
 const Logger = require('../main/logger');
 const i18n = require('../locales/i18n');
+
+// 模块级别的logger，所有实例共享
+const log = new Logger('prompt-service');
 
 /**
  * 提示词服务类
@@ -21,111 +24,7 @@ class PromptService {
      * 创建提示词服务实例
      */
     constructor() {
-        this.log = new Logger('prompt-service');
-        this.promptSelect = document.getElementById('prompt-select');
         this.currentPrompt = null;
-    }
-
-    /**
-     * 加载提示词列表
-     * 
-     * 从主进程获取提示词列表，并填充到提示词选择下拉框中
-     * 
-     * @param {HTMLElement} statusElement - 状态显示元素
-     * @returns {Promise<void>}
-     */
-    async loadPrompts(statusElement) {
-        try {
-            const prompts = await ipcRenderer.invoke('get-prompts');
-            this.log.info('提示词列表:', prompts);
-
-            // 获取当前选择的提示词
-            const currentPromptObj = await ipcRenderer.invoke('get-current-prompt');
-
-            // 清空并重新填充下拉列表
-            this.promptSelect.innerHTML = `<option value="add_new">${i18n.t('prompts.addNew')}</option>`;
-
-            Object.entries(prompts || {}).forEach(([promptId, prompt]) => {
-                const option = document.createElement('option');
-                option.value = promptId;
-                option.textContent = prompt.name;
-                this.promptSelect.appendChild(option);
-            });
-
-            // 设置当前选中的提示词
-            if (currentPromptObj) {
-                this.promptSelect.value = currentPromptObj.id;
-                this.currentPrompt = currentPromptObj.id;
-            } else {
-                this.promptSelect.value = '';
-                this.currentPrompt = null;
-            }
-        } catch (error) {
-            this.log.error('加载提示词列表失败:', error.message);
-            if (statusElement) {
-                statusElement.textContent = i18n.t('prompts.loadingFailed', { error: error.message });
-            }
-        }
-    }
-
-    /**
-     * 处理提示词选择事件
-     * 
-     * @param {HTMLElement} statusElement - 状态显示元素
-     * @param {Function} openSettingsWindowWithTab - 打开设置窗口的函数
-     * @returns {Promise<void>}
-     */
-    async handlePromptSelect(statusElement, openSettingsWindowWithTab) {
-        try {
-            const promptId = this.promptSelect.value || null;
-
-            // 处理选择添加提示词的情况
-            if (promptId === 'add_new') {
-                // 重置选择框
-                const currentPromptObj = await ipcRenderer.invoke('get-current-prompt');
-                this.promptSelect.value = currentPromptObj ? currentPromptObj.id : '';
-
-                // 打开配置窗口
-                openSettingsWindowWithTab('prompts');
-                return;
-            }
-
-            // 更新当前提示词
-            this.currentPrompt = promptId;
-
-            const success = await ipcRenderer.invoke('set-current-prompt', promptId);
-
-            if (success && statusElement) {
-                let message = promptId ? i18n.t('ui.status.promptSelected') : i18n.t('ui.status.promptCleared');
-                statusElement.textContent = message;
-            }
-        } catch (error) {
-            this.log.error('设置提示词失败:', error.message);
-            if (statusElement) {
-                statusElement.textContent = i18n.t('prompts.loadingFailed', { error: error.message });
-            }
-        }
-    }
-
-    /**
-     * 为提示词选择下拉框设置事件监听器
-     * 
-     * @param {HTMLElement} statusElement - 状态显示元素
-     * @param {Function} openSettingsWindowWithTab - 打开设置窗口的函数
-     */
-    setupPromptSelectListeners(statusElement, openSettingsWindowWithTab) {
-        this.promptSelect.addEventListener('change', async () => {
-            await this.handlePromptSelect(statusElement, openSettingsWindowWithTab);
-        });
-    }
-
-    /**
-     * 获取提示词选择下拉框
-     * 
-     * @returns {HTMLElement} - 提示词选择下拉框
-     */
-    getPromptSelect() {
-        return this.promptSelect;
     }
 
     /**
@@ -204,7 +103,7 @@ class PromptService {
      */
     async saveCurrentPrompt() {
         try {
-            this.log.info('开始保存提示词...');
+            log.info('开始保存提示词...');
             const prompt = {
                 name: document.getElementById('promptName').value,
                 content: document.getElementById('promptContent').value,
@@ -223,11 +122,11 @@ class PromptService {
                 success = !!promptId;
             }
 
-            this.log.info('保存操作结果:', success);
+            log.info('保存操作结果:', success);
             if (success) {
-                this.log.info('刷新提示词列表...');
+                log.info('刷新提示词列表...');
                 const prompts = await window.ipcRenderer.invoke('get-all-prompts');
-                this.log.info('获取到的提示词列表:', JSON.stringify(prompts, null, 2));
+                log.info('获取到的提示词列表:', JSON.stringify(prompts, null, 2));
                 window.prompts = prompts;
                 this.updatePromptList(prompts);
                 this.resetPromptForm();
@@ -235,7 +134,7 @@ class PromptService {
                 throw new Error(i18n.t('errors.saveFailed'));
             }
         } catch (error) {
-            this.log.error('保存提示词时出错:', error.message);
+            log.error('保存提示词时出错:', error.message);
         }
     }
 
@@ -297,7 +196,7 @@ class PromptService {
                         this.updatePromptList(prompts);
 
                         // 记录删除操作
-                        this.log.info('提示词已删除，准备重置表单');
+                        log.info('提示词已删除，准备重置表单');
 
                         // 先重置基本的表单状态
                         window.currentPromptId = null;
@@ -314,24 +213,24 @@ class PromptService {
 
                         // 通过IPC重置窗口焦点
                         ipcRenderer.invoke('reset-window-focus').then((success) => {
-                            this.log.info(`窗口焦点重置${success ? '成功' : '失败'}`);
+                            log.info(`窗口焦点重置${success ? '成功' : '失败'}`);
 
                             requestAnimationFrame(() => {
                                 const firstInput = document.getElementById('promptName');
                                 if (firstInput) {
-                                    this.log.info('尝试设置焦点到提示词名称输入框');
+                                    log.info('尝试设置焦点到提示词名称输入框');
                                     firstInput.focus();
                                     firstInput.click();
                                 } else {
-                                    this.log.error('未找到提示词名称输入框元素');
+                                    log.error('未找到提示词名称输入框元素');
                                 }
                             });
                         }).catch(err => {
-                            this.log.error('重置窗口焦点时出错:', err.message);
+                            log.error('重置窗口焦点时出错:', err.message);
                         });
                     }
                 } catch (err) {
-                    this.log.error('删除失败:', err.message);
+                    log.error('删除失败:', err.message);
                 }
             }
         });
@@ -365,29 +264,9 @@ class PromptService {
                     throw new Error('复制提示词失败');
                 }
             } catch (error) {
-                this.log.error('复制提示词时出错:', error.message);
+                log.error('复制提示词时出错:', error.message);
             }
         });
-    }
-
-    /**
-     * 设置提示词选择下拉框的值
-     * 
-     * @param {string} promptId - 要选择的提示词ID
-     */
-    setPromptSelection(promptId) {
-        if (promptId && this.promptSelect) {
-            // 更新下拉框选择
-            this.promptSelect.value = promptId;
-            // 更新当前提示词ID
-            this.currentPrompt = promptId;
-            this.log.info('从会话加载提示词设置:', promptId);
-
-            // 通知主进程更新当前提示词
-            ipcRenderer.invoke('set-current-prompt', promptId).catch(error => {
-                this.log.error('设置提示词失败:', error.message);
-            });
-        }
     }
 }
 
