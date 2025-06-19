@@ -595,29 +595,21 @@ class TabManagerService {
     async setTabSelectors(tabId, agentId) {
         log.info(`设置标签 ${tabId} 显示配置列表, agentId: ${agentId}`);
 
-        const isSpecificAgent = agentId && agentId !== 'free-mode';
-
         const agentSelect = document.getElementById(`agent-select-${tabId}`);
         const modelSelect = document.getElementById(`model-select-${tabId}`);
         const promptSelect = document.getElementById(`prompt-select-${tabId}`);
         const mcpDropdownBtn = document.getElementById(`mcp-dropdown-btn-${tabId}`);
         const mcpDropdownContent = document.getElementById(`mcp-dropdown-content-${tabId}`);
 
-        if (isSpecificAgent) {
-            // 隐藏模型、提示词、mcp列表
-            const modelSelector = agentSelect.parentNode;
-            modelSelector.classList.add('agent-mode');
-        } else {
-            // 移除Agent模式的CSS类
-            const modelSelector = agentSelect.parentNode;
-            modelSelector.classList.remove('agent-mode');
+        // 无论选择什么Agent都移除agent-mode类，始终显示所有选项
+        const modelSelector = agentSelect.parentNode;
+        modelSelector.classList.remove('agent-mode');
 
-            // 更新下拉列表数据
-            await this.setModelDropdown(modelSelect, tabId);
-            await this.setPromptDropdown(promptSelect, tabId);
-            await this.setMcpDropdown(mcpDropdownBtn, mcpDropdownContent, tabId);
-            this.updateMcpButtonDisplay(mcpDropdownBtn, mcpDropdownContent);
-        }
+        // 始终更新所有下拉列表数据
+        await this.setModelDropdown(modelSelect, tabId);
+        await this.setPromptDropdown(promptSelect, tabId);
+        await this.setMcpDropdown(mcpDropdownBtn, mcpDropdownContent, tabId);
+        this.updateMcpButtonDisplay(mcpDropdownBtn, mcpDropdownContent);
     }
 
     /**
