@@ -49,23 +49,26 @@ class TabManagerService {
         this.tabsDropdownMenu = null;
         this.maxVisibleTabs = 0; // 最大可见标签数，初始化时计算
 
-        // 窗口尺寸调整时重新计算标签显示
-        window.addEventListener('resize', this.debounce(() => {
-            this.calculateMaxVisibleTabs();
-            this.updateTabsVisibility();
+        // 保存标签页状态的延迟时间(毫秒)
+        this.saveStateDelay = 1000;
+        this.saveStateTimeout = null;
 
-            // 如果菜单正在显示，更新其位置
-            if (this.tabsDropdownMenu && this.tabsDropdownMenu.classList.contains('show')) {
-                this.updateDropdownMenuPosition();
-            }
-        }, 200));
+        // 防重复创建的保护标志
+        this._creatingTab = false;
 
         // 初始化事件监听器
         this.initEventListeners();
 
-        // 防抖延迟保存标签页状态
-        this.saveStateTimeout = null;
-        this.saveStateDelay = 1000; // 1秒延迟保存
+        // 初始化防抖函数
+        this.debouncedUpdateTabsVisibility = this.debounce(() => {
+            this.updateTabsVisibility();
+        }, 100);
+
+        // 监听窗口大小变化
+        window.addEventListener('resize', () => {
+            this.calculateMaxVisibleTabs();
+            this.debouncedUpdateTabsVisibility();
+        });
     }
 
     /**
@@ -91,9 +94,23 @@ class TabManagerService {
      */
     initEventListeners() {
         // 新建标签按钮点击事件
-        this.newTabButton.addEventListener('click', () => {
-            this.createNewTab();
-            sidebarSessionService.loadSessions();
+        this.newTabButton.addEventListener('click', async () => {
+            // 防止重复点击
+            if (this.newTabButton.disabled) return;
+            this.newTabButton.disabled = true;
+
+            try {
+                log.info('点击新建标签按钮');
+                await this.createNewTab();
+                sidebarSessionService.loadSessions();
+            } catch (error) {
+                log.error('新建标签失败:', error.message);
+            } finally {
+                // 重新启用按钮
+                setTimeout(() => {
+                    this.newTabButton.disabled = false;
+                }, 500);
+            }
         });
 
         // 添加全局点击事件，用于关闭下拉菜单
@@ -222,7 +239,7 @@ class TabManagerService {
         }
 
         // 否则，只显示最大可见数量的标签，其余放入下拉菜单
-        // 显示活动标签 + (最大可见数-1)个其他标签
+        // 优先显示活动标签和最新的标签
         const activeTabIndex = tabs.findIndex(tab => tab.getAttribute('data-tab-id') === this.activeTabId);
         const tabsToShow = new Set();
 
@@ -231,11 +248,13 @@ class TabManagerService {
             tabsToShow.add(this.activeTabId);
         }
 
-        // 如果还有剩余位置，从左到右填充
+        // 如果还有剩余位置，优先显示最新的标签（从右到左填充）
         if (tabsToShow.size < this.maxVisibleTabs) {
             const remainingSlots = this.maxVisibleTabs - tabsToShow.size;
             let count = 0;
-            for (let i = 0; i < tabs.length && count < remainingSlots; i++) {
+
+            // 从最新的标签开始（从右到左），优先显示新标签
+            for (let i = tabs.length - 1; i >= 0 && count < remainingSlots; i--) {
                 const tabId = tabs[i].getAttribute('data-tab-id');
                 if (!tabsToShow.has(tabId)) {
                     tabsToShow.add(tabId);
@@ -505,8 +524,14 @@ class TabManagerService {
         // 初始化标签下拉菜单并计算可见标签数
         this.initTabsDropdown();
 
+        // 重新计算最大可见标签数（因为可能有新的标签影响布局）
+        this.calculateMaxVisibleTabs();
+
         // 更新标签可见性
         this.updateTabsVisibility();
+
+        // 保存标签页状态
+        this.saveTabState();
     }
 
     /**
@@ -534,10 +559,45 @@ class TabManagerService {
 
         // 初始化新建会话按钮
         const newSessionBtn = document.getElementById(`new-session-btn-${tabId}`);
-        newSessionBtn.addEventListener('click', () => {
-            this.createNewTab();
-            sidebarSessionService.loadSessions();
-        });
+        if (newSessionBtn) {
+            // 先移除已有的事件监听器（如果存在）防止重复绑定
+            const existingHandler = newSessionBtn._newSessionHandler;
+            if (existingHandler) {
+                newSessionBtn.removeEventListener('click', existingHandler);
+            }
+
+            // 创建新的事件处理器
+            const newSessionHandler = async () => {
+                // 防止重复触发
+                if (newSessionBtn.disabled) return;
+                newSessionBtn.disabled = true;
+
+                try {
+                    log.info(`标签 ${tabId} 中点击新建会话按钮`);
+
+                    // 创建新标签并新建会话
+                    await this.createNewTab();
+
+                    // 刷新侧边栏会话列表
+                    sidebarSessionService.loadSessions();
+
+                    log.info(`标签 ${tabId} 中成功创建新标签和新会话`);
+                } catch (error) {
+                    log.error(`标签 ${tabId} 中创建新标签和新会话失败:`, error.message);
+                } finally {
+                    // 重新启用按钮
+                    setTimeout(() => {
+                        newSessionBtn.disabled = false;
+                    }, 1000);
+                }
+            };
+
+            // 绑定新的事件监听器
+            newSessionBtn.addEventListener('click', newSessionHandler);
+
+            // 保存处理器引用以便后续移除
+            newSessionBtn._newSessionHandler = newSessionHandler;
+        }
 
         log.info(`标签 ${tabId} 的下拉菜单初始化完成`);
     }
@@ -769,8 +829,8 @@ class TabManagerService {
             // 获取当前会话的MCP服务列表
             const session = this.tabSessions.get(tabId);
             const sessionConfig = await session.getConfig();
-            const sessionMcpServers = sessionConfig.mcpServers;
-            log.info(`当前会话 ${session.data.id} ${session.data.name} 的MCP服务列表：${sessionMcpServers}`);
+            const sessionMcpServers = sessionConfig.mcpServers || []; // 确保为数组，防止undefined
+            log.info(`当前会话 ${session.data.id} ${session.data.name} 的MCP服务列表：${JSON.stringify(sessionMcpServers)}`);
 
             // 保存当前的显示状态
             const wasShown = mcpDropdownContent.classList.contains('show');
@@ -819,7 +879,7 @@ class TabManagerService {
                 checkbox.type = 'checkbox';
                 checkbox.className = 'mcp-server-checkbox';
                 checkbox.setAttribute('data-server-id', serverId);
-                checkbox.checked = sessionMcpServers.includes(serverId);  // 使用会话特定的MCP服务列表
+                checkbox.checked = sessionMcpServers.includes(serverId);  // 现在安全了，sessionMcpServers确保是数组
 
                 checkbox.addEventListener('change', async (e) => {
                     const isChecked = e.target.checked;
@@ -1034,51 +1094,74 @@ class TabManagerService {
      * @returns {string} 新创建的标签ID
      */
     async createNewTab(sessionId = null) {
-        this.tabCounter++;
-        const tabId = `tab-${this.tabCounter}`;
-
-        // 创建标签DOM元素
-        const tabName = sessionId ? '加载中...' : i18n.t('tabs.newSession');
-        const tabElement = this.createTabElement(tabId, tabName);
-
-        // 添加到标签容器
-        this.tabsContainer.insertBefore(tabElement, this.newTabButton);
-
-        // 创建内容区域
-        const contentElement = this.createTabContentElement(tabId);
-        this.tabsContent.appendChild(contentElement);
-
-        // 创建/加载会话信息
-        const chatSession = new ChatSessionService(sessionId);
-        if (sessionId) {
-            await chatSession.loadSession();
-        } else {
-            await chatSession.createNewSession();
+        // 防止重复创建的保护机制
+        if (this._creatingTab) {
+            log.warn('正在创建标签中，忽略重复请求');
+            return null;
         }
 
-        chatSession.setSessionNameChangeCallback((sessionId, newSessionName) => {
-            this.updateSessionName(sessionId, newSessionName);
-            sidebarSessionService.loadSessions();
-        });
+        try {
+            this._creatingTab = true;
 
-        chatSession.setTabId(tabId);
-        this.tabSessions.set(tabId, chatSession);
-        this.tabSessionIds.set(tabId, chatSession.sessionId);
-        this.updateTabName(tabId, chatSession.data.name)
+            this.tabCounter++;
+            const tabId = `tab-${this.tabCounter}`;
 
-        // 初始化标签特定的下拉菜单
-        await this.initTabSpecificDropdowns(tabId);
+            log.info(`开始创建新标签: ${tabId}${sessionId ? ` (会话ID: ${sessionId})` : ' (新会话)'}`);
 
-        // 激活新标签
-        this.activateTab(tabId);
+            // 创建标签DOM元素
+            const tabName = sessionId ? '加载中...' : i18n.t('tabs.newSession');
+            const tabElement = this.createTabElement(tabId, tabName);
 
-        // 更新标签可见性
-        this.updateTabsVisibility();
+            // 添加到标签容器
+            this.tabsContainer.insertBefore(tabElement, this.newTabButton);
 
-        // 保存标签页状态
-        this.saveTabState();
+            // 创建内容区域
+            const contentElement = this.createTabContentElement(tabId);
+            this.tabsContent.appendChild(contentElement);
 
-        return tabId;
+            // 创建/加载会话信息
+            const chatSession = new ChatSessionService(sessionId);
+            if (sessionId) {
+                await chatSession.loadSession();
+                log.info(`标签 ${tabId} 加载已有会话: ${chatSession.data.name}`);
+            } else {
+                await chatSession.createNewSession();
+                log.info(`标签 ${tabId} 创建新会话: ${chatSession.data.name}`);
+            }
+
+            chatSession.setSessionNameChangeCallback((sessionId, newSessionName) => {
+                this.updateSessionName(sessionId, newSessionName);
+                sidebarSessionService.loadSessions();
+            });
+
+            chatSession.setTabId(tabId);
+            this.tabSessions.set(tabId, chatSession);
+            this.tabSessionIds.set(tabId, chatSession.sessionId);
+            this.updateTabName(tabId, chatSession.data.name);
+
+            // 初始化标签特定的下拉菜单
+            await this.initTabSpecificDropdowns(tabId);
+
+            // 激活新标签
+            this.activateTab(tabId);
+
+            // 重新计算最大可见标签数（因为可能有新的标签影响布局）
+            this.calculateMaxVisibleTabs();
+
+            // 更新标签可见性
+            this.updateTabsVisibility();
+
+            // 保存标签页状态
+            this.saveTabState();
+
+            log.info(`成功创建标签: ${tabId} (会话: ${chatSession.data.name})`);
+            return tabId;
+        } catch (error) {
+            log.error('创建新标签失败:', error.message);
+            throw error;
+        } finally {
+            this._creatingTab = false;
+        }
     }
 
     /**
@@ -1126,11 +1209,19 @@ class TabManagerService {
      * @returns {HTMLElement} 标签内容DOM元素
      */
     createTabContentElement(tabId) {
-        const defaultContent = document.getElementById('tab-content-default');
         const contentId = `tab-content-${tabId}`;
 
-        // 如果没有默认内容或已经存在该内容元素，则创建新的
-        if (!defaultContent || document.getElementById(contentId)) {
+        // 检查是否已经存在该内容元素，防止重复创建
+        const existingElement = document.getElementById(contentId);
+        if (existingElement) {
+            log.warn(`标签内容元素 ${contentId} 已存在，返回现有元素`);
+            return existingElement;
+        }
+
+        const defaultContent = document.getElementById('tab-content-default');
+
+        // 如果没有默认内容，则创建新的
+        if (!defaultContent) {
             const contentElement = document.createElement('div');
             contentElement.className = 'tab-content';
             contentElement.id = contentId;
@@ -1141,7 +1232,7 @@ class TabManagerService {
             messagesDiv.id = `chat-messages-${tabId}`;
             contentElement.appendChild(messagesDiv);
 
-            // 创建输入区域（从默认内容克隆）
+            // 创建输入区域
             const inputContainer = document.createElement('div');
             inputContainer.className = 'chat-input-container';
             inputContainer.innerHTML = `
@@ -1164,6 +1255,7 @@ class TabManagerService {
             `;
             contentElement.appendChild(inputContainer);
 
+            log.info(`创建新的标签内容元素: ${contentId}`);
             return contentElement;
         } else {
             // 克隆默认内容
@@ -1219,6 +1311,7 @@ class TabManagerService {
                 inputGroup.outerHTML = InputManagerService.createInputHTML(tabId);
             }
 
+            log.info(`克隆默认内容创建标签内容元素: ${contentId}`);
             return contentElement;
         }
     }
@@ -1288,13 +1381,26 @@ class TabManagerService {
 
                 // 如果可见标签数量超过最大数量，隐藏一个非活动标签
                 if (this.showingTabs.size > this.maxVisibleTabs) {
-                    const tabToHide = Array.from(this.showingTabs).find(id => id !== this.activeTabId);
+                    // 优先隐藏最老的标签（除了活动标签）
+                    const tabs = Array.from(this.tabsContainer.querySelectorAll('.tab'));
+                    let tabToHide = null;
+
+                    // 从最老的标签开始查找（从左到右）
+                    for (let i = 0; i < tabs.length; i++) {
+                        const tabId = tabs[i].getAttribute('data-tab-id');
+                        if (tabId !== this.activeTabId && this.showingTabs.has(tabId)) {
+                            tabToHide = tabId;
+                            break;
+                        }
+                    }
+
                     if (tabToHide) {
                         const tabElement = document.getElementById(tabToHide);
                         if (tabElement) {
                             tabElement.style.display = 'none';
                             this.showingTabs.delete(tabToHide);
                             this.hiddenTabs.add(tabToHide);
+                            log.info(`隐藏老标签 ${tabToHide} 以显示活动标签 ${this.activeTabId}`);
                         }
                     }
                 }
