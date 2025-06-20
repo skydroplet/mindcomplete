@@ -268,6 +268,36 @@ class PromptService {
             }
         });
     }
+
+    /**
+     * 从主进程获取所有提示词并加载到界面
+     * @param {HTMLElement} statusElement - 状态显示元素（可选）
+     * @returns {Promise<Object>} - 提示词列表
+     */
+    async fetchPrompts(statusElement = null) {
+        try {
+            if (statusElement) {
+                statusElement.textContent = i18n.t('ui.status.loadingPrompts') || '加载提示词列表...';
+            }
+
+            const prompts = await ipcRenderer.invoke('get-prompts');
+            this.prompts = prompts;
+            // 同步更新window.prompts，确保全局状态一致
+            window.prompts = prompts;
+
+            if (statusElement) {
+                statusElement.textContent = i18n.t('ui.status.ready');
+            }
+
+            return prompts;
+        } catch (error) {
+            log.error('获取提示词列表失败:', error.message);
+            if (statusElement) {
+                statusElement.textContent = i18n.t('prompts.loadingFailed', { error: error.message }) || `加载提示词失败: ${error.message}`;
+            }
+            return {};
+        }
+    }
 }
 
 // 创建并导出PromptService实例

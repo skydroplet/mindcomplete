@@ -90,12 +90,12 @@ async function init() {
     const loadPromise = Promise.all([
         // 加载模型列表
         (async () => {
-            await modelService.loadModels();
+            await modelService.fetchModels();
         })(),
 
         // 加载提示词列表
         (async () => {
-            await promptService.loadPrompts(statusElement);
+            await promptService.fetchPrompts(statusElement);
         })(),
 
         // 初始化标签管理和会话
@@ -277,8 +277,8 @@ function setupEventListeners() {
     }
 
     // 增强模型和提示词下拉列表
-    enhanceSelectElement(modelService.getModelSelect());
-    enhanceSelectElement(promptService.getPromptSelect());
+    enhanceSelectElement(document.getElementById('model-select'));
+    enhanceSelectElement(document.getElementById('prompt-select'));
 
     sidebarService.setupEventListeners();
 
@@ -416,14 +416,6 @@ function setupEventListeners() {
             document.removeEventListener('click', closeMenu);
         });
     });
-
-    // 设置模型选择监听器
-    modelService.setupModelSelectListeners(openSettingsWindowWithTab);
-
-    // 设置提示词选择监听器
-    promptService.setupPromptSelectListeners(statusElement, openSettingsWindowWithTab);
-
-    // MCP下拉菜单现在由tabManager管理，无需单独设置监听器
 
     // 重命名对话框事件监听
     const renameCancelBtn = document.getElementById('rename-cancel-btn');
@@ -566,7 +558,7 @@ ipcRenderer.on('locale-updated', async () => {
 ipcRenderer.on('config-updated', (event, data) => {
     log.info('收到配置更新:');
     if (data.models) {
-        modelService.loadModels();
+        modelService.fetchModels();
     }
 
     // MCP配置现在由tabManager管理，无需单独处理
@@ -600,7 +592,7 @@ ipcRenderer.on('mcp-server-updated', async (event, mcpConfig) => {
 // 监听提示词配置更新事件
 ipcRenderer.on('prompts-updated', async () => {
     log.info('收到提示词配置更新事件');
-    await promptService.loadPrompts(statusElement);
+    await promptService.fetchPrompts(statusElement);
 
     // 确保样式一致性
     setTimeout(ensureConsistentDropdownStyles, 50);
@@ -609,17 +601,19 @@ ipcRenderer.on('prompts-updated', async () => {
 // 监听模型选择变更事件
 ipcRenderer.on('model-selection-changed', (event, modelId) => {
     log.info('收到模型选择变更事件:', modelId);
-    if (modelId && modelService) {
-        modelService.setModelSelection(modelId);
-    }
+    // 模型选择现在由tabManager管理，无需单独处理
+    // if (modelId && modelService) {
+    //     modelService.setModelSelection(modelId);
+    // }
 });
 
 // 监听提示词选择变更事件
 ipcRenderer.on('prompt-selection-changed', (event, promptId) => {
     log.info('收到提示词选择变更事件:', promptId);
-    if (promptId && promptService) {
-        promptService.setPromptSelection(promptId);
-    }
+    // 提示词选择现在由tabManager管理，无需单独处理
+    // if (promptId && promptService) {
+    //     promptService.setPromptSelection(promptId);
+    // }
 });
 
 // 监听MCP服务选择变更事件
