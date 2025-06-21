@@ -467,6 +467,14 @@ body {
 .mcp-server-item {
     color: var(--text-color);
     background-color: var(--dropdown-bg);
+    padding: 0.5em 0.75em;
+    /* 使用em单位，与settings-select option保持一致 */
+    font-size: 0.9em;
+    /* 改为相对单位，与其他下拉列表保持一致 */
+    line-height: 1.2;
+    /* 设置合适的行高 */
+    min-height: auto;
+    /* 让高度由内容和padding决定 */
 }
 
 .mcp-server-item:hover {

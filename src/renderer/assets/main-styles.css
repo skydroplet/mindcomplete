@@ -162,7 +162,6 @@
     padding: 0.5em 0.75em;
     /* 使用em单位，基于文字大小 */
     cursor: pointer;
-    font-size: 14px;
     margin-left: 5px;
     margin-right: 5px;
     width: 100%;
@@ -185,6 +184,21 @@
     justify-content: space-between;
     /* Space between text and arrow */
     color: var(--text-color);
+}
+
+/* MCP按钮文本容器样式 */
+.mcp-dropdown-btn .dropdown-text {
+    font-size: inherit;
+    /* 继承父元素的字体大小 */
+    line-height: inherit;
+    /* 继承父元素的行高 */
+    color: inherit;
+    /* 继承父元素的颜色 */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex-grow: 1;
+    /* 占据剩余空间 */
 }
 
 .mcp-dropdown-btn::after {
@@ -254,24 +268,30 @@
     display: flex;
     align-items: center;
     padding: 0.5em 0.75em;
-    /* 使用em单位，基于文字大小 */
+    /* 使用em单位，与settings-select option保持一致 */
     cursor: pointer;
     color: var(--text-color);
     background-color: var(--dropdown-bg);
-    font-size: 14px;
-    /* Match font size with settings-select */
-    gap: 8px;
-    /* 元素之间的间距 */
+    font-size: 0.9em;
+    /* 改为相对单位，与其他下拉列表保持一致 */
+    line-height: 1.2;
+    /* 设置合适的行高 */
+    min-height: auto;
+    /* 让高度由内容和padding决定 */
+    gap: 0.5em;
+    /* 改为相对单位，元素之间的间距 */
 }
 
 .mcp-server-name {
-    font-size: 14px;
-    /* Match font size with settings-select */
+    font-size: 1em;
+    /* 改为相对单位，与其他下拉列表保持一致 */
     color: var(--text-color);
     /* Match color with settings-select */
     overflow: hidden;
     text-overflow: ellipsis;
     flex-grow: 1;
+    line-height: inherit;
+    /* 继承父元素的行高 */
 }
 
 .mcp-server-item:hover {
@@ -287,9 +307,11 @@
     color: var(--text-color);
     font-weight: normal;
     padding: 0.5em 0.75em;
-    /* 使用em单位，基于文字大小 */
-    font-size: 14px;
-    /* Match font size with settings-select */
+    /* 使用em单位，与其他列表项保持一致 */
+    font-size: 1em;
+    /* 改为相对单位，与其他下拉列表保持一致 */
+    line-height: 1.2;
+    /* 设置合适的行高 */
 }
 
 .mcp-server-item.add-server-item:hover {
@@ -303,12 +325,14 @@
 
 .mcp-empty-message {
     padding: 0.5em 0.75em;
-    /* 使用em单位，基于文字大小 */
+    /* 使用em单位，与其他列表项保持一致 */
     color: var(--secondary-text-color);
     font-style: italic;
     background-color: var(--dropdown-bg);
-    font-size: 14px;
-    /* Match font size with settings-select */
+    font-size: 1em;
+    /* 改为相对单位，与其他下拉列表保持一致 */
+    line-height: 1.2;
+    /* 设置合适的行高 */
 }
 
 /* 添加缺失的样式定义 */
@@ -327,28 +351,49 @@
     align-items: center;
     justify-content: space-between;
     width: 100%;
-    padding: 8px 12px;
+    padding: 0;
+    /* 移除额外的padding，使用父元素的padding */
     cursor: pointer;
+    line-height: inherit;
+    /* 继承父元素的行高 */
 }
 
 .mcp-server-container input[type="checkbox"] {
-    margin-right: 8px;
+    margin-right: 0.5em;
+    /* 改为相对单位 */
     flex-shrink: 0;
 }
 
 .mcp-server-name {
     flex-grow: 1;
-    margin-right: 8px;
+    margin-right: 0.5em;
+    /* 改为相对单位 */
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    font-size: inherit;
+    /* 继承父元素的字体大小 */
+    line-height: inherit;
+    /* 继承父元素的行高 */
 }
 
 .no-server {
     color: var(--text-color-secondary, #888);
-    font-style: italic;
-    font-size: 14px;
-    /* Match font size with settings-select */
+}
+
+/* 通用下拉文本样式 - 确保所有下拉按钮中的文本保持一致 */
+.dropdown-text {
+    font-size: inherit;
+    /* 继承父元素的字体大小 */
+    line-height: inherit;
+    /* 继承父元素的行高 */
+    color: inherit;
+    /* 继承父元素的颜色 */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: inline;
+    /* 确保内联显示 */
 }
 
 /* 错误信息样式 */

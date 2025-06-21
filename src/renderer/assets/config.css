@@ -977,15 +977,20 @@ textarea {
 
 /* MCP服务左侧菜单样式，和模型列表选项按钮保持一致 */
 .mcp-menu-item {
-    padding: 10px;
-    margin-bottom: 5px;
+    padding: 0.625em;
+    /* 转换为em单位：10px ÷ 16px = 0.625em */
+    margin-bottom: 0.3125em;
+    /* 转换为em单位：5px ÷ 16px = 0.3125em */
     cursor: pointer;
     border-radius: 4px;
     background-color: var(--container-bg);
     color: var(--text-color);
     transition: background 0.2s, color 0.2s;
-    font-size: 15px;
+    font-size: 0.9375em;
+    /* 转换为em单位：15px ÷ 16px = 0.9375em */
     font-weight: 500;
+    line-height: 1.2;
+    /* 设置合适的行高 */
 }
 
 .mcp-menu-item:hover {
