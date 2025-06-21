@@ -963,11 +963,12 @@ class TabManagerService {
             const statusDot = document.createElement('div');
             statusDot.className = 'status-dot';
 
-            // 阻止圆点的点击事件冒泡
-            statusDot.addEventListener('click', (e) => {
+            // 状态圆点点击事件：触发重连
+            statusDot.addEventListener('click', async (e) => {
                 e.stopPropagation();
                 e.preventDefault();
                 e.stopImmediatePropagation();
+                await this.reconnectMcpServer(serverId, statusIndicator);
             });
 
             // 状态箭头（hover时显示）
@@ -975,11 +976,12 @@ class TabManagerService {
             statusArrow.className = 'status-arrow';
             statusArrow.innerHTML = '↻'; // 重新连接箭头符号
 
-            // 阻止箭头的点击事件冒泡
-            statusArrow.addEventListener('click', (e) => {
+            // 状态箭头点击事件：触发重连
+            statusArrow.addEventListener('click', async (e) => {
                 e.stopPropagation();
                 e.preventDefault();
                 e.stopImmediatePropagation();
+                await this.reconnectMcpServer(serverId, statusIndicator);
             });
 
             statusIndicator.appendChild(statusDot);
@@ -1128,11 +1130,12 @@ class TabManagerService {
             const statusDot = document.createElement('div');
             statusDot.className = 'status-dot';
 
-            // 阻止圆点的点击事件冒泡
-            statusDot.addEventListener('click', (e) => {
+            // 状态圆点点击事件：触发重连
+            statusDot.addEventListener('click', async (e) => {
                 e.stopPropagation();
                 e.preventDefault();
                 e.stopImmediatePropagation();
+                await this.reconnectMcpServer(serverId, statusIndicator);
             });
 
             // 状态箭头（hover时显示）
@@ -1140,11 +1143,12 @@ class TabManagerService {
             statusArrow.className = 'status-arrow';
             statusArrow.innerHTML = '↻'; // 重新连接箭头符号
 
-            // 阻止箭头的点击事件冒泡
-            statusArrow.addEventListener('click', (e) => {
+            // 状态箭头点击事件：触发重连
+            statusArrow.addEventListener('click', async (e) => {
                 e.stopPropagation();
                 e.preventDefault();
                 e.stopImmediatePropagation();
+                await this.reconnectMcpServer(serverId, statusIndicator);
             });
 
             statusIndicator.appendChild(statusDot);
@@ -1292,11 +1296,12 @@ class TabManagerService {
             const statusDot = document.createElement('div');
             statusDot.className = 'status-dot';
 
-            // 阻止圆点的点击事件冒泡
-            statusDot.addEventListener('click', (e) => {
+            // 状态圆点点击事件：触发重连
+            statusDot.addEventListener('click', async (e) => {
                 e.stopPropagation();
                 e.preventDefault();
                 e.stopImmediatePropagation();
+                await this.reconnectMcpServer(serverId, statusIndicator);
             });
 
             // 状态箭头（hover时显示）
@@ -1304,11 +1309,12 @@ class TabManagerService {
             statusArrow.className = 'status-arrow';
             statusArrow.innerHTML = '↻'; // 重新连接箭头符号
 
-            // 阻止箭头的点击事件冒泡
-            statusArrow.addEventListener('click', (e) => {
+            // 状态箭头点击事件：触发重连
+            statusArrow.addEventListener('click', async (e) => {
                 e.stopPropagation();
                 e.preventDefault();
                 e.stopImmediatePropagation();
+                await this.reconnectMcpServer(serverId, statusIndicator);
             });
 
             statusIndicator.appendChild(statusDot);
