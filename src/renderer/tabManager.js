@@ -2284,13 +2284,7 @@ class TabManagerService {
             return;
         }
 
-        const agentSelect = document.getElementById(`agent-select-${tabId}`);
-        if (!agentSelect) {
-            log.warn(`标签 ${tabId} 的Agent选择框不存在`);
-            return;
-        }
-
-        const currentAgentId = agentSelect.value;
+        const currentAgentId = session.data.agentId;
 
         // 只有在选择了具体Agent（不是自由模式）的情况下才需要处理
         if (!currentAgentId || currentAgentId === 'free-mode' || currentAgentId === 'add_new') {
