@@ -2287,49 +2287,27 @@ class TabManagerService {
         }
 
         const currentAgentId = session.data.agentId;
-
-        // 只有在选择了具体Agent（不是自由模式）的情况下才需要处理
-        if (!currentAgentId || currentAgentId === 'free-mode' || currentAgentId === 'add_new') {
-            // 如果已经是自由模式，直接应用配置更改
-            log.info(`标签 ${tabId} 当前是自由模式，直接应用${configType}配置更改`);
-
-            if (configType === 'model') {
-                await ipcRenderer.invoke('select-session-model', session.data.id, newValue);
-            } else if (configType === 'prompt') {
-                await ipcRenderer.invoke('select-session-prompt', session.data.id, newValue);
-            } else if (configType === 'mcp') {
-                await ipcRenderer.invoke('select-session-mcp-servers', session.data.id, newValue);
+        if (currentAgentId !== null && currentAgentId !== 'free-mode' && currentAgentId !== 'add_new') {
+            // 选择Agent时 修改其他选项 要把Agent改为free-mode
+            const agentSelect = document.getElementById(`agent-select-${tabId}`);
+            if (agentSelect) {
+                agentSelect.value = 'free-mode';
             }
-            return;
-        }
 
-        log.info(`检测到在Agent模式 ${currentAgentId} 下修改了${configType}配置，准备切换到自由模式`);
+            // 将Agent设置为自由模式
+            await ipcRenderer.invoke('select-session-agent', session.data.id, 'free-mode');
+        }
 
         // 根据配置类型更新会话配置
         if (configType === 'model') {
             await ipcRenderer.invoke('select-session-model', session.data.id, newValue);
-            log.info(`已更新会话 ${session.data.id} 的模型配置为: ${newValue}`);
         } else if (configType === 'prompt') {
             await ipcRenderer.invoke('select-session-prompt', session.data.id, newValue);
-            log.info(`已更新会话 ${session.data.id} 的提示词配置为: ${newValue}`);
         } else if (configType === 'mcp') {
             await ipcRenderer.invoke('select-session-mcp-servers', session.data.id, newValue);
-            log.info(`已更新会话 ${session.data.id} 的MCP服务配置为: ${JSON.stringify(newValue)}`);
         }
 
-        // 将Agent设置为自由模式
-        await ipcRenderer.invoke('select-session-agent', session.data.id, 'free-mode');
-
-        // 获取Agent下拉框元素并更新显示为自由模式
-        const agentSelect = document.getElementById(`agent-select-${tabId}`);
-        if (agentSelect) {
-            agentSelect.value = 'free-mode';
-        }
-
-        // 获取当前会话配置，以便更新
-        await session.getConfig(); // 刷新会话配置
-
-        log.info(`已将标签 ${tabId} 会话 ${session.data.id} 切换到自由模式，并应用新的${configType}配置`);
+        log.info(`更新会话 ${session.data.id} 配置: ${configType} = ${newValue} `);
     }
 }
 
