@@ -307,11 +307,6 @@
     color: var(--text-color);
     font-weight: normal;
     padding: 0.5em 0.75em;
-    /* 使用em单位，与其他列表项保持一致 */
-    font-size: 1em;
-    /* 改为相对单位，与其他下拉列表保持一致 */
-    line-height: 1.2;
-    /* 设置合适的行高 */
 }
 
 .mcp-server-item.add-server-item:hover {
