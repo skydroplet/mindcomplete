@@ -113,10 +113,8 @@ function closeConfigWindow() {
 function registerConfigIPC() {
     // 配置相关IPC处理
     ipcMain.handle('get-models', () => {
-        log.info('处理获取模型列表请求');
         const modelConfig = modelManager.getConfig();
         const models = modelConfig.models || {};
-        log.info('返回模型列表:', JSON.stringify(models, null, 2));
         return models;
     });
 

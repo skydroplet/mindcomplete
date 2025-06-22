@@ -653,10 +653,6 @@ class TabManagerService {
         const mcpDropdownBtn = document.getElementById(`mcp-dropdown-btn-${tabId}`);
         const mcpDropdownContent = document.getElementById(`mcp-dropdown-content-${tabId}`);
 
-        // 无论选择什么Agent都移除agent-mode类，始终显示所有选项
-        const modelSelector = agentSelect.parentNode;
-        modelSelector.classList.remove('agent-mode');
-
         // 根据agentId模式决定配置来源
         if (agentId && agentId !== 'free-mode') {
             // 选择Agent时：使用Agent配置填充模型、提示词、mcp下拉列表
@@ -728,9 +724,9 @@ class TabManagerService {
         // 获取Agent配置的模型
         const agents = await ipcRenderer.invoke('get-agents');
         const agent = agents[agentId];
-        if (agent && agent.model) {
-            select.value = agent.model;
-            log.info(`Agent ${agentId} 使用的模型：${agent.model}`);
+        if (agent && agent.modelId) {
+            select.value = agent.modelId;
+            log.info(`Agent ${agentId} 使用的模型：${agent.modelId}`);
         }
     }
 
@@ -817,9 +813,9 @@ class TabManagerService {
         // 获取Agent配置的提示词
         const agents = await ipcRenderer.invoke('get-agents');
         const agent = agents[agentId];
-        if (agent && agent.prompt) {
-            select.value = agent.prompt;
-            log.info(`Agent ${agentId} 使用的提示词：${agent.prompt}`);
+        if (agent && agent.promptId) {
+            select.value = agent.promptId;
+            log.info(`Agent ${agentId} 使用的提示词：${agent.promptId}`);
         }
     }
 
@@ -2309,9 +2305,6 @@ class TabManagerService {
 
         log.info(`检测到在Agent模式 ${currentAgentId} 下修改了${configType}配置，准备切换到自由模式`);
 
-        // 获取当前会话配置，以便更新
-        await session.getConfig(); // 刷新会话配置
-
         // 根据配置类型更新会话配置
         if (configType === 'model') {
             await ipcRenderer.invoke('select-session-model', session.data.id, newValue);
@@ -2327,8 +2320,14 @@ class TabManagerService {
         // 将Agent设置为自由模式
         await ipcRenderer.invoke('select-session-agent', session.data.id, 'free-mode');
 
-        // 更新Agent下拉框显示为自由模式
-        agentSelect.value = 'free-mode';
+        // 获取Agent下拉框元素并更新显示为自由模式
+        const agentSelect = document.getElementById(`agent-select-${tabId}`);
+        if (agentSelect) {
+            agentSelect.value = 'free-mode';
+        }
+
+        // 获取当前会话配置，以便更新
+        await session.getConfig(); // 刷新会话配置
 
         log.info(`已将标签 ${tabId} 会话 ${session.data.id} 切换到自由模式，并应用新的${configType}配置`);
     }

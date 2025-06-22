@@ -124,43 +124,6 @@ class AgentService {
             this.showAgentForm();
         }
     }
-
-    /**
-     * 获取模型名称
-     * @param {string} modelId - 模型ID
-     * @returns {string} 模型名称
-     */
-    getModelName(modelId) {
-        if (!modelId || !this.models[modelId]) {
-            return '';
-        }
-        return this.models[modelId].name;
-    }
-
-    /**
-     * 获取提示词名称
-     * @param {string} promptId - 提示词ID
-     * @returns {string} 提示词名称
-     */
-    getPromptName(promptId) {
-        if (!promptId || !this.prompts[promptId]) {
-            return '';
-        }
-        return this.prompts[promptId].name;
-    }
-
-    /**
-     * 获取MCP服务名称
-     * @param {string} mcpId - MCP服务ID
-     * @returns {string} MCP服务名称
-     */
-    getMcpServiceName(mcpId) {
-        if (!mcpId || !this.mcpServers[mcpId]) {
-            return '';
-        }
-        return this.mcpServers[mcpId].name;
-    }
-
     /**
      * 选择Agent
      * @param {string} agentId - Agent ID
@@ -205,13 +168,13 @@ class AgentService {
         // 设置模型选择
         const agentModelSelect = document.getElementById('agentModel');
         if (agentModelSelect) {
-            agentModelSelect.value = agent.model || '';
+            agentModelSelect.value = agent.modelId || '';
         }
 
         // 设置提示词选择
         const agentPromptSelect = document.getElementById('agentPrompt');
         if (agentPromptSelect) {
-            agentPromptSelect.value = agent.prompt || '';
+            agentPromptSelect.value = agent.promptId || '';
         }
 
         // 设置MCP服务列表
@@ -405,8 +368,8 @@ class AgentService {
 
             const agentData = {
                 name: agentName,
-                model: agentModel,
-                prompt: agentPrompt || null,
+                modelId: agentModel || null,
+                promptId: agentPrompt || null,
                 mcpServers: mcpServers
             };
 

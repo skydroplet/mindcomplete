@@ -67,7 +67,25 @@ class ChatSession {
     }
 
     setAgentId(agentId) {
+        // 切换到自由模式时 使用之前使用的Agent配置 否则使用当前的Agent配置
+        if (agentId === 'free-mode') {
+            const agent = agentConfig.getAgent(this.data.agentId);
+            if (agent) {
+                this.data.modelId = agent.modelId;
+                this.data.promptId = agent.promptId;
+                this.data.mcpServers = agent.mcpServers;
+            }
+        } else {
+            const agent = agentConfig.getAgent(agentId);
+            if (agent) {
+                this.data.modelId = agent.modelId;
+                this.data.promptId = agent.promptId;
+                this.data.mcpServers = agent.mcpServers;
+            }
+        }
+
         this.data.agentId = agentId;
+        log.info(`agentId: ${agentId}, modelId: ${this.data.modelId}, promptId: ${this.data.promptId}, mcpServers: ${this.data.mcpServers}`)
         this.saveToFile();
     }
 
