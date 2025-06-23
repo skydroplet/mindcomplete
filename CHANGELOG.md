@@ -1,12 +1,20 @@
 # Changelog
 
-## [0.1.3](https://github.com/skydroplet/mindcomplete/compare/v0.1.2...v0.1.3) (2025-06-18)
+## [0.1.4](https://github.com/skydroplet/mindcomplete/compare/v0.1.2...v0.1.4) (2025-06-23)
 
 ### ✨ 新功能
 
 * 支持创建Agent ([4e1591f](https://github.com/skydroplet/mindcomplete/commit/4e1591fdc1521b8ea1626d663b910f6c0b5ef375))
 * 支持和Agent进行对话 ([bcdecba](https://github.com/skydroplet/mindcomplete/commit/bcdecbae54935e747d5064ba231fab97dbc0b769))
 * 保存标签状态 重启后恢复 ([cfb1046](https://github.com/skydroplet/mindcomplete/commit/cfb1046072bb37a8cfdb129059c268d56e160c15))
+* 增加mcp状态展示 ([3abd38f](https://github.com/skydroplet/mindcomplete/commit/3abd38f8a93c096179b098a4b35f2db7e7afb994))
+* 支持mcp点击重连 ([8585987](https://github.com/skydroplet/mindcomplete/commit/8585987dcd754b01c35727b5c3ab1631f2dfa81c))
+
+### 🐛 修复
+
+* 调整下拉列表数据错误 ([f0b5159](https://github.com/skydroplet/mindcomplete/commit/f0b51597f2c5e792b3ed1efc0715d35d2b2451ae))
+* 使用会话的Agent选项 ([887a3d2](https://github.com/skydroplet/mindcomplete/commit/887a3d2340b687e448ade58ac0d107c3f7a32ce4))
+* 新建标签错误 ([6a34823](https://github.com/skydroplet/mindcomplete/commit/6a348230676054dc4341ee66821771828226cd8a))
 
 ## [0.1.2](https://github.com/skydroplet/mindcomplete/compare/v0.1.1...v0.1.2) (2025-06-07)
 
