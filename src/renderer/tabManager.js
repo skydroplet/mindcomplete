@@ -2286,17 +2286,9 @@ class TabManagerService {
             return;
         }
 
-        const currentAgentId = session.data.agentId;
-        if (currentAgentId !== null && currentAgentId !== 'free-mode' && currentAgentId !== 'add_new') {
-            // 选择Agent时 修改其他选项 要把Agent改为free-mode
-            const agentSelect = document.getElementById(`agent-select-${tabId}`);
-            if (agentSelect) {
-                agentSelect.value = 'free-mode';
-            }
-
-            // 将Agent设置为自由模式
-            await ipcRenderer.invoke('select-session-agent', session.data.id, 'free-mode');
-        }
+        // 修改其他选项 要把Agent改为free-mode
+        const agentSelect = document.getElementById(`agent-select-${tabId}`);
+        agentSelect.value = 'free-mode';
 
         // 根据配置类型更新会话配置
         if (configType === 'model') {

@@ -54,15 +54,15 @@ class ChatSession {
 
     setModelId(modelId) {
         this.data.modelId = modelId;
-        // 同步保存到配置 新建会话时 以当前使用的配置为准
-        modelConfig.selectModel(modelId);
+        this.data.agentId = 'free-mode';
+        log.info(`id: ${this.data.id}, agentId: ${this.data.agentId}, modelId: ${this.data.modelId}`)
         this.saveToFile();
     }
 
     setPromptId(promptId) {
         this.data.promptId = promptId;
-        // 同步保存到配置 新建会话时 以当前使用的配置为准
-        promptConfig.setCurrentPrompt(promptId);
+        this.data.agentId = 'free-mode';
+        log.info(`id: ${this.data.id}, agentId: ${this.data.agentId}, promptId: ${this.data.promptId}`)
         this.saveToFile();
     }
 
@@ -85,14 +85,14 @@ class ChatSession {
         }
 
         this.data.agentId = agentId;
-        log.info(`agentId: ${agentId}, modelId: ${this.data.modelId}, promptId: ${this.data.promptId}, mcpServers: ${this.data.mcpServers}`)
+        log.info(`id: ${this.data.id}, agentId: ${this.data.agentId}, modelId: ${this.data.modelId}, promptId: ${this.data.promptId}, mcpServers: ${this.data.mcpServers}`)
         this.saveToFile();
     }
 
     setMcpServers(servers) {
         this.data.mcpServers = servers;
-        // 同步保存到配置 新建会话时 以当前使用的配置为准
-        mcpConfig.setActiveMcps(servers);
+        this.data.agentId = 'free-mode';
+        log.info(`id: ${this.data.id}, agentId: ${this.data.agentId}, mcpServers: ${this.data.mcpServers}`)
         this.saveToFile();
     }
 
