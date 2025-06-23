@@ -310,6 +310,12 @@
         "server": "MCP服务",
         "selectedServers": "已选择 {count} 个服务",
         "toggleFailed": "切换MCP服务失败: {error}",
+        "status": {
+            "connected": "已连接",
+            "connecting": "连接中",
+            "error": "连接失败",
+            "disconnected": "未连接"
+        },
         "toolsList": {
             "title": "工具列表",
             "index": "序号",

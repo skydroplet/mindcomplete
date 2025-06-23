@@ -3,9 +3,8 @@
  * 模型服务模块
  * 
  * 该模块负责处理与AI模型相关的功能，包括：
- * - 从主进程获取模型列表
- * - 更新模型选择下拉框
- * - 处理模型选择事件
+ * - 模型管理和配置
+ * - 模型的增删改查操作
  */
 
 const { ipcRenderer } = require('electron');
@@ -24,70 +23,6 @@ class ModelService {
     constructor() {
         // 当前选择的模型ID
         this.currentModel = null;
-        this.modelSelect = null;
-        // 在初始化时，DOM可能尚未准备好
-    }
-
-    /**
-     * 初始化模型服务
-     * 必须在DOM加载完成后调用
-     */
-    init() {
-        this.modelSelect = document.getElementById('model-select');
-    }
-
-    /**
-     * 加载模型列表
-     *
-     * 从主进程获取可用的AI模型列表，并填充到模型选择下拉框中
-     * 同时恢复上次选择的模型
-     * 
-     * @returns {Promise<string>} - 当前选择的模型ID
-     */
-    async loadModels() {
-        try {
-            // 确保已经初始化
-            if (!this.modelSelect) {
-                this.init();
-            }
-
-            // 从主进程获取模型列表
-            const models = await ipcRenderer.invoke('get-models');
-            log.info(i18n.t('logs.modelList'), models);
-
-            // 初始化变量，用于存储默认模型ID
-            let defaultModelId = "";
-
-            // 清空并重新填充模型选择下拉框
-            this.modelSelect.innerHTML = `<option value="add_new">${i18n.t('settings.buttons.addModelOption')}</option>`;
-
-            // 遍历所有模型，添加到下拉框中
-            Object.entries(models || {}).forEach(([modelId, model]) => {
-                const option = document.createElement('option');
-                option.value = modelId;
-                option.textContent = model.name;
-                this.modelSelect.appendChild(option);
-                defaultModelId = modelId; // 保存最后一个模型ID作为默认值
-            });
-
-            // 加载当前选择的模型（从配置中获取）
-            const modelConfig = await ipcRenderer.invoke('get-config');
-            if (modelConfig && modelConfig.currentModel) {
-                this.currentModel = modelConfig.currentModel;
-            } else {
-                // 如果配置中没有选择的模型，使用默认值
-                this.currentModel = defaultModelId;
-            }
-            log.info(i18n.t('logs.currentModel'), this.currentModel);
-
-            // 设置下拉框的当前选中值
-            this.modelSelect.value = this.currentModel || "";
-
-            return this.currentModel;
-        } catch (error) {
-            log.error(i18n.t('logs.loadModelListFailed'), error.message);
-            return null;
-        }
     }
 
     /**
@@ -96,53 +31,6 @@ class ModelService {
      */
     getCurrentModel() {
         return this.currentModel;
-    }
-
-    /**
-     * 处理模型选择事件
-     * 
-     * @param {Event} e - 事件对象
-     * @param {Function} openSettingsWindowWithTab - 打开设置窗口的函数
-     * @returns {Promise<void>}
-     */
-    async handleModelSelect(e, openSettingsWindowWithTab) {
-        const modelId = e.target.value;
-        if (modelId === "add_new") {
-            // 重置选择框
-            this.modelSelect.value = this.currentModel || "";
-
-            // 打开配置窗口的模型标签页
-            openSettingsWindowWithTab('models');
-        } else if (modelId) {
-            // 用户选择了一个模型
-            this.currentModel = modelId;
-            await ipcRenderer.invoke('select-model', modelId);
-        }
-    }
-
-    /**
-     * 为模型选择下拉框设置事件监听器
-     * 
-     * @param {Function} openSettingsWindowWithTab - 打开设置窗口的函数
-     */
-    setupModelSelectListeners(openSettingsWindowWithTab) {
-        // 确保已经初始化
-        if (!this.modelSelect) {
-            this.init();
-        }
-
-        this.modelSelect.addEventListener('change', async (e) => {
-            await this.handleModelSelect(e, openSettingsWindowWithTab);
-        });
-    }
-
-    /**
-     * 获取模型选择下拉框
-     * 
-     * @returns {HTMLSelectElement} - 模型选择下拉框
-     */
-    getModelSelect() {
-        return this.modelSelect;
     }
 
     /**
@@ -497,25 +385,6 @@ class ModelService {
         } catch (error) {
             log.error('获取模型列表失败:', error.message);
             return {};
-        }
-    }
-
-    /**
-     * 设置模型选择下拉框的值
-     * 
-     * @param {string} modelId - 要选择的模型ID
-     */
-    setModelSelection(modelId) {
-        if (!this.modelSelect) {
-            this.init();
-        }
-
-        if (modelId && this.modelSelect) {
-            // 更新下拉框选择
-            this.modelSelect.value = modelId;
-            // 更新当前模型ID
-            this.currentModel = modelId;
-            log.info('从会话加载模型设置:', modelId);
         }
     }
 }

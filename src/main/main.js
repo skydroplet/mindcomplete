@@ -357,6 +357,88 @@ ipcMain.handle('connect-mcp-server', async (event, serverConfig) => {
     }
 });
 
+// 检查MCP服务连接状态
+ipcMain.handle('check-mcp-connection', async (event, serverId) => {
+    try {
+        log.info('检查MCP连接状态:', serverId);
+
+        const mcp = require('./mcp/mcpClient');
+        const clientInfo = mcp.mcpClients.get(serverId);
+
+        if (!clientInfo) {
+            return { connected: false, error: '服务未找到' };
+        }
+
+        if (!clientInfo.isConnected) {
+            return { connected: false, error: clientInfo.error || '服务已断开' };
+        }
+
+        // 可以在这里添加更复杂的连接状态检查，比如ping操作
+        return { connected: true };
+    } catch (error) {
+        log.error('检查MCP连接状态失败:', error.message);
+        return { connected: false, error: error.message };
+    }
+});
+
+// 重置MCP客户端
+ipcMain.handle('reset-mcp-client', async (event, serverId) => {
+    try {
+        log.info('重置MCP客户端:', serverId);
+
+        const mcp = require('./mcp/mcpClient');
+        const clientInfo = mcp.mcpClients.get(serverId);
+
+        if (clientInfo) {
+            // 关闭现有连接
+            if (clientInfo.client && clientInfo.transport) {
+                try {
+                    await clientInfo.client.close();
+                } catch (closeError) {
+                    log.error('关闭MCP客户端时出错:', closeError.message);
+                }
+            }
+
+            // 从Map中移除客户端
+            mcp.mcpClients.delete(serverId);
+            log.info(`已重置MCP客户端: ${serverId}`);
+        }
+
+        return { success: true };
+    } catch (error) {
+        log.error('重置MCP客户端失败:', error.message);
+        return { success: false, error: error.message };
+    }
+});
+
+// 重新连接MCP服务
+ipcMain.handle('reconnect-mcp-server', async (event, { serverId, serverData }) => {
+    try {
+        log.info('重新连接MCP服务:', serverId);
+
+        const mcp = require('./mcp/mcpClient');
+
+        // 先重置客户端
+        await mcp.mcpClients.delete(serverId);
+
+        // 重新连接
+        const tools = await mcp.connectToServer(serverId, serverData);
+
+        return {
+            success: true,
+            serverName: serverData.name || serverId,
+            tools: tools.length,
+            toolDescriptions: tools.map(t => ({
+                name: t.function.name,
+                description: t.function.description || '无描述'
+            }))
+        };
+    } catch (error) {
+        log.error('重新连接MCP服务失败:', error.message);
+        return { success: false, error: error.message };
+    }
+});
+
 // 注册配置相关的IPC处理程序
 registerConfigIPC();
 

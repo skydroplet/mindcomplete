@@ -77,6 +77,8 @@
     flex-direction: column;
     flex-shrink: 0;
     /* 确保不会收缩 */
+    height: 100%;
+    /* 添加高度约束，使列表能够在固定高度内滚动 */
 }
 
 .model-form {
@@ -440,11 +442,21 @@ textarea {
     opacity: 0.8;
 }
 
+#mcp-list-section {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+    /* 防止section自身滚动，让内部列表滚动 */
+}
+
 #mcpServersList,
 #promptList {
     flex: 1;
     overflow-y: auto;
     margin-top: 10px;
+    max-height: calc(100vh - 200px);
+    /* 添加最大高度约束，为按钮和其他元素留出空间 */
 }
 
 /* 提示词类型标签样式 */
@@ -977,15 +989,20 @@ textarea {
 
 /* MCP服务左侧菜单样式，和模型列表选项按钮保持一致 */
 .mcp-menu-item {
-    padding: 10px;
-    margin-bottom: 5px;
+    padding: 0.625em;
+    /* 转换为em单位：10px ÷ 16px = 0.625em */
+    margin-bottom: 0.3125em;
+    /* 转换为em单位：5px ÷ 16px = 0.3125em */
     cursor: pointer;
     border-radius: 4px;
     background-color: var(--container-bg);
     color: var(--text-color);
     transition: background 0.2s, color 0.2s;
-    font-size: 15px;
+    font-size: 0.9375em;
+    /* 转换为em单位：15px ÷ 16px = 0.9375em */
     font-weight: 500;
+    line-height: 1.2;
+    /* 设置合适的行高 */
 }
 
 .mcp-menu-item:hover {
@@ -1104,6 +1121,10 @@ textarea {
     display: flex;
     flex-direction: column;
     flex-shrink: 0;
+    height: 100%;
+    /* 确保面板占据全高度 */
+    overflow: hidden;
+    /* 防止面板自身滚动，让内部列表滚动 */
 }
 
 .mcp-detail-panel {
@@ -1261,6 +1282,8 @@ textarea {
     flex: 1;
     overflow-y: auto;
     margin-top: 10px;
+    max-height: calc(100vh - 200px);
+    /* 添加最大高度约束，确保超出范围时显示滚动条 */
 }
 
 /* Agent标签页特殊样式 */
@@ -1330,4 +1353,12 @@ textarea {
     font-weight: 500;
     border-radius: 6px;
     min-width: 150px;
+}
+
+#mcp-list-section {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+    /* 防止section自身滚动，让内部列表滚动 */
 }

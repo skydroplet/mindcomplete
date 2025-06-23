@@ -50,8 +50,8 @@ class AgentConfig extends BaseConfigManager {
      * 添加新的Agent配置
      * @param {Object} agent - Agent配置对象
      * @param {string} agent.name - Agent名称
-     * @param {string} agent.model - 关联的模型ID
-     * @param {string} agent.prompt - 关联的提示词ID
+     * @param {string} agent.modelId - 关联的模型ID
+     * @param {string} agent.promptId - 关联的提示词ID
      * @param {Array} agent.mcpServers - MCP服务ID列表
      * @returns {string} 新创建的Agent ID
      */
@@ -72,8 +72,8 @@ class AgentConfig extends BaseConfigManager {
         const newAgent = {
             id: agentId,
             name: agent.name,
-            model: agent.model || null,
-            prompt: agent.prompt || null,
+            modelId: agent.modelId || null,
+            promptId: agent.promptId || null,
             mcpServers: agent.mcpServers || [],
             createdAt: new Date().toLocaleString(),
             updatedAt: new Date().toLocaleString()
@@ -116,8 +116,8 @@ class AgentConfig extends BaseConfigManager {
         this.config.agents[agentId] = {
             ...existingAgent,
             name: agent.name,
-            model: agent.model || null,
-            prompt: agent.prompt || null,
+            modelId: agent.modelId || null,
+            promptId: agent.promptId || null,
             mcpServers: agent.mcpServers || [],
             updatedAt: new Date().toLocaleString()
         };
@@ -174,8 +174,8 @@ class AgentConfig extends BaseConfigManager {
         try {
             const newAgent = {
                 name: sourceAgent.name + ' (副本)',
-                model: sourceAgent.model,
-                prompt: sourceAgent.prompt,
+                modelId: sourceAgent.modelId,
+                promptId: sourceAgent.promptId,
                 mcpServers: [...(sourceAgent.mcpServers || [])]
             };
 

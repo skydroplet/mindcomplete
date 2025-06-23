@@ -49,23 +49,26 @@ class TabManagerService {
         this.tabsDropdownMenu = null;
         this.maxVisibleTabs = 0; // 最大可见标签数，初始化时计算
 
-        // 窗口尺寸调整时重新计算标签显示
-        window.addEventListener('resize', this.debounce(() => {
-            this.calculateMaxVisibleTabs();
-            this.updateTabsVisibility();
+        // 保存标签页状态的延迟时间(毫秒)
+        this.saveStateDelay = 1000;
+        this.saveStateTimeout = null;
 
-            // 如果菜单正在显示，更新其位置
-            if (this.tabsDropdownMenu && this.tabsDropdownMenu.classList.contains('show')) {
-                this.updateDropdownMenuPosition();
-            }
-        }, 200));
+        // 防重复创建的保护标志
+        this._creatingTab = false;
 
         // 初始化事件监听器
         this.initEventListeners();
 
-        // 防抖延迟保存标签页状态
-        this.saveStateTimeout = null;
-        this.saveStateDelay = 1000; // 1秒延迟保存
+        // 初始化防抖函数
+        this.debouncedUpdateTabsVisibility = this.debounce(() => {
+            this.updateTabsVisibility();
+        }, 100);
+
+        // 监听窗口大小变化
+        window.addEventListener('resize', () => {
+            this.calculateMaxVisibleTabs();
+            this.debouncedUpdateTabsVisibility();
+        });
     }
 
     /**
@@ -91,9 +94,19 @@ class TabManagerService {
      */
     initEventListeners() {
         // 新建标签按钮点击事件
-        this.newTabButton.addEventListener('click', () => {
-            this.createNewTab();
+        this.newTabButton.addEventListener('click', async () => {
+            // 防止重复点击
+            if (this.newTabButton.disabled) return;
+            this.newTabButton.disabled = true;
+
+            log.info('点击新建标签按钮');
+            await this.createNewTab();
             sidebarSessionService.loadSessions();
+
+            // 重新启用按钮
+            setTimeout(() => {
+                this.newTabButton.disabled = false;
+            }, 500);
         });
 
         // 添加全局点击事件，用于关闭下拉菜单
@@ -222,7 +235,7 @@ class TabManagerService {
         }
 
         // 否则，只显示最大可见数量的标签，其余放入下拉菜单
-        // 显示活动标签 + (最大可见数-1)个其他标签
+        // 优先显示活动标签和最新的标签
         const activeTabIndex = tabs.findIndex(tab => tab.getAttribute('data-tab-id') === this.activeTabId);
         const tabsToShow = new Set();
 
@@ -231,11 +244,13 @@ class TabManagerService {
             tabsToShow.add(this.activeTabId);
         }
 
-        // 如果还有剩余位置，从左到右填充
+        // 如果还有剩余位置，优先显示最新的标签（从右到左填充）
         if (tabsToShow.size < this.maxVisibleTabs) {
             const remainingSlots = this.maxVisibleTabs - tabsToShow.size;
             let count = 0;
-            for (let i = 0; i < tabs.length && count < remainingSlots; i++) {
+
+            // 从最新的标签开始（从右到左），优先显示新标签
+            for (let i = tabs.length - 1; i >= 0 && count < remainingSlots; i--) {
                 const tabId = tabs[i].getAttribute('data-tab-id');
                 if (!tabsToShow.has(tabId)) {
                     tabsToShow.add(tabId);
@@ -505,8 +520,14 @@ class TabManagerService {
         // 初始化标签下拉菜单并计算可见标签数
         this.initTabsDropdown();
 
+        // 重新计算最大可见标签数（因为可能有新的标签影响布局）
+        this.calculateMaxVisibleTabs();
+
         // 更新标签可见性
         this.updateTabsVisibility();
+
+        // 保存标签页状态
+        this.saveTabState();
     }
 
     /**
@@ -534,10 +555,41 @@ class TabManagerService {
 
         // 初始化新建会话按钮
         const newSessionBtn = document.getElementById(`new-session-btn-${tabId}`);
-        newSessionBtn.addEventListener('click', () => {
-            this.createNewTab();
-            sidebarSessionService.loadSessions();
-        });
+        if (newSessionBtn) {
+            // 先移除已有的事件监听器（如果存在）防止重复绑定
+            const existingHandler = newSessionBtn._newSessionHandler;
+            if (existingHandler) {
+                newSessionBtn.removeEventListener('click', existingHandler);
+            }
+
+            // 创建新的事件处理器
+            const newSessionHandler = async () => {
+                // 防止重复触发
+                if (newSessionBtn.disabled) return;
+                newSessionBtn.disabled = true;
+
+                log.info(`标签 ${tabId} 中点击新建会话按钮`);
+
+                // 创建新标签并新建会话
+                await this.createNewTab();
+
+                // 刷新侧边栏会话列表
+                sidebarSessionService.loadSessions();
+
+                log.info(`标签 ${tabId} 中成功创建新标签和新会话`);
+
+                // 重新启用按钮
+                setTimeout(() => {
+                    newSessionBtn.disabled = false;
+                }, 1000);
+            };
+
+            // 绑定新的事件监听器
+            newSessionBtn.addEventListener('click', newSessionHandler);
+
+            // 保存处理器引用以便后续移除
+            newSessionBtn._newSessionHandler = newSessionHandler;
+        }
 
         log.info(`标签 ${tabId} 的下拉菜单初始化完成`);
     }
@@ -595,29 +647,26 @@ class TabManagerService {
     async setTabSelectors(tabId, agentId) {
         log.info(`设置标签 ${tabId} 显示配置列表, agentId: ${agentId}`);
 
-        const isSpecificAgent = agentId && agentId !== 'free-mode';
-
         const agentSelect = document.getElementById(`agent-select-${tabId}`);
         const modelSelect = document.getElementById(`model-select-${tabId}`);
         const promptSelect = document.getElementById(`prompt-select-${tabId}`);
         const mcpDropdownBtn = document.getElementById(`mcp-dropdown-btn-${tabId}`);
         const mcpDropdownContent = document.getElementById(`mcp-dropdown-content-${tabId}`);
 
-        if (isSpecificAgent) {
-            // 隐藏模型、提示词、mcp列表
-            const modelSelector = agentSelect.parentNode;
-            modelSelector.classList.add('agent-mode');
+        // 根据agentId模式决定配置来源
+        if (agentId && agentId !== 'free-mode') {
+            // 选择Agent时：使用Agent配置填充模型、提示词、mcp下拉列表
+            await this.setModelDropdownWithAgentConfig(modelSelect, tabId, agentId);
+            await this.setPromptDropdownWithAgentConfig(promptSelect, tabId, agentId);
+            await this.setMcpDropdownWithAgentConfig(mcpDropdownBtn, mcpDropdownContent, tabId, agentId);
         } else {
-            // 移除Agent模式的CSS类
-            const modelSelector = agentSelect.parentNode;
-            modelSelector.classList.remove('agent-mode');
-
-            // 更新下拉列表数据
-            await this.setModelDropdown(modelSelect, tabId);
-            await this.setPromptDropdown(promptSelect, tabId);
-            await this.setMcpDropdown(mcpDropdownBtn, mcpDropdownContent, tabId);
-            this.updateMcpButtonDisplay(mcpDropdownBtn, mcpDropdownContent);
+            // 选择自由模式时：使用会话配置填充模型、提示词、mcp下拉列表
+            await this.setModelDropdownWithSessionConfig(modelSelect, tabId);
+            await this.setPromptDropdownWithSessionConfig(promptSelect, tabId);
+            await this.setMcpDropdownWithSessionConfig(mcpDropdownBtn, mcpDropdownContent, tabId);
         }
+
+        this.updateMcpButtonDisplay(mcpDropdownBtn, mcpDropdownContent);
     }
 
     /**
@@ -650,39 +699,63 @@ class TabManagerService {
     }
 
     /**
-     * 初始化模型下拉菜单
+     * 使用Agent配置填充模型下拉选择器
+     * @param {HTMLSelectElement} select 下拉元素
      * @param {string} tabId 标签ID
-     * @param {ChatSessionService} session 会话实例
+     * @param {string} agentId Agent ID
+     * @returns {Promise<void>}
      */
-    async initModelDropdown(tabId, session) {
-        const modelSelect = document.getElementById(`model-select-${tabId}`);
-        if (!modelSelect || !window.modelService) return;
+    async setModelDropdownWithAgentConfig(select, tabId, agentId) {
+        // 获取所有模型
+        const models = await ipcRenderer.invoke('get-models');
+        log.info("模型列表：", models);
 
-        // 初始化下拉框
-        await this.setModelDropdown(modelSelect, tabId);
+        // 清空并重新填充下拉框
+        select.innerHTML = `<option value="add_new">${i18n.t('settings.buttons.addModelOption')}</option>`;
 
-        // 添加选择事件监听器
-        modelSelect.addEventListener('change', async (e) => {
-            const modelId = e.target.value;
-
-            if (modelId === "add_new") {
-                // 重置选择框
-                const session = this.tabSessions.get(tabId);
-                const sessionConfig = await session.getConfig();
-                modelSelect.value = sessionConfig.modelId;
-
-                // 打开配置窗口的模型标签页
-                window.openSettingsWindowWithTab('models');
-            } else if (modelId) {
-                log.info(`选择模型 ${session.data.id} ${session.data.name} ${modelId}`);
-                await ipcRenderer.invoke('select-session-model', session.data.id, modelId);
-            }
+        // 添加所有模型
+        Object.entries(models || {}).forEach(([modelId, model]) => {
+            const option = document.createElement('option');
+            option.value = modelId;
+            option.textContent = model.name;
+            select.appendChild(option);
         });
 
-        // 添加点击事件监听器，在下拉框打开时刷新模型列表
-        modelSelect.addEventListener('mousedown', async (event) => {
-            await this.setModelDropdown(modelSelect, tabId);
+        // 获取Agent配置的模型
+        const agents = await ipcRenderer.invoke('get-agents');
+        const agent = agents[agentId];
+        if (agent && agent.modelId) {
+            select.value = agent.modelId;
+            log.info(`Agent ${agentId} 使用的模型：${agent.modelId}`);
+        }
+    }
+
+    /**
+     * 使用会话配置填充模型下拉选择器
+     * @param {HTMLSelectElement} select 下拉元素
+     * @param {string} tabId 标签ID
+     * @returns {Promise<void>}
+     */
+    async setModelDropdownWithSessionConfig(select, tabId) {
+        // 获取所有模型
+        const models = await ipcRenderer.invoke('get-models');
+        log.info("模型列表：", models);
+
+        // 清空并重新填充下拉框
+        select.innerHTML = `<option value="add_new">${i18n.t('settings.buttons.addModelOption')}</option>`;
+
+        // 添加所有模型
+        Object.entries(models || {}).forEach(([modelId, model]) => {
+            const option = document.createElement('option');
+            option.value = modelId;
+            option.textContent = model.name;
+            select.appendChild(option);
         });
+
+        // 获取会话的自定义模型配置
+        const session = this.tabSessions.get(tabId);
+        select.value = session.data.modelId || '';
+        log.info(`会话 ${session.data.id} ${session.data.name} 的自定义模型：${session.data.modelId}`);
     }
 
     /**
@@ -692,73 +765,86 @@ class TabManagerService {
      * @returns {Promise<void>}
      */
     async setPromptDropdown(select, tabId) {
-        try {
-            // 获取所有提示词
-            const prompts = await ipcRenderer.invoke('get-prompts');
-            log.info("提示词列表：", prompts);
+        // 获取所有提示词
+        const prompts = await ipcRenderer.invoke('get-prompts');
+        log.info("提示词列表：", prompts);
 
-            // 清空并重新填充下拉框
-            select.innerHTML = `<option value="add_new">${i18n.t('prompts.addNew')}</option>`;
+        // 清空并重新填充下拉框
+        select.innerHTML = `<option value="add_new">${i18n.t('prompts.addNew')}</option>`;
 
-            // 添加所有提示词
-            Object.entries(prompts || {}).forEach(([promptId, prompt]) => {
-                const option = document.createElement('option');
-                option.value = promptId;
-                option.textContent = prompt.name;
-                select.appendChild(option);
-            });
+        // 添加所有提示词
+        Object.entries(prompts || {}).forEach(([promptId, prompt]) => {
+            const option = document.createElement('option');
+            option.value = promptId;
+            option.textContent = prompt.name;
+            select.appendChild(option);
+        });
 
-            // 获取当前会话选择的提示词
-            const session = this.tabSessions.get(tabId);
-            const sessionConfig = await session.getConfig();
-            select.value = sessionConfig.promptId;
-            log.info(`当前会话 ${session.data.id} ${session.data.name} 使用的提示词：${sessionConfig.promptId}`);
-        } catch (error) {
-            log.error("初始化或刷新提示词下拉菜单时出错:", error.message);
-            throw error;
+        // 获取当前会话选择的提示词
+        const session = this.tabSessions.get(tabId);
+        const sessionConfig = await session.getConfig();
+        select.value = sessionConfig.promptId;
+        log.info(`当前会话 ${session.data.id} ${session.data.name} 使用的提示词：${sessionConfig.promptId}`);
+    }
+
+    /**
+     * 使用Agent配置填充提示词下拉选择器
+     * @param {HTMLSelectElement} select 下拉元素
+     * @param {string} tabId 标签ID
+     * @param {string} agentId Agent ID
+     * @returns {Promise<void>}
+     */
+    async setPromptDropdownWithAgentConfig(select, tabId, agentId) {
+        // 获取所有提示词
+        const prompts = await ipcRenderer.invoke('get-prompts');
+        log.info("提示词列表：", prompts);
+
+        // 清空并重新填充下拉框
+        select.innerHTML = `<option value="add_new">${i18n.t('prompts.addNew')}</option>`;
+
+        // 添加所有提示词
+        Object.entries(prompts || {}).forEach(([promptId, prompt]) => {
+            const option = document.createElement('option');
+            option.value = promptId;
+            option.textContent = prompt.name;
+            select.appendChild(option);
+        });
+
+        // 获取Agent配置的提示词
+        const agents = await ipcRenderer.invoke('get-agents');
+        const agent = agents[agentId];
+        if (agent && agent.promptId) {
+            select.value = agent.promptId;
+            log.info(`Agent ${agentId} 使用的提示词：${agent.promptId}`);
         }
     }
 
     /**
-     * 初始化提示词下拉菜单
+     * 使用会话配置填充提示词下拉选择器
+     * @param {HTMLSelectElement} select 下拉元素
      * @param {string} tabId 标签ID
-     * @param {ChatSessionService} session 会话实例
+     * @returns {Promise<void>}
      */
-    async initPromptDropdown(tabId, session) {
-        const promptSelect = document.getElementById(`prompt-select-${tabId}`);
-        if (!promptSelect || !window.promptService) return;
+    async setPromptDropdownWithSessionConfig(select, tabId) {
+        // 获取所有提示词
+        const prompts = await ipcRenderer.invoke('get-prompts');
+        log.info("提示词列表：", prompts);
 
-        try {
-            // 初始化下拉框
-            await this.setPromptDropdown(promptSelect, tabId);
+        // 清空并重新填充下拉框
+        select.innerHTML = `<option value="add_new">${i18n.t('prompts.addNew')}</option>`;
 
-            // 添加选择事件监听器
-            promptSelect.addEventListener('change', async (e) => {
-                const promptId = e.target.value;
+        // 添加所有提示词
+        Object.entries(prompts || {}).forEach(([promptId, prompt]) => {
+            const option = document.createElement('option');
+            option.value = promptId;
+            option.textContent = prompt.name;
+            select.appendChild(option);
+        });
 
-                // 处理选择添加提示词的情况
-                if (promptId === 'add_new') {
-                    // 重置选择框
-                    const session = this.tabSessions.get(tabId);
-                    const sessionConfig = await session.getConfig();
-                    promptSelect.value = sessionConfig.promptId;
-
-                    // 打开配置窗口
-                    window.openSettingsWindowWithTab('prompts');
-                    return;
-                } else {
-                    log.info(`选择提示词 ${session.data.id} ${session.data.name} ${promptId}`);
-                    await ipcRenderer.invoke('select-session-prompt', session.data.id, promptId);
-                }
-            });
-
-            // 添加点击事件监听器，在下拉框打开时刷新提示词列表
-            promptSelect.addEventListener('mousedown', async (event) => {
-                await this.setPromptDropdown(promptSelect, tabId);
-            });
-        } catch (error) {
-            log.error(`初始化标签 ${tabId} 的提示词下拉菜单时出错:`, error.message);
-        }
+        // 获取会话的自定义提示词配置
+        const session = this.tabSessions.get(tabId);
+        select.value = session.data.promptId || '';
+        log.info(`会话 ${session.data.id} ${session.data.name} 的自定义提示词：${session.data.promptId}`);
     }
 
     /**
@@ -769,109 +855,495 @@ class TabManagerService {
      * @returns {Promise<void>}
      */
     async setMcpDropdown(mcpDropdownBtn, mcpDropdownContent, tabId) {
-        try {
-            // 获取MCP服务器列表
-            const mcpServers = await ipcRenderer.invoke('get-mcp-servers');
-            log.info("MCP服务数量：", mcpServers.length);
+        // 获取MCP服务器列表
+        const mcpServers = await ipcRenderer.invoke('get-mcp-servers');
+        log.info("MCP服务数量：", mcpServers.length);
 
-            // 获取当前会话的MCP服务列表
-            const session = this.tabSessions.get(tabId);
-            const sessionConfig = await session.getConfig();
-            const sessionMcpServers = sessionConfig.mcpServers;
-            log.info(`当前会话 ${session.data.id} ${session.data.name} 的MCP服务列表：${sessionMcpServers}`);
+        // 获取当前会话的MCP服务列表
+        const session = this.tabSessions.get(tabId);
+        const sessionConfig = await session.getConfig();
+        const sessionMcpServers = sessionConfig.mcpServers || []; // 确保为数组，防止undefined
+        log.info(`当前会话 ${session.data.id} ${session.data.name} 的MCP服务列表：${JSON.stringify(sessionMcpServers)}`);
 
-            // 保存当前的显示状态
-            const wasShown = mcpDropdownContent.classList.contains('show');
+        // 保存当前的显示状态
+        const wasShown = mcpDropdownContent.classList.contains('show');
 
-            // 清空内容
-            mcpDropdownContent.innerHTML = '';
+        // 清空内容
+        mcpDropdownContent.innerHTML = '';
 
-            // 设置基础样式，但保留show类
-            if (wasShown) {
-                mcpDropdownContent.className = 'mcp-dropdown-content show';
-            } else {
-                mcpDropdownContent.className = 'mcp-dropdown-content';
-            }
-
-            // 确保下拉内容的样式正确
-            mcpDropdownContent.style.position = 'absolute';
-            mcpDropdownContent.style.zIndex = '1000';
-
-            // 根据显示状态设置display属性
-            mcpDropdownContent.style.display = wasShown ? 'block' : 'none';
-
-            // 添加"添加MCP服务"选项
-            const addServerOption = document.createElement('div');
-            addServerOption.className = 'mcp-server-item add-server-item';
-            addServerOption.textContent = i18n.t('mcp.addServer') || '添加MCP服务';
-            addServerOption.addEventListener('click', () => {
-                window.openSettingsWindowWithTab('mcp-servers');
-
-                // 确保正确关闭下拉菜单
-                mcpDropdownContent.classList.remove('show');
-                mcpDropdownContent.style.display = 'none';
-                log.info(`关闭MCP下拉菜单(添加服务选项点击): ${tabId}`);
-            });
-            mcpDropdownContent.appendChild(addServerOption);
-
-            // 添加MCP服务器
-            Object.entries(mcpServers || {}).forEach(([serverId, server]) => {
-                const option = document.createElement('div');
-                option.className = 'mcp-server-item';
-
-                // 创建一个容器来包含复选框和文本，使其布局更好
-                const container = document.createElement('label');
-                container.className = 'mcp-server-container';
-
-                const checkbox = document.createElement('input');
-                checkbox.type = 'checkbox';
-                checkbox.className = 'mcp-server-checkbox';
-                checkbox.setAttribute('data-server-id', serverId);
-                checkbox.checked = sessionMcpServers.includes(serverId);  // 使用会话特定的MCP服务列表
-
-                checkbox.addEventListener('change', async (e) => {
-                    const isChecked = e.target.checked;
-                    const serverId = checkbox.getAttribute('data-server-id');
-                    log.info(`切换MCP服务 ${serverId} 状态为: ${isChecked}`);
-
-                    try {
-                        // 获取当前所有选中的服务ID
-                        const allCheckedServerIds = Array.from(
-                            mcpDropdownContent.querySelectorAll('.mcp-server-checkbox:checked')
-                        ).map(cb => cb.getAttribute('data-server-id'));
-
-                        log.info(`当前选中的所有MCP服务: ${JSON.stringify(allCheckedServerIds)}`);
-
-                        // 使用select-session-mcp-servers接口，与模型和提示词流程保持一致
-                        await ipcRenderer.invoke('select-session-mcp-servers', session.data.id, allCheckedServerIds);
-                        log.info(`已向会话 ${session.data.id} ${session.data.name} 应用MCP服务列表：${JSON.stringify(allCheckedServerIds)}`);
-
-                        // 更新按钮显示
-                        this.updateMcpButtonDisplay(mcpDropdownBtn, mcpDropdownContent);
-                    } catch (error) {
-                        log.error(`切换MCP服务状态时出错:`, error.message);
-                        // 恢复复选框状态
-                        e.target.checked = !isChecked;
-                    }
-                });
-
-                const nameSpan = document.createElement('span');
-                nameSpan.textContent = server.name;
-                nameSpan.className = 'mcp-server-name';
-
-                container.appendChild(checkbox);
-                container.appendChild(nameSpan);
-                option.appendChild(container);
-
-                mcpDropdownContent.appendChild(option);
-            });
-
-            // 更新按钮显示
-            this.updateMcpButtonDisplay(mcpDropdownBtn, mcpDropdownContent);
-        } catch (error) {
-            log.error(`更新MCP下拉菜单时出错:`, error.message);
-            throw error;
+        // 设置基础样式，但保留show类
+        if (wasShown) {
+            mcpDropdownContent.className = 'mcp-dropdown-content show';
+        } else {
+            mcpDropdownContent.className = 'mcp-dropdown-content';
         }
+
+        // 确保下拉内容的样式正确
+        mcpDropdownContent.style.position = 'absolute';
+        mcpDropdownContent.style.zIndex = '1000';
+
+        // 根据显示状态设置display属性
+        mcpDropdownContent.style.display = wasShown ? 'block' : 'none';
+
+        // 添加"添加MCP服务"选项
+        const addServerOption = document.createElement('div');
+        addServerOption.className = 'mcp-server-item add-server-item';
+        addServerOption.textContent = i18n.t('mcp.addServer') || '添加MCP服务';
+        addServerOption.addEventListener('click', () => {
+            window.openSettingsWindowWithTab('mcp-servers');
+
+            // 确保正确关闭下拉菜单
+            mcpDropdownContent.classList.remove('show');
+            mcpDropdownContent.style.display = 'none';
+            log.info(`关闭MCP下拉菜单(添加服务选项点击): ${tabId}`);
+        });
+        mcpDropdownContent.appendChild(addServerOption);
+
+        // 添加MCP服务器
+        Object.entries(mcpServers || {}).forEach(([serverId, server]) => {
+            const option = document.createElement('div');
+            option.className = 'mcp-server-item';
+
+            // 创建一个容器来包含复选框和文本，使其布局更好
+            const container = document.createElement('label');
+            container.className = 'mcp-server-container';
+
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.className = 'mcp-server-checkbox';
+            checkbox.setAttribute('data-server-id', serverId);
+            checkbox.checked = sessionMcpServers.includes(serverId);  // 现在安全了，sessionMcpServers确保是数组
+
+            checkbox.addEventListener('change', async (e) => {
+                const isChecked = e.target.checked;
+                const serverId = checkbox.getAttribute('data-server-id');
+                log.info(`切换MCP服务 ${serverId} 状态为: ${isChecked}`);
+
+                // 更新连接状态
+                const statusIndicator = option.querySelector('.mcp-status-indicator');
+                if (statusIndicator) {
+                    if (isChecked) {
+                        // 激活时设置为连接中状态
+                        this.setMcpConnectionState(statusIndicator, 'connecting');
+                        // 检查连接状态
+                        setTimeout(() => this.checkMcpServerConnection(serverId, statusIndicator), 500);
+                    } else {
+                        // 停用时设置为断开状态
+                        this.setMcpConnectionState(statusIndicator, 'disconnected');
+                    }
+                }
+
+                // 获取当前所有选中的服务ID
+                const allCheckedServerIds = Array.from(
+                    mcpDropdownContent.querySelectorAll('.mcp-server-checkbox:checked')
+                ).map(cb => cb.getAttribute('data-server-id'));
+
+                log.info(`当前选中的所有MCP服务: ${JSON.stringify(allCheckedServerIds)}`);
+
+                // 检查是否在Agent模式下修改了配置
+                await this.handleConfigurationChange(tabId, 'mcp', allCheckedServerIds);
+
+                // 更新按钮显示
+                this.updateMcpButtonDisplay(mcpDropdownBtn, mcpDropdownContent);
+            });
+
+            const nameSpan = document.createElement('span');
+            nameSpan.textContent = server.name;
+            nameSpan.className = 'mcp-server-name';
+
+            // 创建连接状态指示器
+            const statusIndicator = document.createElement('div');
+            statusIndicator.className = 'mcp-status-indicator status-disconnected';
+
+            // 状态圆点
+            const statusDot = document.createElement('div');
+            statusDot.className = 'status-dot';
+
+            // 状态圆点点击事件：触发重连
+            statusDot.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                await this.reconnectMcpServer(serverId, statusIndicator);
+            });
+
+            // 状态箭头（hover时显示）
+            const statusArrow = document.createElement('div');
+            statusArrow.className = 'status-arrow';
+            statusArrow.innerHTML = '↻'; // 重新连接箭头符号
+
+            // 状态箭头点击事件：触发重连
+            statusArrow.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                await this.reconnectMcpServer(serverId, statusIndicator);
+            });
+
+            statusIndicator.appendChild(statusDot);
+            statusIndicator.appendChild(statusArrow);
+
+            // 添加状态指示器点击事件
+            statusIndicator.addEventListener('click', async (e) => {
+                e.stopPropagation(); // 防止触发复选框事件
+                e.preventDefault(); // 防止默认行为
+                e.stopImmediatePropagation(); // 立即停止事件冒泡
+
+                await this.reconnectMcpServer(serverId, statusIndicator);
+            });
+
+            container.appendChild(checkbox);
+            container.appendChild(nameSpan);
+            container.appendChild(statusIndicator);
+            option.appendChild(container);
+
+            mcpDropdownContent.appendChild(option);
+
+            // 初始化连接状态
+            if (sessionMcpServers.includes(serverId)) {
+                // 对于选中的服务，先设置为连接中状态，然后检查实际连接状态
+                this.setMcpConnectionState(statusIndicator, 'connecting');
+                setTimeout(() => this.checkMcpServerConnection(serverId, statusIndicator), 100);
+            } else {
+                this.setMcpConnectionState(statusIndicator, 'disconnected');
+            }
+        });
+
+        // 更新按钮显示
+        this.updateMcpButtonDisplay(mcpDropdownBtn, mcpDropdownContent);
+    }
+
+    /**
+     * 使用Agent配置填充MCP下拉选择器
+     * @param {HTMLElement} mcpDropdownBtn MCP下拉按钮
+     * @param {HTMLElement} mcpDropdownContent MCP下拉内容
+     * @param {string} tabId 标签ID
+     * @param {string} agentId Agent ID
+     * @returns {Promise<void>}
+     */
+    async setMcpDropdownWithAgentConfig(mcpDropdownBtn, mcpDropdownContent, tabId, agentId) {
+        // 获取MCP服务器列表
+        const mcpServers = await ipcRenderer.invoke('get-mcp-servers');
+        log.info("MCP服务数量：", mcpServers.length);
+
+        // 获取Agent配置的MCP服务列表
+        const agents = await ipcRenderer.invoke('get-agents');
+        const agent = agents[agentId];
+        const agentMcpServers = (agent && agent.mcpServers) ? agent.mcpServers : [];
+        log.info(`Agent ${agentId} 的MCP服务列表：${JSON.stringify(agentMcpServers)}`);
+
+        // 保存当前的显示状态
+        const wasShown = mcpDropdownContent.classList.contains('show');
+
+        // 清空内容
+        mcpDropdownContent.innerHTML = '';
+
+        // 设置基础样式，但保留show类
+        if (wasShown) {
+            mcpDropdownContent.className = 'mcp-dropdown-content show';
+        } else {
+            mcpDropdownContent.className = 'mcp-dropdown-content';
+        }
+
+        // 确保下拉内容的样式正确
+        mcpDropdownContent.style.position = 'absolute';
+        mcpDropdownContent.style.zIndex = '1000';
+
+        // 根据显示状态设置display属性
+        mcpDropdownContent.style.display = wasShown ? 'block' : 'none';
+
+        // 添加"添加MCP服务"选项
+        const addServerOption = document.createElement('div');
+        addServerOption.className = 'mcp-server-item add-server-item';
+        addServerOption.textContent = i18n.t('mcp.addServer') || '添加MCP服务';
+        addServerOption.addEventListener('click', () => {
+            window.openSettingsWindowWithTab('mcp-servers');
+
+            // 确保正确关闭下拉菜单
+            mcpDropdownContent.classList.remove('show');
+            mcpDropdownContent.style.display = 'none';
+            log.info(`关闭MCP下拉菜单(添加服务选项点击): ${tabId}`);
+        });
+        mcpDropdownContent.appendChild(addServerOption);
+
+        // 添加MCP服务器
+        Object.entries(mcpServers || {}).forEach(([serverId, server]) => {
+            const option = document.createElement('div');
+            option.className = 'mcp-server-item';
+
+            // 创建一个容器来包含复选框和文本，使其布局更好
+            const container = document.createElement('label');
+            container.className = 'mcp-server-container';
+
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.className = 'mcp-server-checkbox';
+            checkbox.setAttribute('data-server-id', serverId);
+            checkbox.checked = agentMcpServers.includes(serverId);  // 使用Agent配置
+
+            checkbox.addEventListener('change', async (e) => {
+                const isChecked = e.target.checked;
+                const serverId = checkbox.getAttribute('data-server-id');
+                log.info(`切换MCP服务 ${serverId} 状态为: ${isChecked}`);
+
+                // 更新连接状态
+                const statusIndicator = option.querySelector('.mcp-status-indicator');
+                if (statusIndicator) {
+                    if (isChecked) {
+                        // 激活时设置为连接中状态
+                        this.setMcpConnectionState(statusIndicator, 'connecting');
+                        // 检查连接状态
+                        setTimeout(() => this.checkMcpServerConnection(serverId, statusIndicator), 500);
+                    } else {
+                        // 停用时设置为断开状态
+                        this.setMcpConnectionState(statusIndicator, 'disconnected');
+                    }
+                }
+
+                // 获取当前所有选中的服务ID
+                const allCheckedServerIds = Array.from(
+                    mcpDropdownContent.querySelectorAll('.mcp-server-checkbox:checked')
+                ).map(cb => cb.getAttribute('data-server-id'));
+
+                log.info(`当前选中的所有MCP服务: ${JSON.stringify(allCheckedServerIds)}`);
+
+                // 检查是否在Agent模式下修改了配置
+                await this.handleConfigurationChange(tabId, 'mcp', allCheckedServerIds);
+
+                // 更新按钮显示
+                this.updateMcpButtonDisplay(mcpDropdownBtn, mcpDropdownContent);
+            });
+
+            const nameSpan = document.createElement('span');
+            nameSpan.textContent = server.name;
+            nameSpan.className = 'mcp-server-name';
+
+            // 创建连接状态指示器
+            const statusIndicator = document.createElement('div');
+            statusIndicator.className = 'mcp-status-indicator status-disconnected';
+
+            // 状态圆点
+            const statusDot = document.createElement('div');
+            statusDot.className = 'status-dot';
+
+            // 状态圆点点击事件：触发重连
+            statusDot.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                await this.reconnectMcpServer(serverId, statusIndicator);
+            });
+
+            // 状态箭头（hover时显示）
+            const statusArrow = document.createElement('div');
+            statusArrow.className = 'status-arrow';
+            statusArrow.innerHTML = '↻'; // 重新连接箭头符号
+
+            // 状态箭头点击事件：触发重连
+            statusArrow.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                await this.reconnectMcpServer(serverId, statusIndicator);
+            });
+
+            statusIndicator.appendChild(statusDot);
+            statusIndicator.appendChild(statusArrow);
+
+            // 添加状态指示器点击事件
+            statusIndicator.addEventListener('click', async (e) => {
+                e.stopPropagation(); // 防止触发复选框事件
+                e.preventDefault(); // 防止默认行为
+                e.stopImmediatePropagation(); // 立即停止事件冒泡
+
+                await this.reconnectMcpServer(serverId, statusIndicator);
+            });
+
+            container.appendChild(checkbox);
+            container.appendChild(nameSpan);
+            container.appendChild(statusIndicator);
+            option.appendChild(container);
+
+            mcpDropdownContent.appendChild(option);
+
+            // 初始化连接状态
+            if (agentMcpServers.includes(serverId)) {
+                // 对于选中的服务，先设置为连接中状态，然后检查实际连接状态
+                this.setMcpConnectionState(statusIndicator, 'connecting');
+                setTimeout(() => this.checkMcpServerConnection(serverId, statusIndicator), 100);
+            } else {
+                this.setMcpConnectionState(statusIndicator, 'disconnected');
+            }
+        });
+
+        // 更新按钮显示
+        this.updateMcpButtonDisplay(mcpDropdownBtn, mcpDropdownContent);
+    }
+
+    /**
+     * 使用会话配置填充MCP下拉选择器
+     * @param {HTMLElement} mcpDropdownBtn MCP下拉按钮
+     * @param {HTMLElement} mcpDropdownContent MCP下拉内容
+     * @param {string} tabId 标签ID
+     * @returns {Promise<void>}
+     */
+    async setMcpDropdownWithSessionConfig(mcpDropdownBtn, mcpDropdownContent, tabId) {
+        // 获取MCP服务器列表
+        const mcpServers = await ipcRenderer.invoke('get-mcp-servers');
+        log.info("MCP服务数量：", mcpServers.length);
+
+        // 获取会话的自定义MCP服务列表
+        const session = this.tabSessions.get(tabId);
+        const sessionMcpServers = session.data.mcpServers || [];
+        log.info(`会话 ${session.data.id} ${session.data.name} 的自定义MCP服务列表：${JSON.stringify(sessionMcpServers)}`);
+
+        // 保存当前的显示状态
+        const wasShown = mcpDropdownContent.classList.contains('show');
+
+        // 清空内容
+        mcpDropdownContent.innerHTML = '';
+
+        // 设置基础样式，但保留show类
+        if (wasShown) {
+            mcpDropdownContent.className = 'mcp-dropdown-content show';
+        } else {
+            mcpDropdownContent.className = 'mcp-dropdown-content';
+        }
+
+        // 确保下拉内容的样式正确
+        mcpDropdownContent.style.position = 'absolute';
+        mcpDropdownContent.style.zIndex = '1000';
+
+        // 根据显示状态设置display属性
+        mcpDropdownContent.style.display = wasShown ? 'block' : 'none';
+
+        // 添加"添加MCP服务"选项
+        const addServerOption = document.createElement('div');
+        addServerOption.className = 'mcp-server-item add-server-item';
+        addServerOption.textContent = i18n.t('mcp.addServer') || '添加MCP服务';
+        addServerOption.addEventListener('click', () => {
+            window.openSettingsWindowWithTab('mcp-servers');
+
+            // 确保正确关闭下拉菜单
+            mcpDropdownContent.classList.remove('show');
+            mcpDropdownContent.style.display = 'none';
+            log.info(`关闭MCP下拉菜单(添加服务选项点击): ${tabId}`);
+        });
+        mcpDropdownContent.appendChild(addServerOption);
+
+        // 添加MCP服务器
+        Object.entries(mcpServers || {}).forEach(([serverId, server]) => {
+            const option = document.createElement('div');
+            option.className = 'mcp-server-item';
+
+            // 创建一个容器来包含复选框和文本，使其布局更好
+            const container = document.createElement('label');
+            container.className = 'mcp-server-container';
+
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.className = 'mcp-server-checkbox';
+            checkbox.setAttribute('data-server-id', serverId);
+            checkbox.checked = sessionMcpServers.includes(serverId);  // 使用会话配置
+
+            checkbox.addEventListener('change', async (e) => {
+                const isChecked = e.target.checked;
+                const serverId = checkbox.getAttribute('data-server-id');
+                log.info(`切换MCP服务 ${serverId} 状态为: ${isChecked}`);
+
+                // 更新连接状态
+                const statusIndicator = option.querySelector('.mcp-status-indicator');
+                if (statusIndicator) {
+                    if (isChecked) {
+                        // 激活时设置为连接中状态
+                        this.setMcpConnectionState(statusIndicator, 'connecting');
+                        // 检查连接状态
+                        setTimeout(() => this.checkMcpServerConnection(serverId, statusIndicator), 500);
+                    } else {
+                        // 停用时设置为断开状态
+                        this.setMcpConnectionState(statusIndicator, 'disconnected');
+                    }
+                }
+
+                // 获取当前所有选中的服务ID
+                const allCheckedServerIds = Array.from(
+                    mcpDropdownContent.querySelectorAll('.mcp-server-checkbox:checked')
+                ).map(cb => cb.getAttribute('data-server-id'));
+
+                log.info(`当前选中的所有MCP服务: ${JSON.stringify(allCheckedServerIds)}`);
+
+                // 使用select-session-mcp-servers接口，与模型和提示词流程保持一致
+                await ipcRenderer.invoke('select-session-mcp-servers', session.data.id, allCheckedServerIds);
+                log.info(`已向会话 ${session.data.id} ${session.data.name} 应用MCP服务列表：${JSON.stringify(allCheckedServerIds)}`);
+
+                // 更新按钮显示
+                this.updateMcpButtonDisplay(mcpDropdownBtn, mcpDropdownContent);
+            });
+
+            const nameSpan = document.createElement('span');
+            nameSpan.textContent = server.name;
+            nameSpan.className = 'mcp-server-name';
+
+            // 创建连接状态指示器
+            const statusIndicator = document.createElement('div');
+            statusIndicator.className = 'mcp-status-indicator status-disconnected';
+
+            // 状态圆点
+            const statusDot = document.createElement('div');
+            statusDot.className = 'status-dot';
+
+            // 状态圆点点击事件：触发重连
+            statusDot.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                await this.reconnectMcpServer(serverId, statusIndicator);
+            });
+
+            // 状态箭头（hover时显示）
+            const statusArrow = document.createElement('div');
+            statusArrow.className = 'status-arrow';
+            statusArrow.innerHTML = '↻'; // 重新连接箭头符号
+
+            // 状态箭头点击事件：触发重连
+            statusArrow.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                await this.reconnectMcpServer(serverId, statusIndicator);
+            });
+
+            statusIndicator.appendChild(statusDot);
+            statusIndicator.appendChild(statusArrow);
+
+            // 添加状态指示器点击事件
+            statusIndicator.addEventListener('click', async (e) => {
+                e.stopPropagation(); // 防止触发复选框事件
+                e.preventDefault(); // 防止默认行为
+                e.stopImmediatePropagation(); // 立即停止事件冒泡
+
+                await this.reconnectMcpServer(serverId, statusIndicator);
+            });
+
+            container.appendChild(checkbox);
+            container.appendChild(nameSpan);
+            container.appendChild(statusIndicator);
+            option.appendChild(container);
+
+            mcpDropdownContent.appendChild(option);
+
+            // 初始化连接状态
+            if (sessionMcpServers.includes(serverId)) {
+                // 对于选中的服务，先设置为连接中状态，然后检查实际连接状态
+                this.setMcpConnectionState(statusIndicator, 'connecting');
+                setTimeout(() => this.checkMcpServerConnection(serverId, statusIndicator), 100);
+            } else {
+                this.setMcpConnectionState(statusIndicator, 'disconnected');
+            }
+        });
+
+        // 更新按钮显示
+        this.updateMcpButtonDisplay(mcpDropdownBtn, mcpDropdownContent);
     }
 
     /**
@@ -884,59 +1356,51 @@ class TabManagerService {
         const mcpDropdownContent = document.getElementById(`mcp-dropdown-content-${tabId}`);
         if (!mcpDropdownBtn || !mcpDropdownContent || !window.mcpServer) return;
 
-        try {
-            // 初始化下拉内容
-            await this.setMcpDropdown(mcpDropdownBtn, mcpDropdownContent, tabId);
+        // 初始化下拉内容
+        await this.setMcpDropdown(mcpDropdownBtn, mcpDropdownContent, tabId);
 
-            // 添加点击事件监听器
-            mcpDropdownBtn.addEventListener('click', async (event) => {
-                try {
-                    // 防止事件冒泡，避免立即触发文档点击事件
-                    event.stopPropagation();
+        // 添加点击事件监听器
+        mcpDropdownBtn.addEventListener('click', async (event) => {
+            // 防止事件冒泡，避免立即触发文档点击事件
+            event.stopPropagation();
 
-                    // 获取当前显示状态
-                    const isShown = mcpDropdownContent.classList.contains('show');
+            // 获取当前显示状态
+            const isShown = mcpDropdownContent.classList.contains('show');
 
-                    // 根据当前状态切换显示/隐藏
-                    if (!isShown) {
-                        // 显示前先更新内容
-                        await this.setMcpDropdown(mcpDropdownBtn, mcpDropdownContent, tabId);
+            // 根据当前状态切换显示/隐藏
+            if (!isShown) {
+                // 显示前先更新内容
+                await this.setMcpDropdown(mcpDropdownBtn, mcpDropdownContent, tabId);
 
-                        // 修改样式和类
-                        mcpDropdownContent.style.display = 'block';
-                        mcpDropdownContent.classList.add('show');
-                        log.info(`显示MCP下拉菜单: ${tabId}`);
-                    } else {
-                        // 隐藏菜单
-                        mcpDropdownContent.style.display = 'none';
-                        mcpDropdownContent.classList.remove('show');
-                        log.info(`隐藏MCP下拉菜单: ${tabId}`);
-                    }
-                } catch (error) {
-                    log.error(`获取会话 ${session.data.id} MCP服务列表失败:`, error.message);
-                }
-            });
+                // 修改样式和类
+                mcpDropdownContent.style.display = 'block';
+                mcpDropdownContent.classList.add('show');
+                log.info(`显示MCP下拉菜单: ${tabId}`);
+            } else {
+                // 隐藏菜单
+                mcpDropdownContent.style.display = 'none';
+                mcpDropdownContent.classList.remove('show');
+                log.info(`隐藏MCP下拉菜单: ${tabId}`);
+            }
+        });
 
-            // 添加文档点击事件，点击外部区域时关闭下拉菜单
-            document.addEventListener('click', (event) => {
-                // 如果点击的不是下拉按钮和下拉内容区域
-                if (mcpDropdownContent.classList.contains('show') &&
-                    !mcpDropdownBtn.contains(event.target) &&
-                    !mcpDropdownContent.contains(event.target)) {
-                    // 关闭下拉菜单
-                    mcpDropdownContent.style.display = 'none';
-                    mcpDropdownContent.classList.remove('show');
-                    log.info(`关闭MCP下拉菜单(点击外部区域): ${tabId}`);
-                }
-            });
+        // 添加文档点击事件，点击外部区域时关闭下拉菜单
+        document.addEventListener('click', (event) => {
+            // 如果点击的不是下拉按钮和下拉内容区域
+            if (mcpDropdownContent.classList.contains('show') &&
+                !mcpDropdownBtn.contains(event.target) &&
+                !mcpDropdownContent.contains(event.target)) {
+                // 关闭下拉菜单
+                mcpDropdownContent.style.display = 'none';
+                mcpDropdownContent.classList.remove('show');
+                log.info(`关闭MCP下拉菜单(点击外部区域): ${tabId}`);
+            }
+        });
 
-            // 阻止下拉内容区域的点击事件冒泡
-            mcpDropdownContent.addEventListener('click', (event) => {
-                event.stopPropagation();
-            });
-        } catch (error) {
-            log.error(`初始化标签 ${tabId} 的MCP下拉菜单时出错:`, error.message);
-        }
+        // 阻止下拉内容区域的点击事件冒泡
+        mcpDropdownContent.addEventListener('click', (event) => {
+            event.stopPropagation();
+        });
     }
 
     /**
@@ -979,8 +1443,18 @@ class TabManagerService {
      * @returns {string} 新创建的标签ID
      */
     async createNewTab(sessionId = null) {
+        // 防止重复创建的保护机制
+        if (this._creatingTab) {
+            log.warn('正在创建标签中，忽略重复请求');
+            return null;
+        }
+
+        this._creatingTab = true;
+
         this.tabCounter++;
         const tabId = `tab-${this.tabCounter}`;
+
+        log.info(`开始创建新标签: ${tabId}${sessionId ? ` (会话ID: ${sessionId})` : ' (新会话)'}`);
 
         // 创建标签DOM元素
         const tabName = sessionId ? '加载中...' : i18n.t('tabs.newSession');
@@ -997,8 +1471,10 @@ class TabManagerService {
         const chatSession = new ChatSessionService(sessionId);
         if (sessionId) {
             await chatSession.loadSession();
+            log.info(`标签 ${tabId} 加载已有会话: ${chatSession.data.name}`);
         } else {
             await chatSession.createNewSession();
+            log.info(`标签 ${tabId} 创建新会话: ${chatSession.data.name}`);
         }
 
         chatSession.setSessionNameChangeCallback((sessionId, newSessionName) => {
@@ -1009,7 +1485,7 @@ class TabManagerService {
         chatSession.setTabId(tabId);
         this.tabSessions.set(tabId, chatSession);
         this.tabSessionIds.set(tabId, chatSession.sessionId);
-        this.updateTabName(tabId, chatSession.data.name)
+        this.updateTabName(tabId, chatSession.data.name);
 
         // 初始化标签特定的下拉菜单
         await this.initTabSpecificDropdowns(tabId);
@@ -1017,12 +1493,18 @@ class TabManagerService {
         // 激活新标签
         this.activateTab(tabId);
 
+        // 重新计算最大可见标签数（因为可能有新的标签影响布局）
+        this.calculateMaxVisibleTabs();
+
         // 更新标签可见性
         this.updateTabsVisibility();
 
         // 保存标签页状态
         this.saveTabState();
 
+        log.info(`成功创建标签: ${tabId} (会话: ${chatSession.data.name})`);
+
+        this._creatingTab = false;
         return tabId;
     }
 
@@ -1071,11 +1553,19 @@ class TabManagerService {
      * @returns {HTMLElement} 标签内容DOM元素
      */
     createTabContentElement(tabId) {
-        const defaultContent = document.getElementById('tab-content-default');
         const contentId = `tab-content-${tabId}`;
 
-        // 如果没有默认内容或已经存在该内容元素，则创建新的
-        if (!defaultContent || document.getElementById(contentId)) {
+        // 检查是否已经存在该内容元素，防止重复创建
+        const existingElement = document.getElementById(contentId);
+        if (existingElement) {
+            log.warn(`标签内容元素 ${contentId} 已存在，返回现有元素`);
+            return existingElement;
+        }
+
+        const defaultContent = document.getElementById('tab-content-default');
+
+        // 如果没有默认内容，则创建新的
+        if (!defaultContent) {
             const contentElement = document.createElement('div');
             contentElement.className = 'tab-content';
             contentElement.id = contentId;
@@ -1086,7 +1576,7 @@ class TabManagerService {
             messagesDiv.id = `chat-messages-${tabId}`;
             contentElement.appendChild(messagesDiv);
 
-            // 创建输入区域（从默认内容克隆）
+            // 创建输入区域
             const inputContainer = document.createElement('div');
             inputContainer.className = 'chat-input-container';
             inputContainer.innerHTML = `
@@ -1109,6 +1599,7 @@ class TabManagerService {
             `;
             contentElement.appendChild(inputContainer);
 
+            log.info(`创建新的标签内容元素: ${contentId}`);
             return contentElement;
         } else {
             // 克隆默认内容
@@ -1164,6 +1655,7 @@ class TabManagerService {
                 inputGroup.outerHTML = InputManagerService.createInputHTML(tabId);
             }
 
+            log.info(`克隆默认内容创建标签内容元素: ${contentId}`);
             return contentElement;
         }
     }
@@ -1233,13 +1725,26 @@ class TabManagerService {
 
                 // 如果可见标签数量超过最大数量，隐藏一个非活动标签
                 if (this.showingTabs.size > this.maxVisibleTabs) {
-                    const tabToHide = Array.from(this.showingTabs).find(id => id !== this.activeTabId);
+                    // 优先隐藏最老的标签（除了活动标签）
+                    const tabs = Array.from(this.tabsContainer.querySelectorAll('.tab'));
+                    let tabToHide = null;
+
+                    // 从最老的标签开始查找（从左到右）
+                    for (let i = 0; i < tabs.length; i++) {
+                        const tabId = tabs[i].getAttribute('data-tab-id');
+                        if (tabId !== this.activeTabId && this.showingTabs.has(tabId)) {
+                            tabToHide = tabId;
+                            break;
+                        }
+                    }
+
                     if (tabToHide) {
                         const tabElement = document.getElementById(tabToHide);
                         if (tabElement) {
                             tabElement.style.display = 'none';
                             this.showingTabs.delete(tabToHide);
                             this.hiddenTabs.add(tabToHide);
+                            log.info(`隐藏老标签 ${tabToHide} 以显示活动标签 ${this.activeTabId}`);
                         }
                     }
                 }
@@ -1408,27 +1913,23 @@ class TabManagerService {
 
         if (!conversationModeBtn) return;
 
-        try {
-            // 获取当前会话的对话模式
-            const sessionConfig = await session.getConfig();
-            const isSingleTurn = sessionConfig.conversationMode === 'single-turn' || !sessionConfig.conversationMode;
+        // 获取当前会话的对话模式
+        const sessionConfig = await session.getConfig();
+        const isSingleTurn = sessionConfig.conversationMode === 'single-turn' || !sessionConfig.conversationMode;
 
-            // 根据当前模式设置按钮状态和文本
-            this.updateConversationModeButton(tabId, isSingleTurn);
+        // 根据当前模式设置按钮状态和文本
+        this.updateConversationModeButton(tabId, isSingleTurn);
 
-            // 添加点击事件监听器
-            conversationModeBtn.addEventListener('click', async () => {
-                // 获取当前按钮文本以确定当前模式
-                const currentMode = conversationModeBtn.textContent === '单次对话' ? 'single-turn' : 'multi-turn';
-                // 切换到另一个模式
-                const newMode = currentMode === 'single-turn' ? 'multi-turn' : 'single-turn';
-                await this.setConversationMode(tabId, newMode);
-            });
+        // 添加点击事件监听器
+        conversationModeBtn.addEventListener('click', async () => {
+            // 获取当前按钮文本以确定当前模式
+            const currentMode = conversationModeBtn.textContent === '单次对话' ? 'single-turn' : 'multi-turn';
+            // 切换到另一个模式
+            const newMode = currentMode === 'single-turn' ? 'multi-turn' : 'single-turn';
+            await this.setConversationMode(tabId, newMode);
+        });
 
-            log.info(`初始化标签 ${tabId} 的对话模式切换按钮完成，当前模式: ${isSingleTurn ? 'single-turn' : 'multi-turn'}`);
-        } catch (error) {
-            log.error(`初始化标签 ${tabId} 的对话模式切换按钮时出错:`, error.message);
-        }
+        log.info(`初始化标签 ${tabId} 的对话模式切换按钮完成，当前模式: ${isSingleTurn ? 'single-turn' : 'multi-turn'}`);
     }
 
     /**
@@ -1451,19 +1952,15 @@ class TabManagerService {
      * @param {string} mode 对话模式 'single-turn' 或 'multi-turn'
      */
     async setConversationMode(tabId, mode) {
-        try {
-            const session = this.tabSessions.get(tabId);
-            if (!session) return;
+        const session = this.tabSessions.get(tabId);
+        if (!session) return;
 
-            // 更新UI
-            this.updateConversationModeButton(tabId, mode === 'single-turn');
+        // 更新UI
+        this.updateConversationModeButton(tabId, mode === 'single-turn');
 
-            // 保存到后端
-            await ipcRenderer.invoke('select-session-conversation-mode', session.data.id, mode);
-            log.info(`设置会话 ${session.data.id} ${session.data.name} 的对话模式为: ${mode}`);
-        } catch (error) {
-            log.error(`设置会话 ${tabId} 的对话模式时出错:`, error.message);
-        }
+        // 保存到后端
+        await ipcRenderer.invoke('select-session-conversation-mode', session.data.id, mode);
+        log.info(`设置会话 ${session.data.id} ${session.data.name} 的对话模式为: ${mode}`);
     }
 
     /**
@@ -1581,25 +2078,228 @@ class TabManagerService {
     }
 
     /**
-     * 清除所有标签（保留默认内容）
+     * 清除所有标签
+     * 用于重置界面状态
      */
     clearAllTabs() {
-        // 清除所有标签DOM元素
-        const tabs = this.tabsContainer.querySelectorAll('.tab');
-        tabs.forEach(tab => tab.remove());
-
-        // 清除所有内容DOM元素（除了默认内容）
-        const contents = this.tabsContent.querySelectorAll('.tab-content:not(#tab-content-default)');
-        contents.forEach(content => content.remove());
-
-        // 清除映射关系
+        // 清除所有标签页
         this.tabSessions.clear();
         this.tabSessionIds.clear();
+
+        // 清除DOM元素
+        const tabs = this.tabsContainer.querySelectorAll('.tab');
+        tabs.forEach(tab => {
+            if (tab !== this.newTabButton) {
+                tab.remove();
+            }
+        });
+
+        const contents = this.tabsContent.querySelectorAll('.tab-content');
+        contents.forEach(content => content.remove());
+
+        // 重置计数器和状态
+        this.tabCounter = 0;
+        this.activeTabId = null;
         this.showingTabs.clear();
         this.hiddenTabs.clear();
 
-        // 重置活动标签
-        this.activeTabId = null;
+        // 更新下拉菜单
+        this.updateTabsDropdownMenu();
+    }
+
+    /**
+     * 设置MCP服务连接状态
+     * @param {HTMLElement} statusIndicator - 状态指示器元素
+     * @param {string} status - 连接状态: 'connected', 'connecting', 'error', 'disconnected'
+     * @param {string} error - 错误信息（可选）
+     */
+    setMcpConnectionState(statusIndicator, status, error = null) {
+        if (!statusIndicator) return;
+
+        // 更新状态类
+        statusIndicator.className = `mcp-status-indicator status-${status}`;
+
+        // 设置tooltip
+        let tooltipText = '';
+        switch (status) {
+            case 'connected':
+                tooltipText = i18n.t('mcp.status.connected') || '已连接';
+                break;
+            case 'connecting':
+                tooltipText = i18n.t('mcp.status.connecting') || '连接中';
+                break;
+            case 'error':
+                tooltipText = error ? `${i18n.t('mcp.status.error') || '连接失败'}: ${error}` : (i18n.t('mcp.status.error') || '连接失败');
+                break;
+            default:
+                tooltipText = i18n.t('mcp.status.disconnected') || '未连接';
+                break;
+        }
+        statusIndicator.title = tooltipText;
+    }
+
+    /**
+     * 检查MCP服务连接状态
+     * @param {string} serverId - 服务ID
+     * @param {HTMLElement} statusIndicator - 状态指示器元素
+     */
+    async checkMcpServerConnection(serverId, statusIndicator) {
+        const result = await ipcRenderer.invoke('check-mcp-connection', serverId);
+
+        if (result && result.connected) {
+            this.setMcpConnectionState(statusIndicator, 'connected');
+        } else {
+            this.setMcpConnectionState(statusIndicator, 'error', '连接失败');
+        }
+    }
+
+    /**
+     * 重新连接MCP服务
+     * @param {string} serverId - 服务ID
+     * @param {HTMLElement} statusIndicator - 状态指示器元素
+     */
+    async reconnectMcpServer(serverId, statusIndicator) {
+        log.info('重新连接MCP服务:', serverId);
+
+        // 获取服务配置
+        const mcpServers = await ipcRenderer.invoke('get-mcp-servers');
+        const serverConfig = mcpServers[serverId];
+        if (!serverConfig) {
+            const error = new Error(`MCP服务配置不存在: ${serverId}`);
+            log.error(`重新连接MCP服务失败 [${serverId}]:`, error.message);
+            this.setMcpConnectionState(statusIndicator, 'error', error.message);
+            return;
+        }
+
+        // 设置连接中状态
+        this.setMcpConnectionState(statusIndicator, 'connecting');
+
+        // 重置MCP客户端
+        await ipcRenderer.invoke('reset-mcp-client', serverId);
+
+        // 重新连接
+        const result = await ipcRenderer.invoke('reconnect-mcp-server', {
+            serverId,
+            serverData: serverConfig
+        });
+
+        if (result && result.success) {
+            this.setMcpConnectionState(statusIndicator, 'connected');
+            log.info(`MCP服务 ${serverId} 重新连接成功`);
+        } else {
+            const error = result?.error || '重新连接失败';
+            log.error(`重新连接MCP服务失败 [${serverId}]:`, error);
+            this.setMcpConnectionState(statusIndicator, 'error', error);
+        }
+    }
+
+    /**
+     * 初始化模型下拉菜单
+     * @param {string} tabId 标签ID
+     * @param {ChatSessionService} session 会话实例
+     */
+    async initModelDropdown(tabId, session) {
+        const modelSelect = document.getElementById(`model-select-${tabId}`);
+        if (!modelSelect || !window.modelService) return;
+
+        // 初始化下拉框
+        await this.setModelDropdown(modelSelect, tabId);
+
+        // 添加选择事件监听器
+        modelSelect.addEventListener('change', async (e) => {
+            const modelId = e.target.value;
+
+            if (modelId === "add_new") {
+                // 重置选择框
+                const session = this.tabSessions.get(tabId);
+                const sessionConfig = await session.getConfig();
+                modelSelect.value = sessionConfig.modelId;
+
+                // 打开配置窗口的模型标签页
+                window.openSettingsWindowWithTab('models');
+            } else if (modelId) {
+                log.info(`选择模型 ${session.data.id} ${session.data.name} ${modelId}`);
+
+                // 检查是否在Agent模式下修改了配置
+                await this.handleConfigurationChange(tabId, 'model', modelId);
+            }
+        });
+
+        // 添加点击事件监听器，在下拉框打开时刷新模型列表
+        modelSelect.addEventListener('mousedown', async (event) => {
+            await this.setModelDropdown(modelSelect, tabId);
+        });
+    }
+
+    /**
+     * 初始化提示词下拉菜单
+     * @param {string} tabId 标签ID
+     * @param {ChatSessionService} session 会话实例
+     */
+    async initPromptDropdown(tabId, session) {
+        const promptSelect = document.getElementById(`prompt-select-${tabId}`);
+        if (!promptSelect || !window.promptService) return;
+
+        // 初始化下拉框
+        await this.setPromptDropdown(promptSelect, tabId);
+
+        // 添加选择事件监听器
+        promptSelect.addEventListener('change', async (e) => {
+            const promptId = e.target.value;
+
+            // 处理选择添加提示词的情况
+            if (promptId === 'add_new') {
+                // 重置选择框
+                const session = this.tabSessions.get(tabId);
+                const sessionConfig = await session.getConfig();
+                promptSelect.value = sessionConfig.promptId;
+
+                // 打开配置窗口
+                window.openSettingsWindowWithTab('prompts');
+                return;
+            } else {
+                log.info(`选择提示词 ${session.data.id} ${session.data.name} ${promptId}`);
+
+                // 检查是否在Agent模式下修改了配置
+                await this.handleConfigurationChange(tabId, 'prompt', promptId);
+            }
+        });
+
+        // 添加点击事件监听器，在下拉框打开时刷新提示词列表
+        promptSelect.addEventListener('mousedown', async (event) => {
+            await this.setPromptDropdown(promptSelect, tabId);
+        });
+    }
+
+    /**
+     * 处理在Agent模式下修改配置的情况
+     * 如果在Agent模式下修改了模型、提示词、MCP配置，则切换到自由模式并更新会话配置
+     * @param {string} tabId 标签ID
+     * @param {string} configType 配置类型：'model'、'prompt'、'mcp'
+     * @param {string|Array} newValue 新的配置值
+     * @returns {Promise<void>}
+     */
+    async handleConfigurationChange(tabId, configType, newValue) {
+        const session = this.tabSessions.get(tabId);
+        if (!session) {
+            log.warn(`标签 ${tabId} 对应的会话不存在`);
+            return;
+        }
+
+        // 修改其他选项 要把Agent改为free-mode
+        const agentSelect = document.getElementById(`agent-select-${tabId}`);
+        agentSelect.value = 'free-mode';
+
+        // 根据配置类型更新会话配置
+        if (configType === 'model') {
+            await ipcRenderer.invoke('select-session-model', session.data.id, newValue);
+        } else if (configType === 'prompt') {
+            await ipcRenderer.invoke('select-session-prompt', session.data.id, newValue);
+        } else if (configType === 'mcp') {
+            await ipcRenderer.invoke('select-session-mcp-servers', session.data.id, newValue);
+        }
+
+        log.info(`更新会话 ${session.data.id} 配置: ${configType} = ${newValue} `);
     }
 }
 

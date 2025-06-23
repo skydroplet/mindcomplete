@@ -86,28 +86,19 @@ async function init() {
     // 确保下拉选择框样式一致性
     ensureConsistentDropdownStyles();
 
-    // 设置事件监听器
-    setupEventListeners();
-
-    // 9. 并行加载数据以提高性能
-    // 创建一个并行加载函数，同时执行多个异步任务
+    // 并行加载数据以提高性能
     const loadPromise = Promise.all([
         // 加载模型列表
         (async () => {
-            await modelService.loadModels();
+            await modelService.fetchModels();
         })(),
 
         // 加载提示词列表
         (async () => {
-            await promptService.loadPrompts(statusElement);
+            await promptService.fetchPrompts(statusElement);
         })(),
 
-        // 加载MCP服务列表
-        (async () => {
-            await mcpServerService.loadMcpServers(statusElement);
-        })(),
-
-        // 加载会话
+        // 初始化标签管理和会话
         (async () => {
             // 设置rename会话回调
             sidebarSession.setRenameSessionCallback((sessionId, newName) => {
@@ -184,11 +175,11 @@ async function init() {
     // 等待所有并行任务完成
     await loadPromise;
 
+    // 设置事件监听器
+    setupEventListeners();
+
     // 更新状态栏，表示应用程序已准备就绪
     statusElement.textContent = i18n.t('ui.status.ready');
-
-    // 设置MCP下拉菜单监听器
-    mcpServerService.setupMcpDropdownListeners(openSettingsWindowWithTab);
 
     // 设置主题相关监听器
     themeService.setupThemeListeners();
@@ -286,8 +277,8 @@ function setupEventListeners() {
     }
 
     // 增强模型和提示词下拉列表
-    enhanceSelectElement(modelService.getModelSelect());
-    enhanceSelectElement(promptService.getPromptSelect());
+    enhanceSelectElement(document.getElementById('model-select'));
+    enhanceSelectElement(document.getElementById('prompt-select'));
 
     sidebarService.setupEventListeners();
 
@@ -425,15 +416,6 @@ function setupEventListeners() {
             document.removeEventListener('click', closeMenu);
         });
     });
-
-    // 设置模型选择监听器
-    modelService.setupModelSelectListeners(openSettingsWindowWithTab);
-
-    // 设置提示词选择监听器
-    promptService.setupPromptSelectListeners(statusElement, openSettingsWindowWithTab);
-
-    // 设置MCP下拉菜单监听器
-    mcpServerService.setupMcpDropdownListeners(openSettingsWindowWithTab);
 
     // 重命名对话框事件监听
     const renameCancelBtn = document.getElementById('rename-cancel-btn');
@@ -576,12 +558,10 @@ ipcRenderer.on('locale-updated', async () => {
 ipcRenderer.on('config-updated', (event, data) => {
     log.info('收到配置更新:');
     if (data.models) {
-        modelService.loadModels();
+        modelService.fetchModels();
     }
 
-    if (data.mcpConfig) {
-        mcpServerService.loadMcpServers(statusElement);
-    }
+    // MCP配置现在由tabManager管理，无需单独处理
 
     if (data.generalConfig) {
         // 更新语言选择
@@ -603,7 +583,7 @@ ipcRenderer.on('config-updated', (event, data) => {
 // 监听MCP服务更新事件
 ipcRenderer.on('mcp-server-updated', async (event, mcpConfig) => {
     log.info('收到MCP服务更新:', mcpConfig);
-    await mcpServerService.loadMcpServers(statusElement);
+    // MCP服务现在由tabManager管理，无需单独处理
 
     // 确保样式一致性
     setTimeout(ensureConsistentDropdownStyles, 50);
@@ -612,7 +592,7 @@ ipcRenderer.on('mcp-server-updated', async (event, mcpConfig) => {
 // 监听提示词配置更新事件
 ipcRenderer.on('prompts-updated', async () => {
     log.info('收到提示词配置更新事件');
-    await promptService.loadPrompts(statusElement);
+    await promptService.fetchPrompts(statusElement);
 
     // 确保样式一致性
     setTimeout(ensureConsistentDropdownStyles, 50);
@@ -621,25 +601,25 @@ ipcRenderer.on('prompts-updated', async () => {
 // 监听模型选择变更事件
 ipcRenderer.on('model-selection-changed', (event, modelId) => {
     log.info('收到模型选择变更事件:', modelId);
-    if (modelId && modelService) {
-        modelService.setModelSelection(modelId);
-    }
+    // 模型选择现在由tabManager管理，无需单独处理
+    // if (modelId && modelService) {
+    //     modelService.setModelSelection(modelId);
+    // }
 });
 
 // 监听提示词选择变更事件
 ipcRenderer.on('prompt-selection-changed', (event, promptId) => {
     log.info('收到提示词选择变更事件:', promptId);
-    if (promptId && promptService) {
-        promptService.setPromptSelection(promptId);
-    }
+    // 提示词选择现在由tabManager管理，无需单独处理
+    // if (promptId && promptService) {
+    //     promptService.setPromptSelection(promptId);
+    // }
 });
 
 // 监听MCP服务选择变更事件
 ipcRenderer.on('mcp-selection-changed', (event, mcpServerIds) => {
     log.info('收到MCP服务选择变更事件:', mcpServerIds);
-    if (mcpServerIds && mcpServerService) {
-        mcpServerService.setActiveMcpServers(mcpServerIds);
-    }
+    // MCP服务选择现在由tabManager管理，无需单独处理
 });
 
 // 发送消息函数
@@ -673,9 +653,6 @@ async function sendMessage() {
 function ensureConsistentDropdownStyles() {
     log.info('确保下拉选择框样式一致性');
 
-    // 确保MCP下拉菜单样式一致性
-    mcpServerService.ensureMcpDropdownStyles();
-
     // 确保model-selector容器正确使用CSS样式
     const modelSelector = document.querySelector('.model-selector');
     if (modelSelector) {
@@ -685,10 +662,12 @@ function ensureConsistentDropdownStyles() {
     }
 
     // 移除所有下拉元素的固定宽度，使用CSS控制
-    const dropdowns = modelSelector.querySelectorAll('select, .mcp-dropdown-btn');
-    dropdowns.forEach(dropdown => {
-        dropdown.style.removeProperty('width');
-    });
+    const dropdowns = modelSelector?.querySelectorAll('select, .mcp-dropdown-btn');
+    if (dropdowns) {
+        dropdowns.forEach(dropdown => {
+            dropdown.style.removeProperty('width');
+        });
+    }
 }
 
 // 将openSettingsWindow函数暴露到全局，以便在HTML中调用
