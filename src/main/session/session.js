@@ -281,27 +281,13 @@ class ChatSession {
      * @returns {Object} 配置对象 {modelId, promptId, mcpServers}
      */
     getSessionConfig() {
-        if (this.data.agentId && this.data.agentId !== 'free-mode') {
-            // 使用agent配置
-            const agent = agentConfig.getAgent(this.data.agentId);
-            if (!agent) {
-                throw new Error(i18n.t('errors.agentNotFound', { agentId: this.data.agentId }));
-            }
-            const config = {
-                modelId: agent.model,
-                promptId: agent.prompt,
-                mcpServers: agent.mcpServers || []
-            };
-            return config;
-        } else {
-            // 使用自定义配置
-            const config = {
-                modelId: this.data.modelId,
-                promptId: this.data.promptId,
-                mcpServers: this.data.mcpServers || []
-            };
-            return config;
-        }
+        const config = {
+            modelId: this.data.modelId,
+            promptId: this.data.promptId,
+            mcpServers: this.data.mcpServers || []
+        };
+
+        return config;
     }
 
     /**

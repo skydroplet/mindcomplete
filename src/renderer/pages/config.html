@@ -14,18 +14,24 @@
 <body>
     <div class="config-container">
         <div class="tab-nav">
-            <button class="tab-link active" data-target="models" data-tab="models">模型配置</button>
-            <button class="tab-link" data-target="prompts" data-tab="prompts">提示词管理</button>
-            <button class="tab-link" data-target="mcp-servers" data-tab="mcp">MCP服务</button>
-            <button class="tab-link" data-target="agents" data-tab="agents">Agent配置</button>
+            <button class="tab-link active" data-target="models" data-tab="models"
+                data-i18n="settings.tabs.models">模型配置</button>
+            <button class="tab-link" data-target="prompts" data-tab="prompts"
+                data-i18n="settings.tabs.prompts">提示词管理</button>
+            <button class="tab-link" data-target="mcp-servers" data-tab="mcp"
+                data-i18n="settings.tabs.mcp">MCP服务</button>
+            <button class="tab-link" data-target="agents" data-tab="agents"
+                data-i18n="settings.tabs.agents">Agent配置</button>
             <div style="flex: 1;"></div>
-            <button id="import-config-btn" class="import-btn" title="导入配置" data-i18n="settings.buttons.importConfig">
+            <button id="import-config-btn" class="import-btn" title="" data-i18n-title="settings.buttons.importConfig"
+                data-i18n="settings.buttons.importConfig">
                 导入配置
             </button>
-            <button id="export-config-btn" class="export-btn" title="导出配置" data-i18n="settings.buttons.exportConfig">
+            <button id="export-config-btn" class="export-btn" title="" data-i18n-title="settings.buttons.exportConfig"
+                data-i18n="settings.buttons.exportConfig">
                 导出配置
             </button>
-            <button id="theme-toggle" class="theme-toggle" title="切换深色/浅色模式">
+            <button id="theme-toggle" class="theme-toggle" title="" data-i18n-title="header.toggleTheme">
                 <span id="theme-toggle-icon" class="theme-toggle-icon">🌓</span>
             </button>
         </div>
@@ -33,31 +39,35 @@
         <!-- 模型配置标签页 -->
         <div class="tab-content active" id="models">
             <div class="model-list">
-                <button class="add-btn" id="addModelBtn">添加模型</button>
+                <button class="add-btn" id="addModelBtn" data-i18n="settings.buttons.addModel">添加模型</button>
                 <div id="modelList"></div>
             </div>
             <div class="model-form">
                 <form id="modelForm">
                     <div class="form-group">
-                        <label for="modelName">模型名称</label>
-                        <input type="text" id="modelName" name="modelName" placeholder="输入模型名称">
+                        <label for="modelName" data-i18n="settings.labels.modelName">模型名称</label>
+                        <input type="text" id="modelName" name="modelName" placeholder=""
+                            data-i18n-placeholder="settings.placeholders.modelName">
                     </div>
                     <div class="form-group">
-                        <label for="modelType">模型类型</label>
-                        <input type="text" id="modelType" name="modelType" placeholder="">
+                        <label for="modelType" data-i18n="settings.labels.modelType">模型类型</label>
+                        <input type="text" id="modelType" name="modelType" placeholder=""
+                            data-i18n-placeholder="settings.placeholders.modelType">
                     </div>
                     <div class="form-group">
-                        <label for="apiUrl">API 地址</label>
-                        <input type="text" id="apiUrl" name="apiUrl" placeholder="http://localhost:8000/v1">
+                        <label for="apiUrl" data-i18n="settings.labels.apiUrl">API 地址</label>
+                        <input type="text" id="apiUrl" name="apiUrl" placeholder=""
+                            data-i18n-placeholder="settings.placeholders.apiUrl">
                     </div>
                     <div class="form-group">
-                        <label for="apiKey">API 密钥</label>
-                        <input type="text" id="apiKey" name="apiKey" placeholder="输入你的 API 密钥">
+                        <label for="apiKey" data-i18n="settings.labels.apiKey">API 密钥</label>
+                        <input type="text" id="apiKey" name="apiKey" placeholder=""
+                            data-i18n-placeholder="settings.placeholders.apiKey">
                     </div>
                     <div class="form-group">
                         <div style="display: flex; align-items: center;">
-                            <label for="contextWindowSize"
-                                style="margin-bottom: 0; margin-right: 10px; width: 120px;">上下文窗口大小</label>
+                            <label for="contextWindowSize" style="margin-bottom: 0; margin-right: 10px; width: 120px;"
+                                data-i18n="settings.labels.contextWindowSize">上下文窗口大小</label>
                             <div style="display: flex; align-items: center; flex: 1;">
                                 <input type="number" id="contextWindowSize" name="contextWindowSize" min="1" value="32"
                                     style="flex: 1;">
@@ -67,8 +77,8 @@
                     </div>
                     <div class="form-group">
                         <div style="display: flex; align-items: center;">
-                            <label for="temperature"
-                                style="margin-bottom: 0; margin-right: 10px; width: 120px;">温度</label>
+                            <label for="temperature" style="margin-bottom: 0; margin-right: 10px; width: 120px;"
+                                data-i18n="settings.labels.temperature">温度</label>
                             <div style="display: flex; align-items: center; flex: 1;">
                                 <input type="number" id="temperature" name="temperature" min="0" max="2" step="0.1"
                                     value="0.7" style="flex: 1;">
@@ -79,10 +89,12 @@
 
                 <!-- 模型配置按钮 -->
                 <div class="form-buttons" id="model-buttons">
-                    <button class="delete-btn hidden" id="deleteModelBtn">删除模型</button>
-                    <button class="copy-btn hidden" id="copyModelBtn">复制模型</button>
-                    <button class="cancel-btn" id="cancelBtn">取消</button>
-                    <button class="save-btn" id="saveBtn">保存</button>
+                    <button class="delete-btn hidden" id="deleteModelBtn"
+                        data-i18n="settings.buttons.deleteModelBtn">删除模型</button>
+                    <button class="copy-btn hidden" id="copyModelBtn"
+                        data-i18n="settings.buttons.copyModelBtn">复制模型</button>
+                    <button class="cancel-btn" id="cancelBtn" data-i18n="settings.buttons.cancelBtn">取消</button>
+                    <button class="save-btn" id="saveBtn" data-i18n="settings.buttons.saveBtn">保存</button>
                 </div>
             </div>
         </div>
@@ -149,7 +161,7 @@
                     </div>
                     <!-- 运行环境内容区，默认隐藏 -->
                     <div class="mcp-envs-section">
-                        <div id="runtime-info-loading">正在加载运行环境信息...</div>
+                        <div id="runtime-info-loading" data-i18n="status.loadingRuntimeInfo">正在加载运行环境信息...</div>
                         <div id="runtime-info-list">
                             <div class="runtime-section">
                                 <div style="display: flex; align-items: center; justify-content: space-between;">
@@ -203,14 +215,15 @@
         <!-- 提示词标签页 -->
         <div class="tab-content" id="prompts">
             <div class="model-list">
-                <button class="add-btn" id="addPromptBtn">添加提示词</button>
+                <button class="add-btn" id="addPromptBtn" data-i18n="settings.buttons.addPromptBtn">添加提示词</button>
                 <div id="promptList" class="config-list"></div>
             </div>
             <div class="model-form">
                 <form id="promptForm">
                     <div class="form-group">
-                        <label for="promptName">提示词名称</label>
-                        <input type="text" id="promptName" name="promptName" placeholder="输入提示词名称" required>
+                        <label for="promptName" data-i18n="settings.labels.promptName">提示词名称</label>
+                        <input type="text" id="promptName" name="promptName" placeholder=""
+                            data-i18n-placeholder="settings.placeholders.promptName" required>
                     </div>
                     <div class="form-group">
                         <label for="promptType" data-i18n="settings.labels.promptType">提示词类型</label>
@@ -223,18 +236,21 @@
                         </div>
                     </div>
                     <div class="form-group">
-                        <label for="promptContent">提示词内容</label>
-                        <textarea id="promptContent" name="promptContent" rows="5"
-                            placeholder="输入提示词内容，将根据类型作为system或user消息发送给大模型"></textarea>
+                        <label for="promptContent" data-i18n="settings.labels.promptContent">提示词内容</label>
+                        <textarea id="promptContent" name="promptContent" rows="5" placeholder=""
+                            data-i18n-placeholder="settings.placeholders.promptContent"></textarea>
                     </div>
                 </form>
 
                 <!-- 提示词按钮 -->
                 <div class="form-buttons" id="prompt-buttons">
-                    <button class="delete-btn hidden" id="deletePromptBtn">删除</button>
-                    <button class="copy-btn hidden" id="copyPromptBtn">复制</button>
-                    <button class="cancel-btn" id="cancelPromptBtn">取消</button>
-                    <button class="save-btn" id="savePromptBtn">保存</button>
+                    <button class="delete-btn hidden" id="deletePromptBtn"
+                        data-i18n="settings.buttons.deletePromptBtn">删除</button>
+                    <button class="copy-btn hidden" id="copyPromptBtn"
+                        data-i18n="settings.buttons.copyPromptBtn">复制</button>
+                    <button class="cancel-btn" id="cancelPromptBtn"
+                        data-i18n="settings.buttons.cancelPromptBtn">取消</button>
+                    <button class="save-btn" id="savePromptBtn" data-i18n="settings.buttons.savePromptBtn">保存</button>
                 </div>
             </div>
         </div>
@@ -242,29 +258,30 @@
         <!-- Agent配置标签页 -->
         <div class="tab-content" id="agents">
             <div class="model-list">
-                <button class="add-btn" id="addAgentBtn">添加Agent</button>
+                <button class="add-btn" id="addAgentBtn" data-i18n="settings.buttons.addAgent">添加Agent</button>
                 <div id="agentList" class="config-list"></div>
             </div>
             <div class="model-form agent-form" style="display: none;">
                 <form id="agentForm">
                     <div class="form-group">
-                        <label for="agentName">名称</label>
-                        <input type="text" id="agentName" name="agentName" placeholder="输入Agent名称" required>
+                        <label for="agentName" data-i18n="settings.labels.agentName">名称</label>
+                        <input type="text" id="agentName" name="agentName" placeholder=""
+                            data-i18n-placeholder="settings.placeholders.agentName" required>
                     </div>
                     <div class="form-group">
-                        <label for="agentModel">模型</label>
+                        <label for="agentModel" data-i18n="settings.labels.agentModel">模型</label>
                         <select id="agentModel" name="agentModel">
-                            <option value="">请选择使用的模型</option>
+                            <option value="" data-i18n="agents.selectModel">请选择使用的模型</option>
                         </select>
                     </div>
                     <div class="form-group">
-                        <label for="agentPrompt">提示词</label>
+                        <label for="agentPrompt" data-i18n="settings.labels.agentPrompt">提示词</label>
                         <select id="agentPrompt" name="agentPrompt">
-                            <option value="">请选择系统提示词</option>
+                            <option value="" data-i18n="agents.selectPrompt">请选择系统提示词</option>
                         </select>
                     </div>
                     <div class="form-group">
-                        <label for="mcpServers">MCP服务列表</label>
+                        <label for="mcpServers" data-i18n="settings.labels.mcpServers">MCP服务列表</label>
                         <div id="mcpServersContainer" class="mcp-servers-container">
                             <!-- MCP服务选择行将由JavaScript动态添加 -->
                         </div>
@@ -273,10 +290,12 @@
 
                 <!-- Agent配置按钮 -->
                 <div class="form-buttons" id="agent-buttons">
-                    <button class="delete-btn hidden" id="deleteAgentBtn">删除</button>
-                    <button class="copy-btn hidden" id="copyAgentBtn">复制</button>
-                    <button class="cancel-btn" id="cancelAgentBtn">取消</button>
-                    <button class="save-btn" id="saveAgentBtn">保存</button>
+                    <button class="delete-btn hidden" id="deleteAgentBtn"
+                        data-i18n="settings.buttons.deleteAgentBtn">删除</button>
+                    <button class="copy-btn hidden" id="copyAgentBtn"
+                        data-i18n="settings.buttons.copyAgentBtn">复制</button>
+                    <button class="cancel-btn" id="cancelAgentBtn" data-i18n="settings.buttons.cancelBtn">取消</button>
+                    <button class="save-btn" id="saveAgentBtn" data-i18n="settings.buttons.saveBtn">保存</button>
                 </div>
             </div>
         </div>

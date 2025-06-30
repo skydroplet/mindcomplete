@@ -113,7 +113,8 @@
     },
     "chat": {
         "send": "Send",
-        "placeholder": "Type a message..."
+        "placeholder": "Type a message, press Enter to send, Ctrl+Enter for new line...",
+        "inputPlaceholder": "Type a message, press Enter to send, Ctrl+Enter for new line..."
     },
     "env": {
         "keyPlaceholder": "Variable name",
@@ -193,7 +194,8 @@
         "tabs": {
             "models": "Models",
             "prompts": "Prompts",
-            "mcp": "MCP Manager",
+            "mcp": "MCP Configuration",
+            "agents": "Agents",
             "newSession": "New Session",
             "close": "Close Tab",
             "newTab": "New Tab",
@@ -214,6 +216,10 @@
             "promptName": "Prompt Name",
             "promptContent": "Prompt Content",
             "promptType": "Prompt Type",
+            "agentName": "Agent Name",
+            "agentModel": "Model",
+            "agentPrompt": "Prompt",
+            "mcpServers": "MCP Services",
             "serverName": "Server Name",
             "serverPath": "Executable Path",
             "envVars": "Environment Variables",
@@ -225,6 +231,7 @@
             "apiKey": "Enter your API key",
             "promptName": "Enter prompt name",
             "promptContent": "Enter prompt content",
+            "agentName": "Enter Agent name",
             "serverName": "Enter MCP Server name",
             "serverPath": "Enter executable file path"
         },
@@ -251,7 +258,11 @@
             "add-env-btn": "Add Environment Variable",
             "add-arg-btn": "Add Parameter",
             "exportConfig": "Export Config",
-            "importConfig": "Import Config"
+            "importConfig": "Import Config",
+            "addAgent": "Add Agent",
+            "deleteAgentBtn": "Delete",
+            "copyAgentBtn": "Copy",
+            "addMcpServer": "Add MCP Server"
         }
     },
     "logs": {
@@ -387,5 +398,38 @@
         "confirm": "Are you sure you want to import these configurations? ",
         "success": "Configuration imported successfully! Imported {0}.",
         "error": "Failed to import configuration: {error}"
+    },
+    "conversationMode": {
+        "singleTurn": "Single Turn",
+        "multiTurn": "Multi Turn",
+        "toggle": "Toggle conversation mode"
+    },
+    "contextMenu": {
+        "selectAll": "Select All",
+        "copy": "Copy",
+        "cut": "Cut",
+        "paste": "Paste"
+    },
+    "status": {
+        "ready": "Ready",
+        "loading": "Loading...",
+        "loadingRuntimeInfo": "Loading runtime information..."
+    },
+    "agents": {
+        "confirmDelete": "Are you sure you want to delete Agent \"{name}\"?",
+        "saveSuccess": "Agent configuration saved successfully",
+        "saveFailed": "Failed to save Agent configuration: {error}",
+        "deleteSuccess": "Agent configuration deleted successfully",
+        "deleteFailed": "Failed to delete Agent configuration: {error}",
+        "copySuccess": "Agent configuration copied successfully",
+        "copyFailed": "Failed to copy Agent configuration: {error}",
+        "nameRequired": "Please enter Agent name",
+        "loadFailed": "Failed to load Agent list: {error}",
+        "noModel": "Not set",
+        "noPrompt": "Not set",
+        "mcpServersCount": "{count} services",
+        "selectModel": "Please select a model to use",
+        "selectPrompt": "Please select a system prompt",
+        "selectMcpService": "Please add available MCP services"
     }
 }

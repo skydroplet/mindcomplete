@@ -302,17 +302,15 @@ function setupEventListeners() {
         // 创建全选按钮
         const selectAllItem = document.createElement('div');
         selectAllItem.className = 'context-menu-item';
-        selectAllItem.textContent = '全选';
+        selectAllItem.textContent = i18n.t('contextMenu.selectAll');
         selectAllItem.addEventListener('click', () => {
+            // 为其他元素创建全选功能
             if (isInputFocused) {
                 messageInput.select();
-            } else if (e.target.textContent) {
-                // 为其他元素创建全选功能
+            } else {
+                // 其他情况下选择所有文本，如果有可选择的文本元素
                 const selection = window.getSelection();
-                const range = document.createRange();
-                range.selectNodeContents(e.target);
-                selection.removeAllRanges();
-                selection.addRange(range);
+                selection.selectAllChildren(document.body);
             }
             document.body.removeChild(contextMenu);
         });
@@ -320,8 +318,8 @@ function setupEventListeners() {
         // 创建复制按钮
         const copyItem = document.createElement('div');
         copyItem.className = 'context-menu-item';
-        copyItem.textContent = '复制';
-        copyItem.style.display = selectedText ? 'block' : 'none'; // 只有选择文本时才显示
+        copyItem.textContent = i18n.t('contextMenu.copy');
+        copyItem.style.display = selectedText ? 'block' : 'none';
         copyItem.addEventListener('click', () => {
             if (selectedText) {
                 navigator.clipboard.writeText(selectedText)
@@ -338,7 +336,7 @@ function setupEventListeners() {
         // 创建剪切按钮（仅在输入框中显示）
         const cutItem = document.createElement('div');
         cutItem.className = 'context-menu-item';
-        cutItem.textContent = '剪切';
+        cutItem.textContent = i18n.t('contextMenu.cut');
         cutItem.style.display = isInputFocused && selectedText ? 'block' : 'none';
         cutItem.addEventListener('click', () => {
             if (isInputFocused && selectedText) {
@@ -369,7 +367,7 @@ function setupEventListeners() {
         // 创建粘贴按钮
         const pasteItem = document.createElement('div');
         pasteItem.className = 'context-menu-item';
-        pasteItem.textContent = '粘贴';
+        pasteItem.textContent = i18n.t('contextMenu.paste');
         pasteItem.style.display = isInputFocused ? 'block' : 'none'; // 只在输入框中显示
         pasteItem.addEventListener('click', () => {
             if (isInputFocused) {
@@ -440,10 +438,20 @@ function setupEventListeners() {
         languageSelect.addEventListener('change', async (e) => {
             const locale = e.target.value;
             try {
+                // 立即更新渲染进程的语言设置
+                i18n.setLocale(locale);
+                log.info('立即切换渲染进程语言到:', locale);
+
+                // 立即更新当前页面的UI
+                initUI();
+                if (window.updateUIText) {
+                    window.updateUIText();
+                }
+
+                // 通知主进程更新语言设置
                 const result = await ipcRenderer.invoke('set-locale', locale);
                 if (result) {
-                    // 更新界面文本
-                    initUI();
+                    log.info('主进程语言切换成功');
                     statusElement.textContent = i18n.t('ui.status.ready');
                 }
             } catch (error) {
@@ -460,12 +468,12 @@ function setupEventListeners() {
         // 设置点击事件监听器
         conversationModeBtn.addEventListener('click', async () => {
             // 获取当前按钮文本以确定当前模式
-            const currentMode = conversationModeBtn.textContent === '单次对话' ? 'single-turn' : 'multi-turn';
+            const currentMode = conversationModeBtn.textContent === i18n.t('conversationMode.singleTurn') ? 'single-turn' : 'multi-turn';
             // 切换到另一个模式
             const newMode = currentMode === 'single-turn' ? 'multi-turn' : 'single-turn';
 
             // 更新UI状态
-            conversationModeBtn.textContent = newMode === 'single-turn' ? '单次对话' : '多轮对话';
+            conversationModeBtn.textContent = newMode === 'single-turn' ? i18n.t('conversationMode.singleTurn') : i18n.t('conversationMode.multiTurn');
 
             // 获取当前会话
             const activeSession = tabManager.getActiveSession();
@@ -541,8 +549,61 @@ document.body.addEventListener('click', (event) => {
 
 // 监听语言更新事件
 ipcRenderer.on('locale-updated', async () => {
+    // 获取最新的语言设置并同步到渲染进程的i18n实例
+    try {
+        const language = await ipcRenderer.invoke('get-language');
+        if (language) {
+            i18n.setLocale(language);
+            log.info('渲染进程语言切换到:', language);
+        }
+    } catch (error) {
+        log.error('获取语言设置失败:', error.message);
+    }
+
     // 重新初始化UI
     initUI();
+
+    // 更新UI文本
+    if (window.updateUIText) {
+        window.updateUIText();
+    }
+
+    // 更新所有标签页的国际化文本
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (key) {
+            el.textContent = i18n.t(key);
+        }
+    });
+
+    document.querySelectorAll('[data-i18n-title]').forEach(el => {
+        const key = el.getAttribute('data-i18n-title');
+        if (key) {
+            el.title = i18n.t(key);
+        }
+    });
+
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+        const key = el.getAttribute('data-i18n-placeholder');
+        if (key) {
+            el.placeholder = i18n.t(key);
+        }
+    });
+
+    // 更新所有MCP下拉按钮的文本
+    document.querySelectorAll('[id^="mcp-dropdown-btn"]').forEach(btn => {
+        if (btn.querySelector('.dropdown-text')) {
+            // 如果按钮有下拉文本容器，保持原有文本不变
+            return;
+        }
+        // 如果没有特殊状态，使用默认文本
+        if (!btn.classList.contains('no-server')) {
+            const textSpan = btn.querySelector('.dropdown-text');
+            if (!textSpan) {
+                btn.textContent = i18n.t('modelSelector.mcpServer');
+            }
+        }
+    });
 
     // 重新加载会话列表
     sidebarSession.loadSessions();
@@ -719,7 +780,7 @@ function updateConversationModeButtons(mode) {
     // 更新默认标签的对话模式切换按钮状态
     const defaultBtn = document.getElementById('conversation-mode-btn');
     if (defaultBtn) {
-        defaultBtn.textContent = isSingleTurn ? '单次对话' : '多轮对话';
+        defaultBtn.textContent = isSingleTurn ? i18n.t('conversationMode.singleTurn') : i18n.t('conversationMode.multiTurn');
     }
 
     // 更新活动标签的对话模式切换按钮状态
@@ -727,7 +788,7 @@ function updateConversationModeButtons(mode) {
     if (activeTabId) {
         const activeBtn = document.getElementById(`conversation-mode-btn-${activeTabId}`);
         if (activeBtn) {
-            activeBtn.textContent = isSingleTurn ? '单次对话' : '多轮对话';
+            activeBtn.textContent = isSingleTurn ? i18n.t('conversationMode.singleTurn') : i18n.t('conversationMode.multiTurn');
         }
     }
 }
