@@ -118,7 +118,8 @@
     },
     "chat": {
         "send": "发送",
-        "placeholder": "输入消息..."
+        "placeholder": "输入消息，按Enter发送，Ctrl+Enter换行...",
+        "inputPlaceholder": "输入消息，按Enter发送，Ctrl+Enter换行..."
     },
     "env": {
         "keyPlaceholder": "变量名",
@@ -421,5 +422,21 @@
         "selectModel": "请选择使用的模型",
         "selectPrompt": "请选择系统提示提示词",
         "selectMcpService": "请添加可用的MCP服务"
+    },
+    "conversationMode": {
+        "singleTurn": "单次对话",
+        "multiTurn": "多轮对话",
+        "toggle": "切换对话模式"
+    },
+    "contextMenu": {
+        "selectAll": "全选",
+        "copy": "复制",
+        "cut": "剪切",
+        "paste": "粘贴"
+    },
+    "status": {
+        "ready": "就绪",
+        "loading": "正在加载...",
+        "loadingRuntimeInfo": "正在加载运行环境信息..."
     }
 }

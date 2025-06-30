@@ -317,7 +317,18 @@ ipcRenderer.on('switch-tab', (event, tabName) => {
 });
 
 // 监听语言更新事件
-ipcRenderer.on('locale-updated', () => {
-    // 重新初始化UI文本
+ipcRenderer.on('locale-updated', async () => {
+    // 获取最新的语言设置并同步到渲染进程的i18n实例
+    try {
+        const language = await ipcRenderer.invoke('get-language');
+        if (language) {
+            i18n.setLocale(language);
+            log.info('配置窗口语言切换到:', language);
+        }
+    } catch (error) {
+        log.error('获取语言设置失败:', error.message);
+    }
+
+    log.info('收到语言更新事件，重新初始化UI文本');
     initUIText();
 });

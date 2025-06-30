@@ -53,11 +53,11 @@
                     <div class="system-items">
                         <div class="system-item" id="about-item">
                             <span class="system-item-icon">ℹ️</span>
-                            <span class="system-item-text">关于</span>
+                            <span class="system-item-text" data-i18n="sidebar.about">关于</span>
                         </div>
                         <div class="system-item" id="check-update-item">
                             <span class="system-item-icon">🔄</span>
-                            <span class="system-item-text">检查更新</span>
+                            <span class="system-item-text" data-i18n="sidebar.checkUpdate">检查更新</span>
                         </div>
                     </div>
                 </div>
@@ -110,31 +110,36 @@
                             </div>
 
                             <!-- 对话模式切换按钮 -->
-                            <button id="conversation-mode-btn" class="test-button" title="切换对话模式">单次对话</button>
+                            <button id="conversation-mode-btn" class="test-button" title=""
+                                data-i18n-title="conversationMode.toggle"
+                                data-i18n="conversationMode.singleTurn">单次对话</button>
 
-                            <button id="new-session-btn" class="test-button" title="创建新会话">新建会话</button>
+                            <button id="new-session-btn" class="test-button" title=""
+                                data-i18n-title="session.newSession" data-i18n="session.newSession">新建会话</button>
                         </div>
 
                         <div class="input-group">
-                            <textarea id="message-input" class="input-group" placeholder="输入消息，按Enter发送，Ctrl+Enter换行..."
-                                rows="1"></textarea>
+                            <textarea id="message-input" class="input-group" placeholder=""
+                                data-i18n-placeholder="chat.inputPlaceholder" rows="1"></textarea>
                         </div>
                     </div>
                 </div>
                 <!-- 其他标签内容将通过JavaScript动态生成 -->
             </div>
-            <div id="status" class="status">就绪</div>
+            <div id="status" class="status" data-i18n="status.ready">就绪</div>
         </div>
     </div>
 
     <!-- 自定义对话框 -->
     <div id="rename-dialog" class="custom-dialog" style="display: none;">
         <div class="dialog-content">
-            <h3 id="rename-title">重命名会话</h3>
-            <input type="text" id="new-name-input" class="dialog-input" placeholder="输入新的会话名称">
+            <h3 id="rename-title" data-i18n="session.renameTitle">重命名会话</h3>
+            <input type="text" id="new-name-input" class="dialog-input" placeholder=""
+                data-i18n-placeholder="session.newNamePlaceholder">
             <div class="dialog-buttons">
-                <button id="rename-cancel-btn" class="dialog-btn">取消</button>
-                <button id="rename-confirm-btn" class="dialog-btn dialog-confirm-btn">确定</button>
+                <button id="rename-cancel-btn" class="dialog-btn" data-i18n="session.cancel">取消</button>
+                <button id="rename-confirm-btn" class="dialog-btn dialog-confirm-btn"
+                    data-i18n="session.confirm">确定</button>
             </div>
         </div>
     </div>

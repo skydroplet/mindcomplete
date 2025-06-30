@@ -1581,18 +1581,18 @@ class TabManagerService {
             inputContainer.className = 'chat-input-container';
             inputContainer.innerHTML = `
                 <div class="model-selector">
-                    <select id="agent-select-${tabId}" class="settings-select" title="选择Agent配置"></select>
+                    <select id="agent-select-${tabId}" class="settings-select" title="${i18n.t('agents.selectModel')}"></select>
                     <select id="model-select-${tabId}" class="settings-select"></select>
-                    <select id="prompt-select-${tabId}" class="settings-select" title="选择提示词作为system message"></select>
+                    <select id="prompt-select-${tabId}" class="settings-select" title="${i18n.t('modelSelector.promptTitle')}"></select>
                     
                     <div id="mcp-dropdown-${tabId}" class="mcp-dropdown">
-                        <button id="mcp-dropdown-btn-${tabId}" class="mcp-dropdown-btn settings-select" type="button">MCP服务</button>
+                        <button id="mcp-dropdown-btn-${tabId}" class="mcp-dropdown-btn settings-select" type="button">${i18n.t('modelSelector.mcpServer')}</button>
                         <div id="mcp-dropdown-content-${tabId}" class="mcp-dropdown-content"></div>
                     </div>
                     
-                    <button id="conversation-mode-btn-${tabId}" class="test-button" title="切换对话模式">单次对话</button>
+                    <button id="conversation-mode-btn-${tabId}" class="test-button" title="${i18n.t('conversationMode.toggle')}" data-i18n="conversationMode.singleTurn">${i18n.t('conversationMode.singleTurn')}</button>
                     
-                    <button id="new-session-btn-${tabId}" class="test-button" title="创建新会话">新建会话</button>
+                    <button id="new-session-btn-${tabId}" class="test-button" title="${i18n.t('session.newSession')}" data-i18n="session.newSession">${i18n.t('session.newSession')}</button>
                 </div>
                 
                 ${InputManagerService.createInputHTML(tabId)}
@@ -1642,11 +1642,13 @@ class TabManagerService {
             const conversationModeBtn = contentElement.querySelector('#conversation-mode-btn');
             if (conversationModeBtn) {
                 conversationModeBtn.id = `conversation-mode-btn-${tabId}`;
+                conversationModeBtn.title = i18n.t('conversationMode.toggle');
             }
 
             const newSessionBtn = contentElement.querySelector('#new-session-btn');
             if (newSessionBtn) {
                 newSessionBtn.id = `new-session-btn-${tabId}`;
+                newSessionBtn.title = i18n.t('session.newSession');
             }
 
             // 替换输入区域
@@ -1923,7 +1925,7 @@ class TabManagerService {
         // 添加点击事件监听器
         conversationModeBtn.addEventListener('click', async () => {
             // 获取当前按钮文本以确定当前模式
-            const currentMode = conversationModeBtn.textContent === '单次对话' ? 'single-turn' : 'multi-turn';
+            const currentMode = conversationModeBtn.textContent === i18n.t('conversationMode.singleTurn') ? 'single-turn' : 'multi-turn';
             // 切换到另一个模式
             const newMode = currentMode === 'single-turn' ? 'multi-turn' : 'single-turn';
             await this.setConversationMode(tabId, newMode);
@@ -1943,7 +1945,7 @@ class TabManagerService {
         if (!conversationModeBtn) return;
 
         // 更新按钮文本
-        conversationModeBtn.textContent = isSingleTurn ? '单次对话' : '多轮对话';
+        conversationModeBtn.textContent = isSingleTurn ? i18n.t('conversationMode.singleTurn') : i18n.t('conversationMode.multiTurn');
     }
 
     /**

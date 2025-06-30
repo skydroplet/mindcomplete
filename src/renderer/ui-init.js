@@ -5,79 +5,156 @@
 
 // DOM就绪事件，用于初始化多语言支持和UI元素
 document.addEventListener('DOMContentLoaded', () => {
-    // 设置页面标题
-    document.getElementById('app-title').textContent = i18n.t('app.title');
+    updateUIText();
+});
 
-    // 设置侧边栏文本
-    document.getElementById('sidebar-toggle').title = i18n.t('sidebar.collapse');
-    document.getElementById('session-list-title').textContent = i18n.t('sidebar.sessionList');
-    document.getElementById('settings-text').textContent = i18n.t('sidebar.settings');
-    document.getElementById('settings-btn').title = i18n.t('sidebar.settings');
-    document.querySelector('.sidebar-collapse-icon').title = i18n.t('sidebar.expand');
+/**
+ * 更新界面文本的国际化
+ */
+function updateUIText() {
+    // 设置页面标题
+    const appTitle = document.getElementById('app-title');
+    if (appTitle) {
+        appTitle.textContent = i18n.t('app.title');
+    }
+
+    // 处理所有带有data-i18n属性的元素
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (key) {
+            el.textContent = i18n.t(key);
+        }
+    });
+
+    // 处理所有带有data-i18n-title属性的元素
+    document.querySelectorAll('[data-i18n-title]').forEach(el => {
+        const key = el.getAttribute('data-i18n-title');
+        if (key) {
+            el.title = i18n.t(key);
+        }
+    });
+
+    // 处理所有带有data-i18n-placeholder属性的元素
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+        const key = el.getAttribute('data-i18n-placeholder');
+        if (key) {
+            el.placeholder = i18n.t(key);
+        }
+    });
+
+    // 设置侧边栏文本（为没有data-i18n属性的元素手动设置）
+    const sidebarToggle = document.getElementById('sidebar-toggle');
+    if (sidebarToggle) {
+        sidebarToggle.title = i18n.t('sidebar.collapse');
+    }
+
+    const sessionListTitle = document.getElementById('session-list-title');
+    if (sessionListTitle) {
+        sessionListTitle.textContent = i18n.t('sidebar.sessionList');
+    }
+
+    const settingsText = document.getElementById('settings-text');
+    if (settingsText) {
+        settingsText.textContent = i18n.t('sidebar.settings');
+    }
+
+    const settingsBtn = document.getElementById('settings-btn');
+    if (settingsBtn) {
+        settingsBtn.title = i18n.t('sidebar.settings');
+    }
+
+    const sidebarCollapseIcon = document.querySelector('.sidebar-collapse-icon');
+    if (sidebarCollapseIcon) {
+        sidebarCollapseIcon.title = i18n.t('sidebar.expand');
+    }
 
     // 设置系统按钮文本
-    document.getElementById('system-text').textContent = i18n.t('sidebar.system');
-    document.getElementById('system-btn').title = i18n.t('sidebar.system');
+    const systemText = document.getElementById('system-text');
+    if (systemText) {
+        systemText.textContent = i18n.t('sidebar.system');
+    }
+
+    const systemBtn = document.getElementById('system-btn');
+    if (systemBtn) {
+        systemBtn.title = i18n.t('sidebar.system');
+    }
 
     // 设置系统菜单项文本
-    const aboutItem = document.getElementById('about-item').querySelector('.system-item-text');
+    const aboutItem = document.getElementById('about-item')?.querySelector('.system-item-text');
     if (aboutItem) {
         aboutItem.textContent = i18n.t('sidebar.about');
     }
 
-    const checkUpdateItem = document.getElementById('check-update-item').querySelector('.system-item-text');
+    const checkUpdateItem = document.getElementById('check-update-item')?.querySelector('.system-item-text');
     if (checkUpdateItem) {
         checkUpdateItem.textContent = i18n.t('sidebar.checkUpdate');
     }
 
     // 设置主界面文本
-    document.getElementById('theme-toggle').title = i18n.t('header.toggleTheme');
-    document.getElementById('prompt-select').title = i18n.t('modelSelector.promptTitle');
-    document.getElementById('mcp-dropdown-btn').textContent = i18n.t('modelSelector.mcpServer');
-    document.getElementById('new-session-btn').textContent = i18n.t('session.newSession');
-    document.getElementById('new-session-btn').title = i18n.t('session.newSession');
-    document.getElementById('message-input').placeholder = i18n.t('chat.inputPlaceholder');
-    document.getElementById('status').textContent = i18n.t('ui.status.ready');
+    const themeToggle = document.getElementById('theme-toggle');
+    if (themeToggle) {
+        themeToggle.title = i18n.t('header.toggleTheme');
+    }
 
-    // 设置重命名对话框文本
-    document.getElementById('rename-title').textContent = i18n.t('session.renameTitle');
-    document.getElementById('new-name-input').placeholder = i18n.t('session.newNamePlaceholder');
-    document.getElementById('rename-cancel-btn').textContent = i18n.t('session.cancel');
-    document.getElementById('rename-confirm-btn').textContent = i18n.t('session.confirm');
-});
+    const promptSelect = document.getElementById('prompt-select');
+    if (promptSelect) {
+        promptSelect.title = i18n.t('modelSelector.promptTitle');
+    }
+
+    const mcpDropdownBtn = document.getElementById('mcp-dropdown-btn');
+    if (mcpDropdownBtn) {
+        mcpDropdownBtn.textContent = i18n.t('modelSelector.mcpServer');
+    }
+
+    const promptSelectorDiv = document.querySelector('.prompt-selector-title');
+    if (promptSelectorDiv) {
+        promptSelectorDiv.textContent = i18n.t('prompts.selectPrompt');
+    }
+}
 
 /**
  * 初始化系统和设置菜单的事件处理程序
+ * 设置系统菜单的显示/隐藏逻辑和点击事件
  */
-function initEventHandlers() {
+function initMenuEventHandlers() {
     // 设置按钮点击事件
-    document.getElementById('settings-btn').addEventListener('click', function (e) {
-        e.stopPropagation();
-        window.openSettingsWindow();
-    });
+    const settingsBtn = document.getElementById('settings-btn');
+    if (settingsBtn) {
+        settingsBtn.addEventListener('click', () => {
+            window.openSettingsWindow();
+        });
+    }
 
     // 系统按钮点击事件
-    document.getElementById('system-btn').addEventListener('click', function (e) {
-        e.stopPropagation();
-        toggleSystemMenu();
-    });
+    const systemBtn = document.getElementById('system-btn');
+    if (systemBtn) {
+        systemBtn.addEventListener('click', toggleSystemMenu);
+    }
 
     // 关于按钮点击事件
-    document.getElementById('about-item').addEventListener('click', function () {
-        window.openAboutWindow();
-    });
+    const aboutItem = document.getElementById('about-item');
+    if (aboutItem) {
+        aboutItem.addEventListener('click', () => {
+            window.aboutService.openAboutWindow();
+        });
+    }
 
     // 检查更新按钮点击事件
-    document.getElementById('check-update-item').addEventListener('click', function () {
-        window.checkForUpdates(true);
-    });
+    const checkUpdateItem = document.getElementById('check-update-item');
+    if (checkUpdateItem) {
+        checkUpdateItem.addEventListener('click', () => {
+            window.checkForUpdates();
+        });
+    }
 
     // 点击其他地方时关闭系统菜单
-    document.addEventListener('click', function (e) {
-        const systemItemsContainer = document.getElementById('system-items-container');
-        if (!e.target.closest('#system-btn') &&
-            !e.target.closest('#system-items-container') &&
-            systemItemsContainer.style.display === 'block') {
+    document.addEventListener('click', (event) => {
+        const systemBtn = document.getElementById('system-btn');
+        const systemMenu = document.getElementById('system-items-container');
+
+        if (systemBtn && systemMenu &&
+            !systemBtn.contains(event.target) &&
+            !systemMenu.contains(event.target)) {
             hideSystemMenu();
         }
     });
@@ -85,57 +162,68 @@ function initEventHandlers() {
 
 /**
  * 切换系统菜单的可见性
+ * 如果侧边栏被折叠，先展开侧边栏
  */
 function toggleSystemMenu() {
-    const systemItemsContainer = document.getElementById('system-items-container');
-    const sessionsContainer = document.getElementById('sessions-container');
-    const sidebarLower = document.getElementById('sidebar-footer');
+    const sidebar = document.getElementById('sidebar');
+    const systemMenu = document.getElementById('system-items-container');
 
     // 检查侧边栏是否折叠
-    const sidebar = document.getElementById('sidebar');
-    if (sidebar.classList.contains('collapsed')) {
+    if (sidebar && sidebar.classList.contains('collapsed')) {
+        // 如果侧边栏折叠，先展开
         window.toggleSidebar(); // 先展开侧边栏
 
         // 等待侧边栏动画完成后再显示系统菜单
         setTimeout(() => {
-            systemItemsContainer.style.display = 'block';
-            // 添加菜单打开标记类
-            sidebarLower.classList.add('menu-open');
-            sessionsContainer.classList.add('menu-open');
-        }, 300);
+            if (systemMenu) {
+                systemMenu.style.display = 'block';
+                // 添加菜单打开标记类
+                sidebar.classList.add('system-menu-open');
+            }
+        }, 300); // 等待侧边栏动画完成
     } else {
         // 如果侧边栏已经展开，则切换系统菜单的可见性
-        systemItemsContainer.style.display =
-            systemItemsContainer.style.display === 'none' ? 'block' : 'none';
-
-        // 添加或移除菜单标记类
-        if (systemItemsContainer.style.display === 'block') {
-            sidebarLower.classList.add('menu-open');
-            sessionsContainer.classList.add('menu-open');
-        } else {
-            // 轻微延迟以确保平滑过渡
-            setTimeout(() => {
-                sidebarLower.classList.remove('menu-open');
-                sessionsContainer.classList.remove('menu-open');
-            }, 50);
+        if (systemMenu) {
+            const isVisible = systemMenu.style.display === 'block';
+            systemMenu.style.display = isVisible ? 'none' : 'block';
+            // 添加或移除菜单标记类
+            if (sidebar) {
+                if (isVisible) {
+                    sidebar.classList.remove('system-menu-open');
+                } else {
+                    sidebar.classList.add('system-menu-open');
+                }
+            }
         }
     }
+
+    // 轻微延迟以确保平滑过渡
+    setTimeout(() => {
+        const systemMenu = document.getElementById('system-items-container');
+        if (systemMenu && systemMenu.style.display === 'block') {
+            systemMenu.style.opacity = '1';
+        }
+    }, 50);
 }
 
 /**
  * 隐藏系统菜单
  */
 function hideSystemMenu() {
-    const systemItemsContainer = document.getElementById('system-items-container');
-    systemItemsContainer.style.display = 'none';
+    const systemMenu = document.getElementById('system-items-container');
+    const sidebar = document.getElementById('sidebar');
 
-    // 移除菜单打开标记类
-    setTimeout(() => {
-        const sidebarLower = document.getElementById('sidebar-footer');
-        sidebarLower.classList.remove('menu-open');
-        document.getElementById('sessions-container').classList.remove('menu-open');
-    }, 50);
+    if (systemMenu) {
+        systemMenu.style.display = 'none';
+        // 移除菜单打开标记类
+        if (sidebar) {
+            sidebar.classList.remove('system-menu-open');
+        }
+    }
 }
 
 // 脚本加载时初始化事件处理程序
-document.addEventListener('DOMContentLoaded', initEventHandlers); 
+initMenuEventHandlers();
+
+// 导出updateUIText函数供其他模块使用
+window.updateUIText = updateUIText; 

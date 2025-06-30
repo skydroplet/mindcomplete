@@ -39,11 +39,42 @@
         const { ipcRenderer } = require('electron');
         const i18n = require('../../locales/i18n');
 
-        // 页面加载完成后设置多语言文本
-        document.addEventListener('DOMContentLoaded', () => {
-            // 设置页面标题
+        // 更新UI文本的函数
+        function updateUIText() {
             document.getElementById('title').textContent = i18n.t('app.title');
             document.getElementById('description').textContent = i18n.t('app.description');
+        }
+
+        // 页面加载完成后设置多语言文本
+        document.addEventListener('DOMContentLoaded', async () => {
+            // 获取当前语言设置
+            try {
+                const language = await ipcRenderer.invoke('get-language');
+                if (language) {
+                    i18n.setLocale(language);
+                }
+            } catch (error) {
+                console.error('获取语言设置失败:', error.message);
+            }
+
+            // 设置页面内容
+            updateUIText();
+
+            // 监听语言更新事件
+            ipcRenderer.on('locale-updated', async () => {
+                // 获取最新的语言设置
+                try {
+                    const language = await ipcRenderer.invoke('get-language');
+                    if (language) {
+                        i18n.setLocale(language);
+                    }
+                } catch (error) {
+                    console.error('获取语言设置失败:', error.message);
+                }
+
+                // 更新UI文本
+                updateUIText();
+            });
 
             // 添加链接点击事件委托，使链接在外部浏览器中打开
             document.body.addEventListener('click', (event) => {
