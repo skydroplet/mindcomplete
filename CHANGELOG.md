@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.1.5](https://github.com/skydroplet/mindcomplete/compare/v0.1.4...v0.1.5) (2025-06-30)
+
+### 🐛 修复
+
+* Agent配置没有生效 ([6e46606](https://github.com/skydroplet/mindcomplete/commit/6e46606e08ee2ef9d8333e3f94bbe6d40dbd754d))
+
 ## [0.1.4](https://github.com/skydroplet/mindcomplete/compare/v0.1.2...v0.1.4) (2025-06-23)
 
 ### ✨ 新功能
