@@ -256,6 +256,50 @@ ipcMain.handle('get-tab-state', (event) => {
     }
 });
 
+// 处理输入历史记录的保存和加载
+ipcMain.handle('save-input-history', (event, history) => {
+    try {
+        const userDataPath = app.getPath('userData');
+        const historyFilePath = path.join(userDataPath, 'user-data', 'input-history.json');
+
+        // 确保目录存在
+        const dirPath = path.dirname(historyFilePath);
+        if (!fs.existsSync(dirPath)) {
+            fs.mkdirSync(dirPath, { recursive: true });
+        }
+
+        // 将历史记录保存到文件
+        fs.writeFileSync(historyFilePath, JSON.stringify(history), 'utf8');
+        log.info(`保存输入历史记录成功，共 ${history.length} 条记录`);
+        return true;
+    } catch (error) {
+        log.error('保存输入历史记录失败:', error.message);
+        return false;
+    }
+});
+
+ipcMain.handle('load-input-history', (event) => {
+    try {
+        const userDataPath = app.getPath('userData');
+        const historyFilePath = path.join(userDataPath, 'user-data', 'input-history.json');
+
+        // 如果文件不存在，返回空数组
+        if (!fs.existsSync(historyFilePath)) {
+            log.info('输入历史记录文件不存在，返回空数组');
+            return [];
+        }
+
+        // 从文件加载历史记录
+        const historyData = fs.readFileSync(historyFilePath, 'utf8');
+        const history = JSON.parse(historyData);
+        log.info(`加载输入历史记录成功，共 ${history.length} 条记录`);
+        return history;
+    } catch (error) {
+        log.error('加载输入历史记录失败:', error.message);
+        return [];
+    }
+});
+
 // 添加文件系统相关的 IPC 处理
 ipcMain.handle('read-file', async (event, path) => {
     try {

@@ -26,6 +26,49 @@ class InputManagerService {
         this.messageHistory = []; // 全局历史消息列表，所有标签页共享
         this.historyIndex = -1; // 当前历史索引，-1表示不在历史记录中
         this.tempInput = ''; // 临时存储当前输入内容
+
+        // 保存历史记录的延迟时间(毫秒)
+        this.saveHistoryDelay = 1000;
+        this.saveHistoryTimeout = null;
+
+        // 初始化时从本地加载历史记录
+        this.loadHistoryFromLocal();
+    }
+
+    /**
+     * 从本地加载历史记录
+     */
+    async loadHistoryFromLocal() {
+        try {
+            const history = await ipcRenderer.invoke('load-input-history');
+            if (history && Array.isArray(history)) {
+                this.messageHistory = history;
+                log.info(`从本地加载历史消息记录成功，共 ${history.length} 条记录`);
+            }
+        } catch (error) {
+            log.error('加载历史消息记录失败:', error.message);
+        }
+    }
+
+    /**
+     * 保存历史记录到本地
+     */
+    async saveHistoryToLocal() {
+        // 如果有待保存的任务，清除它
+        if (this.saveHistoryTimeout) {
+            clearTimeout(this.saveHistoryTimeout);
+        }
+
+        // 延迟保存，避免频繁写入
+        this.saveHistoryTimeout = setTimeout(async () => {
+            try {
+                await ipcRenderer.invoke('save-input-history', this.messageHistory);
+                log.info(`保存历史消息记录成功，共 ${this.messageHistory.length} 条记录`);
+                this.saveHistoryTimeout = null;
+            } catch (error) {
+                log.error('保存历史消息记录失败:', error.message);
+            }
+        }, this.saveHistoryDelay);
     }
 
     /**
@@ -282,6 +325,9 @@ class InputManagerService {
         this.tempInput = ''; // 清除临时输入
 
         log.info(`添加全局历史消息: "${message.trim()}", 历史记录总数: ${this.messageHistory.length}`);
+
+        // 保存历史记录到本地
+        this.saveHistoryToLocal();
     }
 
     /**
@@ -337,11 +383,19 @@ class InputManagerService {
     /**
      * 清除历史记录
      */
-    clearHistory() {
+    async clearHistory() {
         this.messageHistory = [];
         this.historyIndex = -1;
         this.tempInput = '';
         log.info('已清除全局历史记录');
+
+        // 同时清除本地保存的历史记录
+        try {
+            await ipcRenderer.invoke('save-input-history', []);
+            log.info('已清除本地保存的历史记录');
+        } catch (error) {
+            log.error('清除本地历史记录失败:', error.message);
+        }
     }
 
     /**
