@@ -4,7 +4,7 @@
         "description": "让每个人都能自由地和数字世界交互。"
     },
     "ui": {
-        "inputPlaceholder": "请输入您的问题...",
+        "inputPlaceholder": "输入消息，按Enter发送，Ctrl+Enter换行，↑↓切换历史消息，Ctrl+P选择用户提示词...",
         "sendButton": "发送",
         "status": {
             "ready": "就绪",
@@ -118,8 +118,8 @@
     },
     "chat": {
         "send": "发送",
-        "placeholder": "输入消息，按Enter发送，Ctrl+Enter换行...",
-        "inputPlaceholder": "输入消息，按Enter发送，Ctrl+Enter换行..."
+        "placeholder": "输入消息，按Enter发送，Ctrl+Enter换行，↑↓切换历史消息...",
+        "inputPlaceholder": "输入消息，按Enter发送，Ctrl+Enter换行，↑↓切换历史消息..."
     },
     "env": {
         "keyPlaceholder": "变量名",
