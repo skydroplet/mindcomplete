@@ -21,9 +21,6 @@ class McpRuntimeService {
         ipcRenderer.on('python-install-progress', (event, data) => {
             this.handlePythonInstallProgress(data);
         });
-
-        // 初始化时检查并安装缺失的运行环境
-        this.initializeRuntimes();
     }
 
     /**
@@ -592,4 +589,8 @@ window.addEventListener('DOMContentLoaded', () => {
     // 绑定Python安装按钮
     const installPythonBtn = document.getElementById('installPythonBtn');
     mcpRuntimeService.bindPythonInstallButton(installPythonBtn);
+
+    setTimeout(() => {
+        mcpRuntimeService.initializeRuntimes();
+    }, 0);
 });
