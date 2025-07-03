@@ -6,6 +6,7 @@
  * - 显示导出配置对话框
  * - 收集用户选择的导出项
  * - 调用主进程导出配置
+ * - 支持模型、提示词、MCP服务和Agent配置的导出
  */
 
 const Logger = require('../main/logger');
@@ -32,7 +33,8 @@ class ExportService {
         this.exportableItems = {
             models: {},
             prompts: {},
-            mcpServers: {}
+            mcpServers: {},
+            agents: {}
         };
 
         // 存储用户选择的配置项
@@ -42,7 +44,8 @@ class ExportService {
             prompts: [],
             mcpServers: [],
             mcpEnvVars: [],
-            mcpArgs: []
+            mcpArgs: [],
+            agents: []
         };
     }
 
@@ -132,6 +135,16 @@ class ExportService {
                 checkbox.checked = checked;
             });
         });
+
+        // Agent类别复选框
+        document.getElementById('export-agents').addEventListener('change', (e) => {
+            const checked = e.target.checked;
+            const agentsList = document.getElementById('agents-list');
+            const agentsCheckboxes = agentsList.querySelectorAll('input[type="checkbox"]');
+            agentsCheckboxes.forEach(checkbox => {
+                checkbox.checked = checked;
+            });
+        });
     }
 
     /**
@@ -142,7 +155,8 @@ class ExportService {
         const categoryMapping = {
             'models-list': 'export-models',
             'prompts-list': 'export-prompts',
-            'mcp-list': 'export-mcp'
+            'mcp-list': 'export-mcp',
+            'agents-list': 'export-agents'
         };
 
         // 遍历映射，为每个类别设置折叠/展开功能
@@ -206,13 +220,18 @@ class ExportService {
             const mcpConfig = await ipcRenderer.invoke('get-mcp-config');
             this.exportableItems.mcpServers = mcpConfig.servers || {};
 
+            // 获取Agent列表
+            const agents = await ipcRenderer.invoke('get-agents');
+            this.exportableItems.agents = agents || {};
+
             // 渲染导出项目列表
             this.renderExportableItems();
 
             log.info('已加载可导出配置项:', {
                 models: Object.keys(this.exportableItems.models).length,
                 prompts: Object.keys(this.exportableItems.prompts).length,
-                mcpServers: Object.keys(this.exportableItems.mcpServers).length
+                mcpServers: Object.keys(this.exportableItems.mcpServers).length,
+                agents: Object.keys(this.exportableItems.agents).length
             });
         } catch (error) {
             log.error('加载可导出配置项失败:', error.message);
@@ -414,6 +433,56 @@ class ExportService {
 
         // 设置MCP全选事件
         this.setupMcpTableAllSelectEvents();
+
+        // 渲染Agent列表 - 使用表格形式
+        const agentsList = document.getElementById('agents-list');
+        agentsList.innerHTML = '';
+
+        // 创建表格
+        const agentsTable = document.createElement('table');
+        agentsTable.className = 'export-table';
+
+        // 创建表头
+        const agentsThead = document.createElement('thead');
+        const agentsHeaderRow = document.createElement('tr');
+
+        // Agent名称列
+        const agentNameHeader = document.createElement('th');
+        agentNameHeader.textContent = i18n.t('export.name', '名称');
+
+        // 导出列
+        const agentExportHeader = document.createElement('th');
+        agentExportHeader.textContent = i18n.t('export.exportOption', '导出');
+
+        // 创建全选复选框
+        const agentSelectAllCheckbox = document.createElement('input');
+        agentSelectAllCheckbox.type = 'checkbox';
+        agentSelectAllCheckbox.id = 'select-all-agents';
+        agentSelectAllCheckbox.checked = true;
+        agentSelectAllCheckbox.className = 'select-all-checkbox';
+        agentSelectAllCheckbox.title = i18n.t('export.selectAllAgents', '选择/取消选择所有Agent');
+        agentExportHeader.appendChild(agentSelectAllCheckbox);
+
+        // 添加表头
+        agentsHeaderRow.appendChild(agentNameHeader);
+        agentsHeaderRow.appendChild(agentExportHeader);
+        agentsThead.appendChild(agentsHeaderRow);
+        agentsTable.appendChild(agentsThead);
+
+        // 创建表格内容
+        const agentsTbody = document.createElement('tbody');
+
+        // 添加Agent行
+        Object.entries(this.exportableItems.agents).forEach(([agentId, agent]) => {
+            const row = this.createAgentTableRow(agentId, agent);
+            agentsTbody.appendChild(row);
+        });
+
+        agentsTable.appendChild(agentsTbody);
+        agentsList.appendChild(agentsTable);
+
+        // 设置Agent全选事件
+        this.setupAgentTableAllSelectEvents();
     }
 
     /**
@@ -504,6 +573,20 @@ class ExportService {
             const checked = e.target.checked;
             const argsCheckboxes = document.querySelectorAll('input[data-type="mcp-args"]');
             argsCheckboxes.forEach(checkbox => {
+                checkbox.checked = checked;
+            });
+        });
+    }
+
+    /**
+     * 设置Agent表格全选事件
+     */
+    setupAgentTableAllSelectEvents() {
+        // Agent全选
+        document.getElementById('select-all-agents').addEventListener('change', (e) => {
+            const checked = e.target.checked;
+            const agentCheckboxes = document.querySelectorAll('input[data-type="agent"]');
+            agentCheckboxes.forEach(checkbox => {
                 checkbox.checked = checked;
             });
         });
@@ -694,6 +777,43 @@ class ExportService {
     }
 
     /**
+     * 创建Agent表格行
+     * @param {string} id - Agent ID
+     * @param {object} agent - Agent对象
+     * @returns {HTMLElement} - 表格行元素
+     */
+    createAgentTableRow(id, agent) {
+        const row = document.createElement('tr');
+        row.className = 'export-table-row';
+
+        // Agent名称单元格
+        const nameCell = document.createElement('td');
+        nameCell.className = 'export-agent-name';
+        nameCell.textContent = agent.name || id;
+
+        // 导出选择框单元格
+        const exportCell = document.createElement('td');
+        exportCell.className = 'export-checkbox-cell';
+
+        const exportCheckbox = document.createElement('input');
+        exportCheckbox.type = 'checkbox';
+        exportCheckbox.id = `agent-${id}`;
+        exportCheckbox.dataset.id = id;
+        exportCheckbox.dataset.type = 'agent';
+        exportCheckbox.checked = true;
+        exportCheckbox.className = 'export-item-checkbox';
+        exportCheckbox.title = i18n.t('export.selectAgent', '选择/取消选择Agent');
+
+        exportCell.appendChild(exportCheckbox);
+
+        // 添加单元格到行
+        row.appendChild(nameCell);
+        row.appendChild(exportCell);
+
+        return row;
+    }
+
+    /**
      * 收集用户选择的导出项
      */
     collectSelectedItems() {
@@ -704,7 +824,8 @@ class ExportService {
             prompts: [],
             mcpServers: [],
             mcpEnvVars: [],
-            mcpArgs: []
+            mcpArgs: [],
+            agents: []
         };
 
         // 收集选中的模型基础配置
@@ -743,13 +864,20 @@ class ExportService {
             this.selectedItems.mcpArgs.push(checkbox.dataset.id);
         });
 
+        // 收集选中的Agent
+        const agentCheckboxes = document.querySelectorAll('input[data-type="agent"]:checked');
+        agentCheckboxes.forEach(checkbox => {
+            this.selectedItems.agents.push(checkbox.dataset.id);
+        });
+
         log.info('已选择的导出项:', {
             models: this.selectedItems.models.length,
             modelSecrets: this.selectedItems.modelSecrets.length,
             prompts: this.selectedItems.prompts.length,
             mcpBase: this.selectedItems.mcpServers.length,
             mcpEnvVars: this.selectedItems.mcpEnvVars.length,
-            mcpArgs: this.selectedItems.mcpArgs.length
+            mcpArgs: this.selectedItems.mcpArgs.length,
+            agents: this.selectedItems.agents.length
         });
     }
 
@@ -836,6 +964,18 @@ class ExportService {
 
                         // 添加到导出数据中
                         exportData.mcpServers[serverId] = serverConfig;
+                    }
+                });
+            }
+
+            // 处理Agent配置
+            if (this.selectedItems.agents.length > 0) {
+                const agents = await ipcRenderer.invoke('get-agents');
+                // 只导出用户选择的Agent配置
+                exportData.agents = {};
+                this.selectedItems.agents.forEach(agentId => {
+                    if (agents[agentId]) {
+                        exportData.agents[agentId] = agents[agentId];
                     }
                 });
             }

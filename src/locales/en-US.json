@@ -194,8 +194,8 @@
         "tabs": {
             "models": "Models",
             "prompts": "Prompts",
-            "mcp": "MCP Configuration",
-            "agents": "Agents",
+            "mcp": "MCP Configurations",
+            "agents": "Agent Configurations",
             "newSession": "New Session",
             "close": "Close Tab",
             "newTab": "New Tab",
@@ -357,6 +357,7 @@
         "models": "Model Configurations",
         "prompts": "Prompts",
         "mcp": "MCP Configurations",
+        "agents": "Agent Configurations",
         "cancel": "Cancel",
         "confirm": "Export",
         "success": "Configuration exported successfully!",
@@ -385,7 +386,9 @@
         "selectAllEnvVars": "Select/Deselect all environment variables",
         "selectAllArgs": "Select/Deselect all command arguments",
         "selectEnvVars": "Select/Deselect environment variables",
-        "selectArgs": "Select/Deselect command arguments"
+        "selectArgs": "Select/Deselect command arguments",
+        "selectAllAgents": "Select/Deselect all agents",
+        "selectAgent": "Select/Deselect agent"
     },
     "import": {
         "title": "Import Configuration",

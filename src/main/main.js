@@ -25,6 +25,7 @@ const modelConfig = require('./config/modelConfig');
 const promptConfig = require('./config/promptConfig');
 const mcpConfig = require('./config/mcpConfig');
 const mcpRuntimeManager = require('./mcp/mcpRuntimeManager');
+const agentConfig = require('./config/agentConfig');
 
 let mainWindow = null;
 
@@ -636,11 +637,26 @@ ipcMain.handle('import-config', async (event, importData) => {
     try {
         log.info('导入配置请求:', Object.keys(importData));
 
+        // 记录导入的项目数量和ID映射关系
+        const result = {
+            success: true,
+            imported: {
+                models: 0,
+                prompts: 0,
+                mcpServers: 0,
+                agents: 0,
+                modelMappings: {},   // 旧ID -> 新ID 映射
+                promptMappings: {},  // 旧ID -> 新ID 映射
+                mcpServerMappings: {} // 旧ID -> 新ID 映射
+            }
+        };
+
         // 记录导入的项目数量
         const importCount = {
             models: 0,
             prompts: 0,
-            mcpServers: 0
+            mcpServers: 0,
+            agents: 0
         };
 
         const now = new Date();
@@ -668,9 +684,14 @@ ipcMain.handle('import-config', async (event, importData) => {
                 }
 
                 // 使用添加模型方法
-                const result = modelConfig.addModel(model);
-                if (result) {
+                const newModelId = modelConfig.addModel(model);
+                if (newModelId) {
                     importCount.models++;
+                    result.imported.models++;
+
+                    // 直接使用返回的ID建立映射关系
+                    result.imported.modelMappings[id] = newModelId;
+                    log.info(`模型ID映射: ${id} -> ${newModelId}`);
                 }
             });
 
@@ -704,6 +725,11 @@ ipcMain.handle('import-config', async (event, importData) => {
                 const newPromptId = promptConfig.addPrompt(prompt);
                 if (newPromptId) {
                     importCount.prompts++;
+                    result.imported.prompts++;
+
+                    // 记录ID映射关系
+                    result.imported.promptMappings[id] = newPromptId;
+                    log.info(`提示词ID映射: ${id} -> ${newPromptId}`);
                 }
             });
 
@@ -735,19 +761,111 @@ ipcMain.handle('import-config', async (event, importData) => {
                 }
 
                 // 使用添加MCP服务方法
-                const result = mcpConfig.addMcpServer(server.name, server);
-                if (result) {
+                const newServerId = mcpConfig.addMcpServer(server.name, server);
+                if (newServerId) {
                     importCount.mcpServers++;
+                    result.imported.mcpServers++;
+
+                    // 直接使用返回的ID建立映射关系
+                    result.imported.mcpServerMappings[id] = newServerId;
+                    log.info(`MCP服务ID映射: ${id} -> ${newServerId}`);
                 }
             });
 
             log.info(`导入了 ${importCount.mcpServers} 个MCP服务配置`);
         }
 
-        return {
-            success: true,
-            imported: importCount
-        };
+        // 导入Agent配置 - 使用addAgent方法
+        index = 1;
+        if (importData.agents && typeof importData.agents === 'object') {
+            // 获取现有Agent配置
+            const existingAgents = agentConfig.getAgents() || {};
+            const existingNames = Object.values(existingAgents).map(a => a.name);
+
+            // 创建ID映射关系，用于更新Agent中的引用
+            const idMappings = {
+                models: {},    // 旧模型ID -> 新模型ID
+                prompts: {},   // 旧提示词ID -> 新提示词ID
+                mcpServers: {} // 旧MCP服务ID -> 新MCP服务ID
+            };
+
+            // 如果导入了模型，建立模型ID映射
+            if (importData.models && result.imported && result.imported.modelMappings) {
+                idMappings.models = result.imported.modelMappings;
+            }
+
+            // 如果导入了提示词，建立提示词ID映射
+            if (importData.prompts && result.imported && result.imported.promptMappings) {
+                idMappings.prompts = result.imported.promptMappings;
+            }
+
+            // 如果导入了MCP服务，建立MCP服务ID映射
+            if (importData.mcpServers && result.imported && result.imported.mcpServerMappings) {
+                idMappings.mcpServers = result.imported.mcpServerMappings;
+            }
+
+            log.info('ID映射关系:', idMappings);
+
+            // 为每个导入的Agent生成新的配置
+            Object.entries(importData.agents).forEach(([id, agent]) => {
+                if (!agent.name) {
+                    agent.name = id;
+                }
+
+                if (!agent.name) {
+                    agent.name = "import-" + suffix + "-" + index;
+                    index++;
+                }
+
+                // 如果Agent名称已存在，添加导入标识
+                if (existingNames.includes(agent.name)) {
+                    agent.name = `${agent.name} (导入)`;
+                }
+
+                // 更新Agent中引用的模型ID
+                if (agent.modelId && idMappings.models[agent.modelId]) {
+                    log.info(`更新Agent "${agent.name}" 中的模型引用: ${agent.modelId} -> ${idMappings.models[agent.modelId]}`);
+                    agent.modelId = idMappings.models[agent.modelId];
+                }
+
+                // 更新Agent中引用的提示词ID
+                if (agent.promptId && idMappings.prompts[agent.promptId]) {
+                    log.info(`更新Agent "${agent.name}" 中的提示词引用: ${agent.promptId} -> ${idMappings.prompts[agent.promptId]}`);
+                    agent.promptId = idMappings.prompts[agent.promptId];
+                }
+
+                // 更新Agent中引用的MCP服务ID列表
+                if (agent.mcpServers && Array.isArray(agent.mcpServers)) {
+                    const updatedMcpServers = agent.mcpServers.map(serverId => {
+                        const newServerId = idMappings.mcpServers[serverId];
+                        if (newServerId) {
+                            log.info(`更新Agent "${agent.name}" 中的MCP服务引用: ${serverId} -> ${newServerId}`);
+                            return newServerId;
+                        }
+                        return serverId;
+                    });
+                    agent.mcpServers = updatedMcpServers;
+                }
+
+                // 使用添加Agent方法
+                const newAgentId = agentConfig.addAgent(agent);
+                if (newAgentId) {
+                    importCount.agents++;
+                    result.imported.agents++;
+                    log.info(`Agent导入成功: ${id} -> ${newAgentId}`);
+                }
+            });
+
+            log.info(`导入了 ${importCount.agents} 个Agent配置`);
+        }
+
+        // 更新导入数量统计
+        result.imported.models = importCount.models;
+        result.imported.prompts = importCount.prompts;
+        result.imported.mcpServers = importCount.mcpServers;
+        result.imported.agents = importCount.agents;
+
+        return result;
     } catch (error) {
         log.error('导入配置失败:', error.message);
         return {

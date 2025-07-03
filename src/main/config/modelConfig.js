@@ -24,7 +24,7 @@ class ModelConfig extends BaseConfigManager {
     /**
      * 添加新模型
      * @param {Object} model - 模型配置对象，包含name、type、apiKey等属性
-     * @returns {boolean} 添加是否成功
+     * @returns {string|null} 成功时返回新创建的模型ID，失败时返回null
      */
     addModel(model) {
         if (!this.config.models) {
@@ -43,7 +43,10 @@ class ModelConfig extends BaseConfigManager {
             contextWindowSize: model.contextWindowSize || 4096,
             temperature: model.temperature || 0.7
         }
-        return this.saveConfig();
+
+        // 保存配置并返回新创建的模型ID
+        const saved = this.saveConfig();
+        return saved ? modelId : null;
     }
 
     /**
