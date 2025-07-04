@@ -68,14 +68,23 @@ class ChatSessionService {
 
     setResponseMessages(rspId, msgId, role, content) {
         if (!this.responses[rspId]) {
-            this.responses[rspId] = { id: rspId, messages: {} };
+            // 创建响应容器，用于包含同一个响应的所有消息
+            const responseContainer = document.createElement('div');
+            responseContainer.className = 'response-container';
+            this.chatMessages.appendChild(responseContainer);
+
+            this.responses[rspId] = {
+                id: rspId,
+                messages: {},
+                container: responseContainer
+            };
         }
 
         let rsp = this.responses[rspId];
         let msgElement = rsp.messages[msgId]?.element || null;
         if (!msgElement) {
             // 根据消息类型添加消息
-            msgElement = this.addMessage('', role);
+            msgElement = this.addMessageToContainer('', role, rsp.container);
             rsp.messages[msgId] = { element: msgElement };
         }
 
@@ -209,8 +218,31 @@ class ChatSessionService {
 
         // 渲染消息历史
         if (this.data.messages) {
-            this.data.messages.forEach(msg => {
-                this.addMessage(msg.content, msg.role);
+            // 按照消息顺序组织用户消息和响应
+            let currentResponseContainer = null;
+            let lastMessageRole = null;
+
+            // 按照原始顺序处理消息
+            this.data.messages.forEach((msg) => {
+                if (msg.role === 'user') {
+                    // 用户消息直接添加到主容器
+                    this.addMessage(msg.content, msg.role);
+                    // 标记下一个非用户消息需要创建新的响应容器
+                    lastMessageRole = 'user';
+                    currentResponseContainer = null;
+                } else {
+                    // AI消息、工具消息或思考过程
+                    if (lastMessageRole === 'user' || currentResponseContainer === null) {
+                        // 如果上一条是用户消息，或者还没有响应容器，创建新的响应容器
+                        currentResponseContainer = document.createElement('div');
+                        currentResponseContainer.className = 'response-container';
+                        this.chatMessages.appendChild(currentResponseContainer);
+                    }
+
+                    // 将消息添加到当前响应容器
+                    this.addMessageToContainer(msg.content, msg.role, currentResponseContainer);
+                    lastMessageRole = msg.role;
+                }
             });
         }
 
@@ -311,22 +343,19 @@ class ChatSessionService {
     }
 
     /**
-     * 向聊天界面添加一条消息
+     * 向指定容器添加一条消息
      *
-     * 此函数用于在聊天界面中添加一条新消息，支持三种类型的消息：
-     * - user: 用户发送的消息，靠右显示，不解析Markdown
-     * - assistant: AI助手的回复，靠左显示，解析Markdown
-     * - tool 工具执行的消息，靠左显示，解析Markdown，有特殊样式
-     * - thinking: AI的思考过程，靠左显示，默认折叠
-     *
-     * @param {string} content - 消息内容。
+     * @param {string} content - 消息内容
      * @param {string} type - 消息类型，可选值为 'user'、'assistant'、'thinking'、 'tool'，默认为 'assistant'
+     * @param {HTMLElement} container - 容器元素，如果未提供则使用this.chatMessages
      * @param {Object} authRequest - 授权请求对象，包含toolName、serverId等信息
      * @returns {HTMLDivElement} - 消息内容元素，用于后续更新
      */
-    addMessage(content, type = 'assistant', authRequest = null) {
-        if (!this.chatMessages) {
-            log.error(`尝试添加消息但未找到消息容器，tabId=${this.tabId}`);
+    addMessageToContainer(content, type = 'assistant', container = null, authRequest = null) {
+        const targetContainer = container || this.chatMessages;
+
+        if (!targetContainer) {
+            log.error(`尝试添加消息但未找到消息容器`);
             return null;
         }
 
@@ -394,14 +423,43 @@ class ChatSessionService {
             messageDiv.appendChild(authButtons);
         }
 
-        // 将消息添加到聊天容器中
-        this.chatMessages.appendChild(messageDiv);
+        // 将消息添加到目标容器中
+        targetContainer.appendChild(messageDiv);
 
         // 滚动到最新消息
         this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
 
         // 返回消息内容元素以便后续更新
         return messageDiv.querySelector('.message-content');
+    }
+
+    /**
+     * 向聊天界面添加一条消息
+     *
+     * @param {string} content - 消息内容。
+     * @param {string} type - 消息类型，可选值为 'user'、'assistant'、'thinking'、 'tool'，默认为 'assistant'
+     * @param {Object} authRequest - 授权请求对象，包含toolName、serverId等信息
+     * @returns {HTMLDivElement} - 消息内容元素，用于后续更新
+     */
+    addMessage(content, type = 'assistant', authRequest = null) {
+        if (!this.chatMessages) {
+            log.error(`尝试添加消息但未找到消息容器，tabId=${this.tabId}`);
+            return null;
+        }
+
+        // 如果是用户消息，直接添加到主容器
+        if (type === 'user') {
+            // 用户消息直接添加到主容器
+            return this.addMessageToContainer(content, type, this.chatMessages, authRequest);
+        } else {
+            // 对于AI响应、思考过程或工具调用，创建一个新的响应容器
+            const responseContainer = document.createElement('div');
+            responseContainer.className = 'response-container';
+            this.chatMessages.appendChild(responseContainer);
+
+            // 将AI响应消息添加到新容器
+            return this.addMessageToContainer(content, type, responseContainer, authRequest);
+        }
     }
 
     /**
