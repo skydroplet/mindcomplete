@@ -44,7 +44,8 @@
         "user": "User",
         "ai": "AI",
         "tool": "Tool",
-        "thinking": "Thinking..."
+        "thinking": "Thinking",
+        "server": "Server"
     },
     "errors": {
         "apiKeyMissing": "API key not found, please check .env file",

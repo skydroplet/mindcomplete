@@ -304,15 +304,17 @@ class MCPClientManager extends EventEmitter {
 
     /**
      * 
-     * @param {string} message 
+     * @param {string} message 错误消息
+     * @param {string} serverId 服务ID
      * @returns 
      */
-    createToolResultError(message) {
+    createToolResultError(message, serverId) {
         return {
             content: [{
                 type: 'text',
                 text: message,
-            }]
+            }],
+            serverId // 添加服务ID到错误结果中
         };
     }
 
@@ -333,13 +335,13 @@ class MCPClientManager extends EventEmitter {
         }
 
         if (!targetServerId) {
-            return this.createToolResultError(`找不到提供工具 ${name} 的MCP服务`);
+            return this.createToolResultError(`找不到提供工具 ${name} 的MCP服务`, targetServerId);
         }
 
         // 获取对应的MCP客户端
         const clientInfo = this.mcpClients.get(targetServerId);
         if (!clientInfo || !clientInfo.isConnected) {
-            return this.createToolResultError(`MCP服务 ${targetServerId} 未连接，无法执行工具 ${name}`);
+            return this.createToolResultError(`MCP服务 ${targetServerId} 未连接，无法执行工具 ${name}`, targetServerId);
         }
 
         // 检查工具是否已授权
@@ -371,7 +373,7 @@ class MCPClientManager extends EventEmitter {
 
             // 如果授权被拒绝，返回错误
             if (!result.authorized) {
-                return this.createToolResultError(`工具 ${name} 执行请求被用户拒绝`);
+                return this.createToolResultError(`工具 ${name} 执行请求被用户拒绝`, targetServerId);
             }
 
             // 如果永久授权，更新授权状态
@@ -396,10 +398,22 @@ class MCPClientManager extends EventEmitter {
 
             const result = await Promise.race([task, timeoutPromise]);
             log.info(`工具执行结果:`, JSON.stringify(result, null, 2));
+
+            // 在结果中添加serverId
+            if (typeof result === 'object') {
+                result.serverId = targetServerId;
+            } else {
+                // 如果结果不是对象，创建一个包装对象
+                return {
+                    content: result,
+                    serverId: targetServerId
+                };
+            }
+
             return result;
         } catch (error) {
             log.error(`工具执行失败: ${error.message}`);
-            return this.createToolResultError(`工具执行失败: ${error.message}`);
+            return this.createToolResultError(`工具执行失败: ${error.message}`, targetServerId);
         }
     }
 }

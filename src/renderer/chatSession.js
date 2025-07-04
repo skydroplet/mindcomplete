@@ -66,7 +66,7 @@ class ChatSessionService {
         }
     }
 
-    setResponseMessages(rspId, msgId, role, content) {
+    setResponseMessages(rspId, msgId, role, content, serverId, toolName) {
         if (!this.responses[rspId]) {
             // 创建响应容器，用于包含同一个响应的所有消息
             const responseContainer = document.createElement('div');
@@ -90,27 +90,31 @@ class ChatSessionService {
 
         const processedText = this.preprocessCodeBlocks(content);
 
-        // 如果是工具调用消息，尝试提取工具名称
+        // 如果是工具调用消息，更新发送者显示
         if (role === 'tool') {
-            // 提取工具名称
-            const toolNameMatch = processedText.match(/使用工具[：:]\s*`?([^`\n]+)`?/i) ||
-                processedText.match(/工具[：:]\s*`?([^`\n]+)`?/i) ||
-                processedText.match(/tool[：:]\s*`?([^`\n]+)`?/i);
+            // 查找消息元素的父元素直到message元素
+            let parentElement = msgElement;
+            while (parentElement && !parentElement.classList.contains('message')) {
+                parentElement = parentElement.parentElement;
+            }
 
-            if (toolNameMatch && toolNameMatch[1]) {
-                const toolName = toolNameMatch[1].trim();
-                // 查找消息元素的父元素直到message元素
-                let parentElement = msgElement;
-                while (parentElement && !parentElement.classList.contains('message')) {
-                    parentElement = parentElement.parentElement;
-                }
+            if (parentElement) {
+                // 更新工具名称和服务器信息
+                const senderEl = parentElement.querySelector('.message-sender');
+                if (senderEl) {
+                    let senderText = i18n.t('messages.tool');
 
-                if (parentElement) {
-                    // 更新工具名称
-                    const senderEl = parentElement.querySelector('.message-sender');
-                    if (senderEl) {
-                        senderEl.textContent = i18n.t('messages.tool') + ': ' + toolName;
+                    // 添加工具名称
+                    if (toolName) {
+                        senderText += ': ' + toolName;
                     }
+
+                    // 添加服务器ID
+                    if (serverId) {
+                        senderText += ` (${i18n.t('messages.server')}: ${serverId})`;
+                    }
+
+                    senderEl.textContent = senderText;
                 }
             }
         }
@@ -124,8 +128,8 @@ class ChatSessionService {
         }
 
         // 接收响应消息
-        ipcRenderer.on('response-stream-' + this.sessionId, (event, rspId, msgId, role, content) => {
-            this.setResponseMessages(rspId, msgId, role, content);
+        ipcRenderer.on('response-stream-' + this.sessionId, (event, rspId, msgId, role, content, serverId, toolName) => {
+            this.setResponseMessages(rspId, msgId, role, content, serverId, toolName);
         });
 
         // 工具授权请求监听
@@ -372,15 +376,30 @@ class ChatSessionService {
             sender.textContent = i18n.t('messages.user');
         } else if (type === 'tool') {
             messageDiv.className = 'message tool-message';
-            sender.textContent = i18n.t('messages.tool');
 
-            // 尝试从内容中提取工具名称
-            const toolNameMatch = content.match(/使用工具[：:]\s*`?([^`\n]+)`?/i) ||
-                content.match(/工具[：:]\s*`?([^`\n]+)`?/i) ||
-                content.match(/tool[：:]\s*`?([^`\n]+)`?/i);
-            if (toolNameMatch && toolNameMatch[1]) {
-                sender.textContent = i18n.t('messages.tool') + ': ' + toolNameMatch[1].trim();
+            // 构建工具消息的发送者信息
+            let senderText = i18n.t('messages.tool');
+
+            // 如果是授权请求，显示服务器名和工具名
+            if (authRequest) {
+                if (authRequest.toolName) {
+                    senderText += ': ' + authRequest.toolName;
+                }
+                if (authRequest.serverName) {
+                    senderText += ` (${i18n.t('messages.server')}: ${authRequest.serverName})`;
+                }
+            } else {
+                // 尝试从内容中提取工具名称
+                const toolNameMatch = content.match(/使用工具[：:]\s*`?([^`\n]+)`?/i) ||
+                    content.match(/工具[：:]\s*`?([^`\n]+)`?/i) ||
+                    content.match(/tool[：:]\s*`?([^`\n]+)`?/i);
+
+                if (toolNameMatch && toolNameMatch[1]) {
+                    senderText += ': ' + toolNameMatch[1].trim();
+                }
             }
+
+            sender.textContent = senderText;
         } else if (type === 'thinking') {
             messageDiv.className = 'message thinking-message';
             sender.textContent = i18n.t('messages.ai') + ': ' + i18n.t('messages.thinking', '思考过程');

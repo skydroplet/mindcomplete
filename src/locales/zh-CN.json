@@ -44,7 +44,8 @@
         "user": "用户",
         "ai": "AI",
         "tool": "工具",
-        "thinking": "思考过程"
+        "thinking": "思考过程",
+        "server": "服务器"
     },
     "errors": {
         "apiKeyMissing": "未找到 API 密钥，请检查 .env 文件",
