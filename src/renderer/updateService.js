@@ -52,9 +52,11 @@ class UpdateService {
     setupUpdateListeners() {
         // 当有新版本可用时显示通知
         ipcRenderer.on('update-available', (event, updateInfo) => {
-            if (updateInfo && updateInfo.hasUpdate) {
+            if (updateInfo && updateInfo.hasUpdate && !updateInfo.ignored) {
                 log.info('发现新版本:', updateInfo);
                 this.showUpdateNotification(updateInfo);
+            } else if (updateInfo && updateInfo.hasUpdate && updateInfo.ignored) {
+                log.info('发现已被忽略的新版本:', updateInfo);
             }
         });
 
@@ -65,9 +67,16 @@ class UpdateService {
 
         // 更新检查结果
         ipcRenderer.on('update-check-result', (event, result) => {
-            if (result.hasUpdate) {
+            if (result.hasUpdate && !result.ignored) {
                 this.updateStatus(i18n.t('ui.status.updateAvailable', '发现新版本 {version}', { version: result.version }));
                 this.showUpdateNotification(result);
+            } else if (result.hasUpdate && result.ignored) {
+                this.updateStatus(i18n.t('ui.status.noUpdateAvailable', '已是最新版本'));
+                log.info('已忽略的新版本:', result.version);
+                // 3秒后恢复状态显示
+                setTimeout(() => {
+                    this.updateStatus(i18n.t('ui.status.ready'));
+                }, 3000);
             } else {
                 this.updateStatus(i18n.t('ui.status.noUpdateAvailable', '已是最新版本'));
                 // 3秒后恢复状态显示
@@ -97,10 +106,17 @@ class UpdateService {
         // 调用主进程中的检查更新方法
         ipcRenderer.invoke('check-for-updates', force)
             .then(result => {
-                if (result.hasUpdate) {
+                if (result.hasUpdate && !result.ignored) {
                     // 显示更新通知
                     this.showUpdateNotification(result);
                     this.updateStatus(i18n.t('ui.status.updateAvailable', '发现新版本 {version}', { version: result.version }));
+                } else if (result.hasUpdate && result.ignored) {
+                    this.updateStatus(i18n.t('ui.status.noUpdateAvailable', '已是最新版本'));
+                    log.info('已忽略的新版本:', result.version);
+                    // 3秒后恢复状态显示
+                    setTimeout(() => {
+                        this.updateStatus(i18n.t('ui.status.ready'));
+                    }, 3000);
                 } else {
                     this.updateStatus(i18n.t('ui.status.noUpdateAvailable', '已是最新版本'));
                     // 3秒后恢复状态显示
@@ -120,12 +136,6 @@ class UpdateService {
     }
 
     showUpdateNotification(updateInfo) {
-        // 检查版本是否被忽略
-        if (updateInfo.ignored) {
-            log.info('版本已被忽略:', updateInfo.version);
-            return;
-        }
-
         // 检查通知是否已存在
         const existingNotification = document.querySelector('.update-notification');
         if (existingNotification) {

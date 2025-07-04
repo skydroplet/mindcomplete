@@ -164,18 +164,27 @@ class AppConfig extends BaseConfigManager {
                     const hasUpdate = this.hasNewVersion(this.appVersion, updateInfo.version);
                     updateInfo.hasUpdate = hasUpdate;
 
+                    // 检查之前是否已经忽略了这个版本
+                    const wasIgnored = this.config.latestVersion &&
+                        this.config.latestVersion.version === updateInfo.version &&
+                        this.config.latestVersion.ignored === true;
+
+                    // 保留忽略状态
+                    updateInfo.ignored = wasIgnored;
+
                     if (hasUpdate) {
                         // 找到新版本，更新缓存并通知
-                        log.info(`发现新版本: ${updateInfo.version}`);
+                        log.info(`发现新版本: ${updateInfo.version}${wasIgnored ? ' (已被忽略)' : ''}`);
 
                         // 更新最后检查时间和最新版本信息
                         this.config.lastUpdateCheck = now;
-                        updateInfo.ignored = false;
                         this.config.latestVersion = updateInfo;
                         this.saveConfig();
 
-                        // 通知所有窗口更新信息
-                        this.notifyWindowsAboutUpdate(updateInfo);
+                        // 仅当版本未被忽略时通知所有窗口更新信息
+                        if (!wasIgnored) {
+                            this.notifyWindowsAboutUpdate(updateInfo);
+                        }
 
                         return updateInfo;
                     } else {
