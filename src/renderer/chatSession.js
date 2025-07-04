@@ -67,19 +67,45 @@ class ChatSessionService {
     }
 
     setResponseMessages(rspId, msgId, role, content) {
-        let rsp = this.responses[rspId];
-        if (!rsp) {
-            rsp = { id: rspId, messages: {} };
-            this.responses[rspId] = rsp;
+        if (!this.responses[rspId]) {
+            this.responses[rspId] = { id: rspId, messages: {} };
         }
 
+        let rsp = this.responses[rspId];
         let msgElement = rsp.messages[msgId]?.element || null;
         if (!msgElement) {
+            // 根据消息类型添加消息
             msgElement = this.addMessage('', role);
             rsp.messages[msgId] = { element: msgElement };
         }
 
         const processedText = this.preprocessCodeBlocks(content);
+
+        // 如果是工具调用消息，尝试提取工具名称
+        if (role === 'tool') {
+            // 提取工具名称
+            const toolNameMatch = processedText.match(/使用工具[：:]\s*`?([^`\n]+)`?/i) ||
+                processedText.match(/工具[：:]\s*`?([^`\n]+)`?/i) ||
+                processedText.match(/tool[：:]\s*`?([^`\n]+)`?/i);
+
+            if (toolNameMatch && toolNameMatch[1]) {
+                const toolName = toolNameMatch[1].trim();
+                // 查找消息元素的父元素直到message元素
+                let parentElement = msgElement;
+                while (parentElement && !parentElement.classList.contains('message')) {
+                    parentElement = parentElement.parentElement;
+                }
+
+                if (parentElement) {
+                    // 更新工具名称
+                    const senderEl = parentElement.querySelector('.message-sender');
+                    if (senderEl) {
+                        senderEl.textContent = i18n.t('messages.tool') + ': ' + toolName;
+                    }
+                }
+            }
+        }
+
         this.updateMessage(msgElement, processedText);
     }
 
@@ -257,12 +283,41 @@ class ChatSessionService {
     }
 
     /**
+     * 创建折叠切换按钮
+     * 
+     * @param {HTMLDivElement} contentDiv - 消息内容元素
+     * @param {string} type - 消息类型
+     * @returns {HTMLButtonElement} 折叠/展开按钮
+     */
+    createToggleButton(contentDiv, type) {
+        const toggleBtn = document.createElement('button');
+        toggleBtn.className = 'toggle-content-btn';
+        toggleBtn.innerHTML = `<span class="toggle-icon">▶</span>`;
+
+        toggleBtn.addEventListener('click', () => {
+            const isCollapsed = contentDiv.classList.contains('collapsed');
+            if (isCollapsed) {
+                // 展开内容
+                contentDiv.classList.remove('collapsed');
+                toggleBtn.innerHTML = `<span class="toggle-icon">▼</span>`;
+            } else {
+                // 折叠内容
+                contentDiv.classList.add('collapsed');
+                toggleBtn.innerHTML = `<span class="toggle-icon">▶</span>`;
+            }
+        });
+
+        return toggleBtn;
+    }
+
+    /**
      * 向聊天界面添加一条消息
      *
      * 此函数用于在聊天界面中添加一条新消息，支持三种类型的消息：
      * - user: 用户发送的消息，靠右显示，不解析Markdown
      * - assistant: AI助手的回复，靠左显示，解析Markdown
      * - tool 工具执行的消息，靠左显示，解析Markdown，有特殊样式
+     * - thinking: AI的思考过程，靠左显示，默认折叠
      *
      * @param {string} content - 消息内容。
      * @param {string} type - 消息类型，可选值为 'user'、'assistant'、'thinking'、 'tool'，默认为 'assistant'
@@ -289,21 +344,49 @@ class ChatSessionService {
         } else if (type === 'tool') {
             messageDiv.className = 'message tool-message';
             sender.textContent = i18n.t('messages.tool');
+
+            // 尝试从内容中提取工具名称
+            const toolNameMatch = content.match(/使用工具[：:]\s*`?([^`\n]+)`?/i) ||
+                content.match(/工具[：:]\s*`?([^`\n]+)`?/i) ||
+                content.match(/tool[：:]\s*`?([^`\n]+)`?/i);
+            if (toolNameMatch && toolNameMatch[1]) {
+                sender.textContent = i18n.t('messages.tool') + ': ' + toolNameMatch[1].trim();
+            }
         } else if (type === 'thinking') {
             messageDiv.className = 'message thinking-message';
-            sender.textContent = i18n.t('messages.ai');
+            sender.textContent = i18n.t('messages.ai') + ': ' + i18n.t('messages.thinking', '思考过程');
         } else {
             messageDiv.className = 'message ai-message';
             sender.textContent = i18n.t('messages.ai');
         }
 
-        messageDiv.appendChild(sender);
+        // 创建发送者头部容器，包含发送者信息和折叠按钮
+        const headerDiv = document.createElement('div');
+        headerDiv.className = 'message-header';
+        headerDiv.appendChild(sender);
 
-        // 消息内容
-        const contentDiv = document.createElement('div');
-        contentDiv.className = 'message-content';
-        this.updateMessage(contentDiv, content);
-        messageDiv.appendChild(contentDiv);
+        // 为思考过程和工具调用添加折叠功能
+        if (type === 'thinking' || type === 'tool') {
+            // 添加用于折叠效果的CSS类
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content collapsible-content collapsed';
+
+            // 创建折叠/展开按钮
+            const toggleBtn = this.createToggleButton(contentDiv, type);
+            headerDiv.appendChild(toggleBtn);
+
+            messageDiv.appendChild(headerDiv);
+            this.updateMessage(contentDiv, content);
+            messageDiv.appendChild(contentDiv);
+        } else {
+            messageDiv.appendChild(headerDiv);
+
+            // 消息内容
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+            this.updateMessage(contentDiv, content);
+            messageDiv.appendChild(contentDiv);
+        }
 
         // 如果是工具消息，并且存在授权元数据，添加授权按钮
         if (authRequest) {
@@ -317,8 +400,8 @@ class ChatSessionService {
         // 滚动到最新消息
         this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
 
-        // 保存引用以便后续使用updateMessage函数更新内容 这对于实现流式响应非常重要
-        return contentDiv;
+        // 返回消息内容元素以便后续更新
+        return messageDiv.querySelector('.message-content');
     }
 
     /**
@@ -430,6 +513,9 @@ class ChatSessionService {
             return;
         }
 
+        // 保存当前折叠状态
+        const wasCollapsed = messageDiv.classList.contains('collapsed');
+
         // 解析普通消息内容
         messageDiv.innerHTML = marked.parse(content);
 
@@ -440,6 +526,18 @@ class ChatSessionService {
         messageDiv.querySelectorAll('pre code').forEach((block) => {
             hljs.highlightElement(block);
         });
+
+        // 恢复折叠状态
+        if (wasCollapsed) {
+            messageDiv.classList.add('collapsed');
+
+            // 尝试找到第一行文本作为预览文本
+            const firstParagraph = messageDiv.querySelector('p');
+            if (firstParagraph) {
+                // 给第一行文本添加data-preview属性，用于CSS样式特殊处理
+                firstParagraph.setAttribute('data-preview', 'true');
+            }
+        }
 
         // 滚动到最新内容，保持消息可见
         this.chatMessages.scrollTop = this.chatMessages.scrollHeight;

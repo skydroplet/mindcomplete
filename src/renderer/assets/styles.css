@@ -112,10 +112,18 @@ body {
     max-width: 80%;
 }
 
+.message-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 5px;
+}
+
 .message-sender {
     font-size: 1em;
     color: #666;
-    margin-bottom: 5px;
+    flex: 1;
 }
 
 .message-content {
@@ -267,7 +275,7 @@ body {
 }
 
 .tool-message .message-sender {
-    color: var(--secondary-text-color);
+    color: var(--message-tool-sender, #9e5731);
 }
 
 .tool-message .message-content {
@@ -1396,4 +1404,91 @@ select.settings-select {
     border: 1px solid var(--border-color);
     border-radius: 4px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* 可折叠内容的样式 */
+.collapsible-content {
+    overflow: hidden;
+    transition: max-height 0.3s ease, opacity 0.3s ease;
+    max-height: 2000px;
+    /* 足够大的高度以容纳展开内容 */
+}
+
+.collapsible-content.collapsed {
+    max-height: 1.5em;
+    /* 折叠状态下显示一行文本 */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    opacity: 0.9;
+}
+
+/* 预览文本的特殊样式 */
+.collapsible-content.collapsed p[data-preview="true"] {
+    margin: 0;
+    padding: 0;
+    display: inline;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+/* 隐藏折叠状态下的其他元素 */
+.collapsible-content.collapsed *:not(p[data-preview="true"]) {
+    display: none;
+}
+
+/* 工具调用消息折叠时的特殊样式 */
+.tool-message .collapsible-content.collapsed {
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    white-space: normal;
+}
+
+.tool-message .collapsible-content.collapsed p[data-preview="true"] {
+    display: -webkit-box;
+}
+
+/* 思考过程折叠时的特殊样式 */
+.thinking-message .collapsible-content.collapsed {
+    opacity: 0.85;
+    /* 思考过程稍微淡一点 */
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    white-space: normal;
+    font-style: italic;
+}
+
+.thinking-message .collapsible-content.collapsed p[data-preview="true"] {
+    display: -webkit-box;
+    font-style: italic;
+}
+
+/* 折叠/展开按钮样式 */
+.toggle-content-btn {
+    background: transparent;
+    border: none;
+    padding: 2px 4px;
+    cursor: pointer;
+    font-size: 0.8em;
+    color: #666;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    border-radius: 2px;
+    transition: background-color 0.2s;
+}
+
+.toggle-content-btn:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.toggle-icon {
+    display: inline-block;
+    transition: transform 0.2s;
 }
