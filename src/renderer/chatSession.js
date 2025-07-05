@@ -105,13 +105,13 @@ class ChatSessionService {
                     let senderText = i18n.t('messages.tool');
 
                     // 添加工具名称
-                    if (toolName) {
-                        senderText += ': ' + toolName;
+                    if (roleName) {
+                        senderText = roleName;
                     }
 
-                    // 添加服务器ID
-                    if (serverId) {
-                        senderText += ` (${i18n.t('messages.server')}: ${serverId})`;
+                    // 添加服务器名称
+                    if (serverName) {
+                        senderText += ` (${i18n.t('messages.server')}: ${serverName})`;
                     }
 
                     senderEl.textContent = senderText;
@@ -402,7 +402,7 @@ class ChatSessionService {
         if (roleName) {
             sender.textContent = roleName;
             if (serverName) {
-                sender.textContent += serverName + ":" + roleName;
+                sender.textContent = `${roleName} (${i18n.t('messages.server')}: ${serverName})`;
             }
         }
 

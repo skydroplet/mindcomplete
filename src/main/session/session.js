@@ -160,10 +160,10 @@ class ChatSession {
     }
 
     /**
-     * 添加消息到当前会话
+     * 保存消息到当前会话
      * @param {Object} message 消息对象 {role, content}
      */
-    addMessage(message) {
+    saveMessage(message) {
         if (!message.content) {
             return;
         }
@@ -384,7 +384,7 @@ class ChatSession {
             // 添加当前用户消息
             messages.push({ role: 'user', content: message });
             // 保存到文件
-            this.addMessage({ role: 'user', content: message });
+            this.saveMessage({ role: 'user', content: message });
             if (this.data.messageCount === 1) {
                 this.data.name = message.slice(0, 64);
                 event.sender.send("session-name-change-" + this.data.id, this.data.name);
@@ -442,8 +442,8 @@ class ChatSession {
      * @param {string} rspId - 响应唯一标识，用于前端消息关联
      * @param {string} msgId - 消息唯一标识，用于前端消息关联
      * @param {string} role - 消息角色，如'user'、'assistant'等
-     * @param {string} roleName - 消息名称，Agent名称、模型名称、工具名称等
      * @param {string} content - 消息内容
+     * @param {string} roleName - 消息名称，Agent名称、模型名称、工具名称等
      * @param {string} serverName - 服务名称，用于工具调用消息
      */
     replyMessage(event, signal, rspId, msgId, role, content, roleName, serverName) {
@@ -489,6 +489,22 @@ class ChatSession {
         let modelMsgId = null;
         let toolCalls = [];
 
+        // 获取模型名称或Agent名称
+        let roleName = null;
+        if (this.data.agentId && this.data.agentId !== 'free-mode') {
+            // 使用Agent配置，获取Agent名称
+            const agent = agentConfig.getAgent(this.data.agentId);
+            if (agent) {
+                roleName = agent.name;
+            }
+        } else if (this.data.modelId) {
+            // 自由模式，使用模型名称
+            const model = modelConfig.getModelById(this.data.modelId);
+            if (model) {
+                roleName = model.name;
+            }
+        }
+
         for await (const chunk of stream) {
             // 检查是否已经中断
             if (signal.aborted) {
@@ -501,7 +517,7 @@ class ChatSession {
             const thinking = chunk.choices[0]?.delta?.reasoning_content;
             if (thinking) {
                 thinkingContent += thinking;
-                thinkingMsgId = this.replyMessage(event, signal, responseId, thinkingMsgId, 'thinking', thinkingContent);
+                thinkingMsgId = this.replyMessage(event, signal, responseId, thinkingMsgId, 'thinking', thinkingContent, roleName, null);
             }
 
             // 工具调用
@@ -539,7 +555,7 @@ class ChatSession {
             const content = chunk.choices[0]?.delta?.content || '';
             if (content) {
                 modelContent += content;
-                modelMsgId = this.replyMessage(event, signal, responseId, modelMsgId, 'assistant', modelContent);
+                modelMsgId = this.replyMessage(event, signal, responseId, modelMsgId, 'assistant', modelContent, roleName, null);
             }
         }
 
@@ -547,12 +563,12 @@ class ChatSession {
 
         // 保存推理消息 只用于显示 不返回给模型
         if (thinkingContent) {
-            this.addMessage({ role: 'thinking', content: thinkingContent });
+            this.saveMessage({ role: 'thinking', content: thinkingContent });
         }
 
         // 多轮对话时 要返回给模型
         const responseMsg = { role: 'assistant', content: modelContent, tool_calls: toolCalls };
-        this.addMessage(responseMsg);
+        this.saveMessage(responseMsg);
 
         // 调用工具
         if (toolCalls.length > 0) {
@@ -605,11 +621,11 @@ class ChatSession {
 
                     // 向前端发送当前正在执行的工具信息
                     toolMessage += `${i18n.t('toolCalls.tool', { name: toolName })}\n\n`;
-                    toolMsgId = this.replyMessage(event, signal, responseId, toolMsgId, 'tool', toolMessage, toolName);
+                    toolMsgId = this.replyMessage(event, signal, responseId, toolMsgId, 'tool', toolMessage, toolName, null);
 
                     // 向前端显示工具参数
                     toolMessage += i18n.t('toolCalls.parameters', { args: JSON.stringify(args, null, 2) });
-                    this.replyMessage(event, signal, responseId, toolMsgId, 'tool', toolMessage, toolName);
+                    this.replyMessage(event, signal, responseId, toolMsgId, 'tool', toolMessage, toolName, null);
 
                     // 调用工具执行器(mcp)执行工具
                     const result = await mcp.executeTool(this.data.id, {
@@ -619,7 +635,7 @@ class ChatSession {
 
                     // 通知前端工具正在处理中
                     toolMessage += i18n.t('toolCalls.processing') + "\n\n";
-                    this.replyMessage(event, signal, responseId, toolMsgId, 'tool', toolMessage, toolName);
+                    this.replyMessage(event, signal, responseId, toolMsgId, 'tool', toolMessage, toolName, null);
 
                     // 处理工具执行结果
                     if (result && typeof result === 'object') {
@@ -636,7 +652,7 @@ class ChatSession {
                         toolMessage += i18n.t('toolCalls.result', { result: toolContents });
 
                         // 发送消息到前端，包含serverId和toolName
-                        this.replyMessage(event, signal, responseId, toolMsgId, 'tool', toolMessage, serverName, toolName);
+                        this.replyMessage(event, signal, responseId, toolMsgId, 'tool', toolMessage, toolName, serverName);
 
                         // 设置结果角色并添加到消息列表，稍后发送给AI
                         const message = {
@@ -647,24 +663,20 @@ class ChatSession {
                             content: toolMessage
                         }
                         messages.push(message);
-                        this.addMessage(message);
+                        this.saveMessage(message);
                     } else {
                         // 如果结果不是有效对象，记录错误
                         const errorMsg = i18n.t('toolCalls.invalidResult', { type: typeof result });
                         log.error(errorMsg, result);
                         toolMessage += errorMsg;
-                        // 依然添加toolName
-                        toolMessage += `\ntoolName: ${toolName}`;
-                        this.replyMessage(event, signal, responseId, toolMsgId, 'tool', toolMessage, null, toolCall.function.name);
+                        this.replyMessage(event, signal, responseId, toolMsgId, 'tool', toolMessage, toolName, null);
                     }
                 } catch (toolError) {
                     // 捕获并处理工具执行过程中的错误
                     const errorMsg = i18n.t('toolCalls.error', { message: toolError.message });
                     log.error('工具执行错误:', toolError);
                     toolMessage += errorMsg;
-                    // 错误情况下也添加toolName
-                    toolMessage += `\ntoolName: ${toolCall.function.name}`;
-                    this.replyMessage(event, signal, responseId, toolMsgId, 'tool', toolMessage, null, toolCall.function.name);
+                    this.replyMessage(event, signal, responseId, toolMsgId, 'tool', toolMessage, toolCall.function.name, null);
                 }
             }
         }
