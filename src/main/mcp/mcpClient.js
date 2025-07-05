@@ -309,12 +309,29 @@ class MCPClientManager extends EventEmitter {
      * @returns 
      */
     createToolResultError(message, serverId) {
+        let serverName = '';
+
+        // 尝试从客户端信息中获取服务名称
+        if (serverId) {
+            const clientInfo = this.mcpClients.get(serverId);
+            if (clientInfo && clientInfo.serverName) {
+                serverName = clientInfo.serverName;
+            } else {
+                // 尝试从配置中获取服务名称
+                const mcpConfig = mcpConfigManager.getConfig();
+                if (mcpConfig.servers && mcpConfig.servers[serverId]) {
+                    serverName = mcpConfig.servers[serverId].name || serverId;
+                }
+            }
+        }
+
         return {
             content: [{
                 type: 'text',
                 text: message,
             }],
-            serverId // 添加服务ID到错误结果中
+            serverId, // 添加服务ID到错误结果中
+            serverName // 添加服务名称到错误结果中
         };
     }
 
@@ -399,14 +416,19 @@ class MCPClientManager extends EventEmitter {
             const result = await Promise.race([task, timeoutPromise]);
             log.info(`工具执行结果:`, JSON.stringify(result, null, 2));
 
-            // 在结果中添加serverId
+            // 获取服务名称
+            const serverName = clientInfo.serverName;
+
+            // 在结果中添加serverId和serverName
             if (typeof result === 'object') {
                 result.serverId = targetServerId;
+                result.serverName = serverName;
             } else {
                 // 如果结果不是对象，创建一个包装对象
                 return {
                     content: result,
-                    serverId: targetServerId
+                    serverId: targetServerId,
+                    serverName: serverName
                 };
             }
 

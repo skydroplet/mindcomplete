@@ -442,11 +442,11 @@ class ChatSession {
      * @param {string} rspId - 响应唯一标识，用于前端消息关联
      * @param {string} msgId - 消息唯一标识，用于前端消息关联
      * @param {string} role - 消息角色，如'user'、'assistant'等
+     * @param {string} roleName - 消息名称，Agent名称、模型名称、工具名称等
      * @param {string} content - 消息内容
-     * @param {string} serverId - 服务ID，用于工具调用消息
-     * @param {string} toolName - 工具名称，用于工具调用消息
+     * @param {string} serverName - 服务名称，用于工具调用消息
      */
-    replyMessage(event, signal, rspId, msgId, role, content, serverId, toolName) {
+    replyMessage(event, signal, rspId, msgId, role, content, roleName, serverName) {
         // 检查是否已经中断
         if (signal.aborted) {
             log.info(`会话 ${this.data.id} 的消息生成已被中断, 停止处理`);
@@ -454,7 +454,7 @@ class ChatSession {
         }
 
         let newMsgId = msgId || crypto.randomUUID();
-        event.sender.send("response-stream-" + this.data.id, rspId, newMsgId, role, content, serverId, toolName);
+        event.sender.send("response-stream-" + this.data.id, rspId, newMsgId, role, content, roleName, serverName);
         return newMsgId;
     }
 
@@ -489,82 +489,77 @@ class ChatSession {
         let modelMsgId = null;
         let toolCalls = [];
 
-        try {
-            for await (const chunk of stream) {
-                // 检查是否已经中断
-                if (signal.aborted) {
-                    log.info(`会话 ${this.data.id} 的消息生成已被中断，停止处理后续消息块`);
-                    break;
-                }
-                // log.info("receive chunk", chunk)
+        for await (const chunk of stream) {
+            // 检查是否已经中断
+            if (signal.aborted) {
+                log.info(`会话 ${this.data.id} 的消息生成已被中断，停止处理后续消息块`);
+                break;
+            }
+            // log.info("receive chunk", chunk)
 
-                // 推理
-                const thinking = chunk.choices[0]?.delta?.reasoning_content;
-                if (thinking) {
-                    thinkingContent += thinking;
-                    thinkingMsgId = this.replyMessage(event, signal, responseId, thinkingMsgId, 'thinking', thinkingContent);
-                }
+            // 推理
+            const thinking = chunk.choices[0]?.delta?.reasoning_content;
+            if (thinking) {
+                thinkingContent += thinking;
+                thinkingMsgId = this.replyMessage(event, signal, responseId, thinkingMsgId, 'thinking', thinkingContent);
+            }
 
-                // 工具调用
-                const toolCallChunks = chunk.choices[0]?.delta?.tool_calls || [];
-                if (toolCallChunks.length > 0) {
-                    // 添加详细的工具调用日志
-                    for (let index = 0; index < toolCallChunks.length; index++) {
-                        const toolCallChunk = toolCallChunks[index];
+            // 工具调用
+            const toolCallChunks = chunk.choices[0]?.delta?.tool_calls || [];
+            if (toolCallChunks.length > 0) {
+                // 添加详细的工具调用日志
+                for (let index = 0; index < toolCallChunks.length; index++) {
+                    const toolCallChunk = toolCallChunks[index];
 
-                        // 初始化工具调用对象
-                        if (toolCalls[index] === undefined) {
-                            toolCalls[index] = {
-                                id: toolCallChunk.id || `call_${index}`,
-                                type: "function",
-                                function: {
-                                    name: "",
-                                    arguments: ""
-                                }
-                            };
-                        }
+                    // 初始化工具调用对象
+                    if (toolCalls[index] === undefined) {
+                        toolCalls[index] = {
+                            id: toolCallChunk.id || `call_${index}`,
+                            type: "function",
+                            function: {
+                                name: "",
+                                arguments: ""
+                            }
+                        };
+                    }
 
-                        // 更新工具调用名称
-                        if (toolCallChunk.function?.name) {
-                            toolCalls[index].function.name += toolCallChunk.function.name;
-                        }
+                    // 更新工具调用名称
+                    if (toolCallChunk.function?.name) {
+                        toolCalls[index].function.name += toolCallChunk.function.name;
+                    }
 
-                        // 更新工具调用参数
-                        if (toolCallChunk.function?.arguments) {
-                            toolCalls[index].function.arguments += toolCallChunk.function.arguments;
-                        }
+                    // 更新工具调用参数
+                    if (toolCallChunk.function?.arguments) {
+                        toolCalls[index].function.arguments += toolCallChunk.function.arguments;
                     }
                 }
-
-                // 回复
-                const content = chunk.choices[0]?.delta?.content || '';
-                if (content) {
-                    modelContent += content;
-                    modelMsgId = this.replyMessage(event, signal, responseId, modelMsgId, 'assistant', modelContent);
-                }
             }
 
-            log.info("模型响应: ", { thinking: thinkingContent, content: modelContent, tool_calls: toolCalls });
-
-            // 保存推理消息 只用于显示 不返回给模型
-            if (thinkingContent) {
-                this.addMessage({ role: 'thinking', content: thinkingContent });
+            // 回复
+            const content = chunk.choices[0]?.delta?.content || '';
+            if (content) {
+                modelContent += content;
+                modelMsgId = this.replyMessage(event, signal, responseId, modelMsgId, 'assistant', modelContent);
             }
-
-            // 多轮对话时 要返回给模型
-            const responseMsg = { role: 'assistant', content: modelContent, tool_calls: toolCalls };
-            this.addMessage(responseMsg);
-
-            // 调用工具
-            if (toolCalls.length > 0) {
-                // 处理工具调用
-                messages = messages.concat(responseMsg);
-                await this.handleToolCalls(event, signal, modelClient, requestParams, responseId, messages, toolCalls);
-            }
-        } catch (err) {
-            log.error('工具调用失败:', err.message);
         }
 
+        log.info("模型响应: ", { thinking: thinkingContent, content: modelContent, tool_calls: toolCalls });
+
+        // 保存推理消息 只用于显示 不返回给模型
+        if (thinkingContent) {
+            this.addMessage({ role: 'thinking', content: thinkingContent });
+        }
+
+        // 多轮对话时 要返回给模型
+        const responseMsg = { role: 'assistant', content: modelContent, tool_calls: toolCalls };
+        this.addMessage(responseMsg);
+
+        // 调用工具
+        if (toolCalls.length > 0) {
+            // 处理工具调用
+            messages = messages.concat(responseMsg);
+            await this.handleToolCalls(event, signal, modelClient, requestParams, responseId, messages, toolCalls);
+        }
     }
 
     /**
@@ -610,11 +605,11 @@ class ChatSession {
 
                     // 向前端发送当前正在执行的工具信息
                     toolMessage += `${i18n.t('toolCalls.tool', { name: toolName })}\n\n`;
-                    toolMsgId = this.replyMessage(event, signal, responseId, toolMsgId, 'tool', toolMessage, null, toolName);
+                    toolMsgId = this.replyMessage(event, signal, responseId, toolMsgId, 'tool', toolMessage, toolName);
 
                     // 向前端显示工具参数
                     toolMessage += i18n.t('toolCalls.parameters', { args: JSON.stringify(args, null, 2) });
-                    this.replyMessage(event, signal, responseId, toolMsgId, 'tool', toolMessage, null, toolName);
+                    this.replyMessage(event, signal, responseId, toolMsgId, 'tool', toolMessage, toolName);
 
                     // 调用工具执行器(mcp)执行工具
                     const result = await mcp.executeTool(this.data.id, {
@@ -624,12 +619,12 @@ class ChatSession {
 
                     // 通知前端工具正在处理中
                     toolMessage += i18n.t('toolCalls.processing') + "\n\n";
-                    this.replyMessage(event, signal, responseId, toolMsgId, 'tool', toolMessage, null, toolName);
+                    this.replyMessage(event, signal, responseId, toolMsgId, 'tool', toolMessage, toolName);
 
                     // 处理工具执行结果
                     if (result && typeof result === 'object') {
                         // 获取serverId
-                        const serverId = result.serverId || '';
+                        const serverName = result.serverName || '';
 
                         // 向前端发送执行结果
                         let toolContents = "";
@@ -641,16 +636,15 @@ class ChatSession {
                         toolMessage += i18n.t('toolCalls.result', { result: toolContents });
 
                         // 发送消息到前端，包含serverId和toolName
-                        this.replyMessage(event, signal, responseId, toolMsgId, 'tool', toolMessage, serverId, toolName);
+                        this.replyMessage(event, signal, responseId, toolMsgId, 'tool', toolMessage, serverName, toolName);
 
                         // 设置结果角色并添加到消息列表，稍后发送给AI
                         const message = {
                             role: "tool",
                             tool_call_id: toolCall.id,
-                            name: toolName,
-                            content: toolMessage,
-                            serverId: serverId,  // 添加serverId到消息中
-                            toolName: toolName   // 添加toolName到消息中
+                            serverName: serverName,
+                            roleName: toolName,
+                            content: toolMessage
                         }
                         messages.push(message);
                         this.addMessage(message);
