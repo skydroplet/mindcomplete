@@ -289,7 +289,7 @@
     },
     "toolCalls": {
         "executing": "**⚙️ Executing tool call...**",
-        "tool": "**🔧 Executing tool:** `{name}`",
+        "tool": "**🔧 Tool name:** `{name}`",
         "parameters": "**📋 Parameters:**\n```json\n{args}\n```\n",
         "processing": "**⏳ Processing...**\n",
         "result": "**✅ Tool execution result:**\n```json\n{result}\n```\n",

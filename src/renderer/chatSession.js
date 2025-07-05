@@ -107,11 +107,9 @@ class ChatSessionService {
                     // 添加工具名称
                     if (roleName) {
                         senderText = roleName;
-                    }
-
-                    // 添加服务器名称
-                    if (serverName) {
-                        senderText += ` (${i18n.t('messages.server')}: ${serverName})`;
+                        if (serverName) {
+                            senderText = `${serverName} : ${roleName}`;
+                        }
                     }
 
                     senderEl.textContent = senderText;
@@ -402,7 +400,7 @@ class ChatSessionService {
         if (roleName) {
             sender.textContent = roleName;
             if (serverName) {
-                sender.textContent = `${roleName} (${i18n.t('messages.server')}: ${serverName})`;
+                sender.textContent = `${serverName} : ${roleName}`;
             }
         }
 

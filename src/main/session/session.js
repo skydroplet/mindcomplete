@@ -162,8 +162,12 @@ class ChatSession {
     /**
      * 保存消息到当前会话
      * @param {Object} message 消息对象 {role, content}
+     * @param {string} responseId 响应唯一标识，用于前端消息关联
+     * @param {string} msgId 消息唯一标识，用于前端消息关联
+     * @param {string} roleName 消息名称，Agent名称、模型名称、工具名称等
+     * @param {string} serverName 服务名称，用于工具调用消息
      */
-    saveMessage(message) {
+    saveMessage(message, responseId, msgId, roleName, serverName) {
         if (!message.content) {
             return;
         }
@@ -179,6 +183,10 @@ class ChatSession {
         this.data.messages.push({
             id: this.data.messageCount,
             ...message,
+            responseId: responseId,
+            msgId: msgId,
+            roleName: roleName,
+            serverName: serverName,
             timestamp: new Date().toLocaleString()
         });
 
@@ -198,10 +206,21 @@ class ChatSession {
         }
 
         const messages = this.data.messages.filter(message => message.role === 'user' || message.role === 'assistant');
-        // 删除消息中的thinking
+        // 删除消息中的thinking和前端展示相关字段
         return messages.map(message => {
-            const { role, content } = message;
-            return { role, content };
+            // 提取AI需要的字段
+            const { role, content, tool_calls, tool_call_id } = message;
+            const aiMessage = { role, content };
+
+            // 如果有工具调用信息，添加到消息中
+            if (tool_calls) {
+                aiMessage.tool_calls = tool_calls;
+            }
+            if (tool_call_id) {
+                aiMessage.tool_call_id = tool_call_id;
+            }
+
+            return aiMessage;
         });
     }
 
@@ -384,7 +403,7 @@ class ChatSession {
             // 添加当前用户消息
             messages.push({ role: 'user', content: message });
             // 保存到文件
-            this.saveMessage({ role: 'user', content: message });
+            this.saveMessage({ role: 'user', content: message }, requestId, null, null, null);
             if (this.data.messageCount === 1) {
                 this.data.name = message.slice(0, 64);
                 event.sender.send("session-name-change-" + this.data.id, this.data.name);
@@ -563,12 +582,12 @@ class ChatSession {
 
         // 保存推理消息 只用于显示 不返回给模型
         if (thinkingContent) {
-            this.saveMessage({ role: 'thinking', content: thinkingContent });
+            this.saveMessage({ role: 'thinking', content: thinkingContent }, responseId, thinkingMsgId, roleName, null);
         }
 
         // 多轮对话时 要返回给模型
         const responseMsg = { role: 'assistant', content: modelContent, tool_calls: toolCalls };
-        this.saveMessage(responseMsg);
+        this.saveMessage(responseMsg, responseId, modelMsgId, roleName, null);
 
         // 调用工具
         if (toolCalls.length > 0) {
@@ -663,7 +682,7 @@ class ChatSession {
                             content: toolMessage
                         }
                         messages.push(message);
-                        this.saveMessage(message);
+                        this.saveMessage(message, responseId, toolMsgId, toolName, serverName);
                     } else {
                         // 如果结果不是有效对象，记录错误
                         const errorMsg = i18n.t('toolCalls.invalidResult', { type: typeof result });
