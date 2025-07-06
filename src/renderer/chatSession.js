@@ -246,6 +246,9 @@ class ChatSessionService {
                     lastMessageRole = msg.role;
                 }
             });
+
+            // 加载历史消息后，折叠所有工具和思考过程消息
+            this.collapseToolAndThinkingMessages();
         }
 
         // 延迟滚动，确保渲染完成
@@ -326,7 +329,7 @@ class ChatSessionService {
     createToggleButton(contentDiv, type) {
         const toggleBtn = document.createElement('button');
         toggleBtn.className = 'toggle-content-btn';
-        toggleBtn.innerHTML = `<span class="toggle-icon">▶</span>`;
+        toggleBtn.innerHTML = `<span class="toggle-icon">▼</span>`;  // 默认显示展开状态的图标
 
         toggleBtn.addEventListener('click', () => {
             const isCollapsed = contentDiv.classList.contains('collapsed');
@@ -411,9 +414,10 @@ class ChatSessionService {
 
         // 为思考过程和工具调用添加折叠功能
         if (type === 'thinking' || type === 'tool') {
-            // 添加用于折叠效果的CSS类
+            // 添加用于折叠效果的CSS类，但默认展开(不添加collapsed类)
             const contentDiv = document.createElement('div');
-            contentDiv.className = 'message-content collapsible-content collapsed';
+            contentDiv.className = 'message-content collapsible-content';
+            contentDiv.dataset.messageType = type; // 添加数据属性以便后续识别
 
             // 创建折叠/展开按钮
             const toggleBtn = this.createToggleButton(contentDiv, type);
@@ -578,6 +582,9 @@ class ChatSessionService {
             : i18n.t('mcp.authorization.denied');
 
         this.statusElement.textContent = i18n.t('ui.status.ready');
+
+        // 消息处理完成后折叠剩余的工具和思考过程消息
+        this.collapseToolAndThinkingMessages();
     }
 
     /**
@@ -782,6 +789,9 @@ class ChatSessionService {
             setTimeout(() => {
                 this.isGenerating = false;
                 this.responses.delete(requestId);
+
+                // 在消息生成完成后折叠所有工具和思考过程消息
+                this.collapseToolAndThinkingMessages();
             }, 100);
         }
     }
@@ -796,6 +806,37 @@ class ChatSessionService {
         } else {
             log.error('尝试清空消息但未找到消息容器');
         }
+    }
+
+    /**
+     * 在消息生成完成后折叠所有工具和思考过程消息
+     */
+    collapseToolAndThinkingMessages() {
+        if (!this.chatMessages) return;
+
+        // 查找所有工具和思考过程消息
+        const collapsibleContents = this.chatMessages.querySelectorAll('.collapsible-content:not(.collapsed)');
+
+        collapsibleContents.forEach(contentDiv => {
+            // 添加折叠类
+            contentDiv.classList.add('collapsed');
+
+            // 更新对应的折叠按钮图标
+            const messageHeader = contentDiv.parentElement.querySelector('.message-header');
+            if (messageHeader) {
+                const toggleBtn = messageHeader.querySelector('.toggle-content-btn');
+                if (toggleBtn) {
+                    toggleBtn.innerHTML = `<span class="toggle-icon">▶</span>`;
+                }
+            }
+
+            // 尝试找到第一行文本作为预览文本
+            const firstParagraph = contentDiv.querySelector('p');
+            if (firstParagraph) {
+                // 给第一行文本添加data-preview属性，用于CSS样式特殊处理
+                firstParagraph.setAttribute('data-preview', 'true');
+            }
+        });
     }
 }
 
