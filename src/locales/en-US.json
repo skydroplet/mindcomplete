@@ -295,6 +295,7 @@
         "result": "**✅ Tool execution result:**\n```json\n{result}\n```\n",
         "invalidResult": "**❌ Tool returned invalid result:** {type}\n",
         "error": "**❌ Tool execution error:** {message}\n",
+        "userDenied": "**❌ User denied the execution request for tool `{name}`**\n",
         "generatingResponse": "**🤔 Generating final response...**\n",
         "responseFailed": "**❌ Failed to generate final response:** {message}\n"
     },

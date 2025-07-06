@@ -124,7 +124,8 @@ class MCPClientManager extends EventEmitter {
 
             // 处理工具列表，转换为特定格式
             const tools = toolsResult.tools.map((tool) => {
-                toolNames.push(tool.name);
+                const toolName = serverId + ":" + tool.name;
+                toolNames.push(toolName);
 
                 // 确保工具有合法的JSON Schema
                 let parameters = tool.inputSchema;
@@ -151,8 +152,8 @@ class MCPClientManager extends EventEmitter {
                 return {
                     type: "function",
                     function: {
-                        name: tool.name,
-                        description: tool.description || `执行${tool.name}操作`,
+                        name: toolName,
+                        description: tool.description,
                         parameters: parameters,
                         serverId: serverId, // 使用serverId替代serverName
                         serverName: serverName // 保留服务名称用于显示
@@ -359,44 +360,6 @@ class MCPClientManager extends EventEmitter {
         const clientInfo = this.mcpClients.get(targetServerId);
         if (!clientInfo || !clientInfo.isConnected) {
             return this.createToolResultError(`MCP服务 ${targetServerId} 未连接，无法执行工具 ${name}`, targetServerId);
-        }
-
-        // 检查工具是否已授权
-        const isAuthorized = this.isToolAuthorized(name, targetServerId);
-        if (!isAuthorized) {
-            log.info(`工具 ${name} 未授权，请求用户授权`);
-
-            // 发出授权请求事件
-            const result = await new Promise((resolve) => {
-                // 监听授权结果
-                const onAuthResult = (result) => {
-                    if (result.toolName === name && result.serverId === targetServerId) {
-                        this.removeListener('tool-authorization-result', onAuthResult);
-                        resolve(result);
-                    }
-                };
-
-                this.on('tool-authorization-result', onAuthResult);
-
-                // 发送授权请求
-                this.emit('tool-authorization-request', {
-                    sessionId: sessionId,
-                    toolName: name,
-                    serverId: targetServerId,
-                    serverName: clientInfo.serverName,
-                    args
-                });
-            });
-
-            // 如果授权被拒绝，返回错误
-            if (!result.authorized) {
-                return this.createToolResultError(`工具 ${name} 执行请求被用户拒绝`, targetServerId);
-            }
-
-            // 如果永久授权，更新授权状态
-            if (result.permanent) {
-                await this.updateToolAuthorizationStatus(name, targetServerId, true);
-            }
         }
 
         log.info(`使用MCP服务 ${targetServerId} 执行工具: ${name}, 参数:`, JSON.stringify(args, null, 2));

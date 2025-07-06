@@ -66,7 +66,7 @@ class ChatSessionService {
         }
     }
 
-    setResponseMessages(rspId, msgId, role, content, roleName, serverName) {
+    setResponseMessages(rspId, msgId, role, content, roleName, serverName, serverId) {
         if (!this.responses[rspId]) {
             // 创建响应容器，用于包含同一个响应的所有消息
             const responseContainer = document.createElement('div');
@@ -84,7 +84,16 @@ class ChatSessionService {
         let msgElement = rsp.messages[msgId]?.element || null;
         if (!msgElement) {
             // 根据消息类型添加消息
-            msgElement = this.addMessageToContainer('', role, rsp.container, roleName, serverName);
+            // 如果是工具授权请求，需要包含授权按钮
+            if (role === 'tool-auth') {
+                msgElement = this.addMessageToContainer('', role, rsp.container, roleName, serverName, {
+                    toolName: roleName,
+                    serverId: serverId,
+                    serverName: serverName
+                });
+            } else {
+                msgElement = this.addMessageToContainer('', role, rsp.container, roleName, serverName);
+            }
             rsp.messages[msgId] = { element: msgElement };
         }
 
@@ -126,15 +135,8 @@ class ChatSessionService {
         }
 
         // 接收响应消息
-        ipcRenderer.on('response-stream-' + this.sessionId, (event, rspId, msgId, role, content, roleName, serverName) => {
-            this.setResponseMessages(rspId, msgId, role, content, roleName, serverName);
-        });
-
-        // 工具授权请求监听
-        ipcRenderer.on('tool-authorization-request-' + this.sessionId, (event, authRequest) => {
-            // 添加包含授权按钮的工具消息
-            const messageContent = i18n.t('mcp.authorization.message', { serverName: authRequest.serverName, name: authRequest.toolName });
-            this.addMessage(messageContent, 'tool', authRequest.toolName, authRequest.serverName, authRequest);
+        ipcRenderer.on('response-stream-' + this.sessionId, (event, rspId, msgId, role, content, roleName, serverName, serverId) => {
+            this.setResponseMessages(rspId, msgId, role, content, roleName, serverName, serverId);
         });
 
         // 对话触发的会话名称变更
@@ -233,7 +235,7 @@ class ChatSessionService {
                     lastMessageRole = 'user';
                     currentResponseContainer = null;
                 } else {
-                    // AI消息、工具消息或思考过程
+                    // AI消息、工具消息或推理过程
                     if (lastMessageRole === 'user' || currentResponseContainer === null) {
                         // 如果上一条是用户消息，或者还没有响应容器，创建新的响应容器
                         currentResponseContainer = document.createElement('div');
@@ -247,7 +249,7 @@ class ChatSessionService {
                 }
             });
 
-            // 加载历史消息后，折叠所有工具和思考过程消息
+            // 加载历史消息后，折叠所有工具和推理过程消息
             this.collapseToolAndThinkingMessages();
         }
 
@@ -375,26 +377,15 @@ class ChatSessionService {
         if (type === 'user') {
             messageDiv.className = 'message user-message';
             sender.textContent = i18n.t('messages.user');
+        } else if (type === 'tool-auth') {
+            messageDiv.className = 'message tool-message';
+            sender.textContent = i18n.t('messages.tool');
         } else if (type === 'tool') {
             messageDiv.className = 'message tool-message';
-
-            // 构建工具消息的发送者信息
-            let senderText = i18n.t('messages.tool');
-
-            // 如果是授权请求，显示服务器名和工具名
-            if (authRequest) {
-                if (authRequest.toolName) {
-                    senderText += ': ' + authRequest.toolName;
-                }
-                if (authRequest.serverName) {
-                    senderText += ` (${i18n.t('messages.server')}: ${authRequest.serverName})`;
-                }
-            }
-
-            sender.textContent = senderText;
+            sender.textContent = i18n.t('messages.tool');
         } else if (type === 'thinking') {
             messageDiv.className = 'message thinking-message';
-            sender.textContent = i18n.t('messages.ai') + ': ' + i18n.t('messages.thinking', '思考过程');
+            sender.textContent = i18n.t('messages.ai') + ': ' + i18n.t('messages.thinking', '推理过程');
         } else {
             messageDiv.className = 'message ai-message';
             sender.textContent = i18n.t('messages.ai');
@@ -405,6 +396,10 @@ class ChatSessionService {
             if (serverName) {
                 sender.textContent = `${serverName} : ${roleName}`;
             }
+
+            if (type === 'thinking') {
+                sender.textContent = `${roleName} : ${i18n.t('messages.thinking', '推理过程')}`;
+            }
         }
 
         // 创建发送者头部容器，包含发送者信息和折叠按钮
@@ -412,7 +407,7 @@ class ChatSessionService {
         headerDiv.className = 'message-header';
         headerDiv.appendChild(sender);
 
-        // 为思考过程和工具调用添加折叠功能
+        // 为推理过程和工具调用添加折叠功能
         if (type === 'thinking' || type === 'tool') {
             // 添加用于折叠效果的CSS类，但默认展开(不添加collapsed类)
             const contentDiv = document.createElement('div');
@@ -436,8 +431,8 @@ class ChatSessionService {
             messageDiv.appendChild(contentDiv);
         }
 
-        // 如果是工具消息，并且存在授权元数据，添加授权按钮
-        if (authRequest) {
+        // 如果是工具授权请求或工具消息，并且存在授权元数据，添加授权按钮
+        if (type === 'tool-auth' && authRequest) {
             const authButtons = this.createToolAuthButtons(authRequest);
             messageDiv.appendChild(authButtons);
         }
@@ -471,7 +466,7 @@ class ChatSessionService {
             // 用户消息直接添加到主容器
             return this.addMessageToContainer(content, type, this.chatMessages, roleName, serverName, authRequest);
         } else {
-            // 对于AI响应、思考过程或工具调用，创建一个新的响应容器
+            // 对于AI响应、推理过程或工具调用，创建一个新的响应容器
             const responseContainer = document.createElement('div');
             responseContainer.className = 'response-container';
             this.chatMessages.appendChild(responseContainer);
@@ -557,16 +552,8 @@ class ChatSessionService {
                 // 查找包含此按钮的消息元素（向上查找到最近的.message元素）
                 const messageElement = btn.closest('.message');
                 if (messageElement && messageElement.parentNode) {
-                    // 查找是否在响应容器内
-                    const responseContainer = messageElement.closest('.response-container');
-
                     // 删除整个消息元素
                     messageElement.parentNode.removeChild(messageElement);
-
-                    // 如果存在响应容器，且容器内没有其他消息，则删除整个响应容器
-                    if (responseContainer && responseContainer.children.length === 0) {
-                        responseContainer.parentNode.removeChild(responseContainer);
-                    }
                 } else {
                     // 如果找不到父消息元素，至少删除按钮
                     btn.parentNode.removeChild(btn);
@@ -583,7 +570,7 @@ class ChatSessionService {
 
         this.statusElement.textContent = i18n.t('ui.status.ready');
 
-        // 消息处理完成后折叠剩余的工具和思考过程消息
+        // 消息处理完成后折叠剩余的工具和推理过程消息
         this.collapseToolAndThinkingMessages();
     }
 
@@ -790,7 +777,7 @@ class ChatSessionService {
                 this.isGenerating = false;
                 this.responses.delete(requestId);
 
-                // 在消息生成完成后折叠所有工具和思考过程消息
+                // 在消息生成完成后折叠所有工具和推理过程消息
                 this.collapseToolAndThinkingMessages();
             }, 100);
         }
@@ -809,12 +796,12 @@ class ChatSessionService {
     }
 
     /**
-     * 在消息生成完成后折叠所有工具和思考过程消息
+     * 在消息生成完成后折叠所有工具和推理过程消息
      */
     collapseToolAndThinkingMessages() {
         if (!this.chatMessages) return;
 
-        // 查找所有工具和思考过程消息
+        // 查找所有工具和推理过程消息
         const collapsibleContents = this.chatMessages.querySelectorAll('.collapsible-content:not(.collapsed)');
 
         collapsibleContents.forEach(contentDiv => {

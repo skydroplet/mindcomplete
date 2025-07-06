@@ -566,39 +566,12 @@ ipcMain.handle('reset-window-focus', (event) => {
     }
 });
 
-// 处理工具授权请求
-mcp.on('tool-authorization-request', async (request) => {
-    const { sessionId, toolName, serverId, serverName } = request;
-    log.info(`收到工具授权请求: ${toolName}, 服务: ${serverId}`);
+// 处理工具授权响应
+ipcMain.on('tool-authorization-response', (event, result) => {
+    log.info(`收到工具授权响应: ${result.toolName}, 服务: ${result.serverId}, 授权: ${result.authorized}`);
 
-    try {
-        // 发送授权请求到渲染进程，在工具消息中显示按钮
-        mainWindow.webContents.send('tool-authorization-request-' + sessionId, {
-            toolName,
-            serverId,
-            serverName: serverName || serverId
-        });
-
-        // 等待授权结果
-        const result = await new Promise((resolve) => {
-            // 监听授权结果
-            ipcMain.once('tool-authorization-response', (event, response) => {
-                resolve(response);
-            });
-        });
-
-        // 发送授权结果
-        mcp.emit('tool-authorization-result', result);
-    } catch (error) {
-        log.error(`处理工具授权请求时出错:`, error.message);
-        // 发送授权失败结果
-        mcp.emit('tool-authorization-result', {
-            toolName,
-            serverId,
-            authorized: false,
-            error: error.message
-        });
-    }
+    // 直接发送授权结果到 MCP 客户端
+    mcp.emit('tool-authorization-result', result);
 });
 
 // 导出配置处理函数

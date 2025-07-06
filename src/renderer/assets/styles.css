@@ -267,7 +267,7 @@ body {
     position: relative;
 }
 
-/* 思考过程消息样式 */
+/* 推理过程消息样式 */
 .thinking-message {
     margin-right: auto;
     border-left: 3px solid #8bc34a;
@@ -1458,10 +1458,10 @@ select.settings-select {
     display: -webkit-box;
 }
 
-/* 思考过程折叠时的特殊样式 */
+/* 推理过程折叠时的特殊样式 */
 .response-container .thinking-message .collapsible-content.collapsed {
     opacity: 0.85;
-    /* 思考过程稍微淡一点 */
+    /* 推理过程稍微淡一点 */
     display: -webkit-box;
     -webkit-line-clamp: 1;
     -webkit-box-orient: vertical;
@@ -1540,7 +1540,7 @@ select.settings-select {
     border-left: 3px solid #ff9800;
 }
 
-/* 响应容器内的思考过程消息样式 */
+/* 响应容器内的推理过程消息样式 */
 .response-container .thinking-message {
     background-color: rgba(240, 240, 245, 0.7);
     border-left: 3px solid #9c27b0;
