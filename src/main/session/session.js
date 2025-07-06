@@ -703,6 +703,14 @@ class ChatSession {
 
                     let args = JSON.parse(toolCall.function.arguments);
 
+                    // 向前端发送当前正在执行的工具信息
+                    toolMessage += `${i18n.t('toolCalls.tool', { name: toolName })}\n\n`;
+                    toolMsgId = this.replyMessage(event, signal, responseId, null, 'tool', toolMessage, toolName, serverName);
+
+                    // 向前端显示工具参数
+                    toolMessage += i18n.t('toolCalls.parameters', { args: JSON.stringify(args, null, 2) });
+                    this.replyMessage(event, signal, responseId, toolMsgId, 'tool', toolMessage, toolName, serverName);
+
                     // 检查工具是否已授权
                     const isAuthorized = serverId ? mcp.isToolAuthorized(toolName, serverId) : false;
                     if (!isAuthorized && serverId) {
@@ -757,14 +765,6 @@ class ChatSession {
                         }
                     }
 
-                    // 向前端发送当前正在执行的工具信息
-                    toolMessage += `${i18n.t('toolCalls.tool', { name: toolName })}\n\n`;
-                    toolMsgId = this.replyMessage(event, signal, responseId, toolMsgId, 'tool', toolMessage, toolName, serverName);
-
-                    // 向前端显示工具参数
-                    toolMessage += i18n.t('toolCalls.parameters', { args: JSON.stringify(args, null, 2) });
-                    this.replyMessage(event, signal, responseId, toolMsgId, 'tool', toolMessage, toolName, serverName);
-
                     // 调用工具执行器(mcp)执行工具
                     const result = await mcp.executeTool(this.data.id, {
                         name: toolName,
@@ -772,10 +772,6 @@ class ChatSession {
                         serverId: serverId,
                         serverName: serverName
                     });
-
-                    // 通知前端工具正在处理中
-                    toolMessage += i18n.t('toolCalls.processing') + "\n\n";
-                    this.replyMessage(event, signal, responseId, toolMsgId, 'tool', toolMessage, toolName, serverName);
 
                     // 处理工具执行结果
                     if (result && typeof result === 'object') {
