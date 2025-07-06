@@ -553,8 +553,16 @@ class ChatSessionService {
                 // 查找包含此按钮的消息元素（向上查找到最近的.message元素）
                 const messageElement = btn.closest('.message');
                 if (messageElement && messageElement.parentNode) {
+                    // 查找是否在响应容器内
+                    const responseContainer = messageElement.closest('.response-container');
+
                     // 删除整个消息元素
                     messageElement.parentNode.removeChild(messageElement);
+
+                    // 如果存在响应容器，且容器内没有其他消息，则删除整个响应容器
+                    if (responseContainer && responseContainer.children.length === 0) {
+                        responseContainer.parentNode.removeChild(responseContainer);
+                    }
                 } else {
                     // 如果找不到父消息元素，至少删除按钮
                     btn.parentNode.removeChild(btn);
