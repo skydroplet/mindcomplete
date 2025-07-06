@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.1.6](https://github.com/skydroplet/mindcomplete/compare/v0.1.5...v0.1.6) (2025-07-06)
+
+### ✨ 新功能
+
+* 窗口加载成功后 再检查mcp运行环境 ([1c89e22](https://github.com/skydroplet/mindcomplete/commit/1c89e2246f8d4e0410f3095b4fc24b49ea934e68))
+* 导入导出增加Agent相关配置 ([0fc325e](https://github.com/skydroplet/mindcomplete/commit/0fc325e69c3754c88748fafe16b6839cd62e9a1d))
+* 工具和思考过程接收完之后再进行折叠 ([49f4d71](https://github.com/skydroplet/mindcomplete/commit/49f4d712c34f5490dd3e3265acda947233be65c1))
+* 支持方向键选择历史输入消息 ([e27ca1c](https://github.com/skydroplet/mindcomplete/commit/e27ca1cf0933cc992f53d22c15b7c4009c767e66))
+* 支持工具消息和思考过程折叠 ([d11cef2](https://github.com/skydroplet/mindcomplete/commit/d11cef26644a08537cc462204618d99156570f2d))
+
+### 🐛 修复
+
+* 修复忽略版本不生效 ([e8f60b0](https://github.com/skydroplet/mindcomplete/commit/e8f60b0a45adf7b105787bf0ce0e504fe5dbc817))
+
 ## [0.1.5](https://github.com/skydroplet/mindcomplete/compare/v0.1.4...v0.1.5) (2025-06-30)
 
 ### 🐛 修复
