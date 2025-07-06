@@ -6,6 +6,7 @@
  * - 显示导入配置对话框
  * - 解析导入的配置文件内容
  * - 调用主进程导入配置
+ * - 支持模型、提示词、MCP服务和Agent配置的导入
  */
 
 const Logger = require('../main/logger');
@@ -32,7 +33,8 @@ class ImportService {
         this.importData = {
             models: {},
             prompts: {},
-            mcpServers: {}
+            mcpServers: {},
+            agents: {}
         };
     }
 
@@ -126,7 +128,7 @@ class ImportService {
                 // 导入成功后刷新页面
                 setTimeout(() => {
                     window.location.reload();
-                }, 1000);
+                }, 0);
             } catch (error) {
                 log.error('导入配置失败:', error.message);
                 alert(i18n.t('import.error', { error: error.message }));
@@ -170,7 +172,8 @@ class ImportService {
         return (
             (this.importData.models && typeof this.importData.models === 'object') ||
             (this.importData.prompts && typeof this.importData.prompts === 'object') ||
-            (this.importData.mcpServers && typeof this.importData.mcpServers === 'object')
+            (this.importData.mcpServers && typeof this.importData.mcpServers === 'object') ||
+            (this.importData.agents && typeof this.importData.agents === 'object')
         );
     }
 
@@ -198,6 +201,9 @@ class ImportService {
                 }
                 if (result.imported.mcpServers > 0) {
                     importedItems.push(`${result.imported.mcpServers} 个MCP服务配置`);
+                }
+                if (result.imported.agents > 0) {
+                    importedItems.push(`${result.imported.agents} 个Agent配置`);
                 }
 
                 const importedItemsText = importedItems.join('、');

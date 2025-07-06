@@ -11,6 +11,7 @@ const promptConfig = require('../config/promptConfig');
 const mcpConfig = require('../config/mcpConfig');
 const agentConfig = require('../config/agentConfig');
 const mcp = require('../mcp/mcpClient');
+const mcpClientManager = require('../mcp/mcpClient');
 
 function getFormattedDate(date) {
     const year = date.getFullYear();
@@ -160,10 +161,14 @@ class ChatSession {
     }
 
     /**
-     * 添加消息到当前会话
+     * 保存消息到当前会话
      * @param {Object} message 消息对象 {role, content}
+     * @param {string} responseId 响应唯一标识，用于前端消息关联
+     * @param {string} msgId 消息唯一标识，用于前端消息关联
+     * @param {string} roleName 消息名称，Agent名称、模型名称、工具名称等
+     * @param {string} serverName 服务名称，用于工具调用消息
      */
-    addMessage(message) {
+    saveMessage(message, responseId, msgId, roleName, serverName) {
         if (!message.content) {
             return;
         }
@@ -179,6 +184,10 @@ class ChatSession {
         this.data.messages.push({
             id: this.data.messageCount,
             ...message,
+            responseId: responseId,
+            msgId: msgId,
+            roleName: roleName,
+            serverName: serverName,
             timestamp: new Date().toLocaleString()
         });
 
@@ -198,10 +207,21 @@ class ChatSession {
         }
 
         const messages = this.data.messages.filter(message => message.role === 'user' || message.role === 'assistant');
-        // 删除消息中的thinking
+        // 删除消息中的thinking和前端展示相关字段
         return messages.map(message => {
-            const { role, content } = message;
-            return { role, content };
+            // 提取AI需要的字段
+            const { role, content, tool_calls, tool_call_id } = message;
+            const aiMessage = { role, content };
+
+            // 如果有工具调用信息，添加到消息中
+            if (tool_calls) {
+                aiMessage.tool_calls = tool_calls;
+            }
+            if (tool_call_id) {
+                aiMessage.tool_call_id = tool_call_id;
+            }
+
+            return aiMessage;
         });
     }
 
@@ -384,7 +404,7 @@ class ChatSession {
             // 添加当前用户消息
             messages.push({ role: 'user', content: message });
             // 保存到文件
-            this.addMessage({ role: 'user', content: message });
+            this.saveMessage({ role: 'user', content: message }, requestId, null, null, null);
             if (this.data.messageCount === 1) {
                 this.data.name = message.slice(0, 64);
                 event.sender.send("session-name-change-" + this.data.id, this.data.name);
@@ -411,7 +431,7 @@ class ChatSession {
             // 添加中断控制器信号
             const signal = this.abortController.signal;
 
-            return await this.sendMessageToModel(event, signal, modelClient, requestParams, requestId, messages);
+            return await this.sendMessageToModel(event, signal, modelClient, requestParams, responseId, messages);
         } catch (err) {
             // 确认是否是中断导致的错误
             if (err.name === 'AbortError') {
@@ -443,8 +463,10 @@ class ChatSession {
      * @param {string} msgId - 消息唯一标识，用于前端消息关联
      * @param {string} role - 消息角色，如'user'、'assistant'等
      * @param {string} content - 消息内容
+     * @param {string} roleName - 消息名称，Agent名称、模型名称、工具名称等
+     * @param {string} serverName - 服务名称，用于工具调用消息
      */
-    replyMessage(event, signal, rspId, msgId, role, content) {
+    replyMessage(event, signal, rspId, msgId, role, content, roleName, serverName, serverId = null) {
         // 检查是否已经中断
         if (signal.aborted) {
             log.info(`会话 ${this.data.id} 的消息生成已被中断, 停止处理`);
@@ -452,7 +474,7 @@ class ChatSession {
         }
 
         let newMsgId = msgId || crypto.randomUUID();
-        event.sender.send("response-stream-" + this.data.id, rspId, newMsgId, role, content);
+        event.sender.send("response-stream-" + this.data.id, rspId, newMsgId, role, content, roleName, serverName, serverId);
         return newMsgId;
     }
 
@@ -487,82 +509,150 @@ class ChatSession {
         let modelMsgId = null;
         let toolCalls = [];
 
-        try {
-            for await (const chunk of stream) {
-                // 检查是否已经中断
-                if (signal.aborted) {
-                    log.info(`会话 ${this.data.id} 的消息生成已被中断，停止处理后续消息块`);
-                    break;
-                }
-                // log.info("receive chunk", chunk)
-
-                // 推理
-                const thinking = chunk.choices[0]?.delta?.reasoning_content;
-                if (thinking) {
-                    thinkingContent += thinking;
-                    thinkingMsgId = this.replyMessage(event, signal, responseId, thinkingMsgId, 'thinking', thinkingContent);
-                }
-
-                // 工具调用
-                const toolCallChunks = chunk.choices[0]?.delta?.tool_calls || [];
-                if (toolCallChunks.length > 0) {
-                    // 添加详细的工具调用日志
-                    for (let index = 0; index < toolCallChunks.length; index++) {
-                        const toolCallChunk = toolCallChunks[index];
-
-                        // 初始化工具调用对象
-                        if (toolCalls[index] === undefined) {
-                            toolCalls[index] = {
-                                id: toolCallChunk.id || `call_${index}`,
-                                type: "function",
-                                function: {
-                                    name: "",
-                                    arguments: ""
-                                }
-                            };
-                        }
-
-                        // 更新工具调用名称
-                        if (toolCallChunk.function?.name) {
-                            toolCalls[index].function.name += toolCallChunk.function.name;
-                        }
-
-                        // 更新工具调用参数
-                        if (toolCallChunk.function?.arguments) {
-                            toolCalls[index].function.arguments += toolCallChunk.function.arguments;
-                        }
-                    }
-                }
-
-                // 回复
-                const content = chunk.choices[0]?.delta?.content || '';
-                if (content) {
-                    modelContent += content;
-                    modelMsgId = this.replyMessage(event, signal, responseId, modelMsgId, 'assistant', modelContent);
-                }
+        // 获取模型名称或Agent名称
+        let roleName = null;
+        if (this.data.agentId && this.data.agentId !== 'free-mode') {
+            // 使用Agent配置，获取Agent名称
+            const agent = agentConfig.getAgent(this.data.agentId);
+            if (agent) {
+                roleName = agent.name;
             }
-
-            log.info("模型响应: ", { thinking: thinkingContent, content: modelContent, tool_calls: toolCalls });
-
-            // 保存推理消息 只用于显示 不返回给模型
-            if (thinkingContent) {
-                this.addMessage({ role: 'thinking', content: thinkingContent });
+        } else if (this.data.modelId) {
+            // 自由模式，使用模型名称
+            const model = modelConfig.getModelById(this.data.modelId);
+            if (model) {
+                roleName = model.name;
             }
-
-            // 多轮对话时 要返回给模型
-            const responseMsg = { role: 'assistant', content: modelContent, tool_calls: toolCalls };
-            this.addMessage(responseMsg);
-
-            // 调用工具
-            if (toolCalls.length > 0) {
-                // 处理工具调用
-                messages = messages.concat(responseMsg);
-                await this.handleToolCalls(event, signal, modelClient, requestParams, responseId, messages, toolCalls);
-            }
-        } catch (err) {
-            log.error('工具调用失败:', err.message);
         }
 
+        for await (const chunk of stream) {
+            // 检查是否已经中断
+            if (signal.aborted) {
+                log.info(`会话 ${this.data.id} 的消息生成已被中断，停止处理后续消息块`);
+                break;
+            }
+            // log.info("receive chunk", chunk)
+
+            // 推理
+            const thinking = chunk.choices[0]?.delta?.reasoning_content;
+            if (thinking) {
+                thinkingContent += thinking;
+                thinkingMsgId = this.replyMessage(event, signal, responseId, thinkingMsgId, 'thinking', thinkingContent, roleName, null);
+            }
+
+            // 工具调用
+            const toolCallChunks = chunk.choices[0]?.delta?.tool_calls || [];
+            if (toolCallChunks.length > 0) {
+                // 添加详细的工具调用日志
+                for (let index = 0; index < toolCallChunks.length; index++) {
+                    const toolCallChunk = toolCallChunks[index];
+
+                    // 初始化工具调用对象
+                    if (toolCalls[index] === undefined) {
+                        toolCalls[index] = {
+                            id: toolCallChunk.id || `call_${index}`,
+                            type: "function",
+                            function: {
+                                name: "",
+                                arguments: ""
+                            }
+                        };
+                    }
+
+                    // 更新工具调用名称
+                    if (toolCallChunk.function?.name) {
+                        toolCalls[index].function.name += toolCallChunk.function.name;
+                    }
+
+                    // 更新工具调用参数
+                    if (toolCallChunk.function?.arguments) {
+                        toolCalls[index].function.arguments += toolCallChunk.function.arguments;
+                    }
+                }
+            }
+
+            // 回复
+            const content = chunk.choices[0]?.delta?.content || '';
+            if (content) {
+                modelContent += content;
+                modelMsgId = this.replyMessage(event, signal, responseId, modelMsgId, 'assistant', modelContent, roleName, null);
+            }
+        }
+
+        log.info("模型响应: ", { thinking: thinkingContent, content: modelContent, tool_calls: toolCalls });
+
+        // 保存推理消息 只用于显示 不返回给模型
+        if (thinkingContent) {
+            this.saveMessage({ role: 'thinking', content: thinkingContent }, responseId, thinkingMsgId, roleName, null);
+        }
+
+        // 多轮对话时 要返回给模型
+        const responseMsg = { role: 'assistant', content: modelContent, tool_calls: toolCalls };
+        this.saveMessage(responseMsg, responseId, modelMsgId, roleName, null);
+
+        // 调用工具
+        if (toolCalls.length > 0) {
+            // 处理工具调用
+            messages = messages.concat(responseMsg);
+            await this.handleToolCalls(event, signal, modelClient, requestParams, responseId, messages, toolCalls);
+        }
+    }
+
+    /**
+     * 解析模型返回的toolName 返回实际的serverId、serverName、toolName
+     * 使用:将原始modelToolName分割为两部分，前半部分为serverId,后半部为toolName
+     * 根据serverId获取实际的serverName
+     * 
+     * @param {string} modelToolName 
+     */
+    parseToolName(modelToolName) {
+        // 使用:将原始modelToolName分割为两部分，前半部分为serverId,后半部为toolName
+        // 只按第一个冒号分割，支持toolName包含冒号的情况
+        const firstColonIndex = modelToolName.indexOf(':');
+        if (firstColonIndex === -1) {
+            const toolName = modelToolName;
+            let serverId = null;
+            let serverName = null;
+
+            // 查找工具所在的MCP服务
+            const config = this.getSessionConfig();
+            if (config.mcpServers && config.mcpServers.length > 0) {
+                const tools = mcp.getToolsForServer(config.mcpServers);
+                const tool = tools.find(t => t.function.name === toolName);
+                if (tool) {
+                    serverId = tool.function.serverId;
+                    serverName = tool.function.serverName;
+                }
+            }
+
+            return {
+                serverId: serverId,
+                serverName: serverName,
+                toolName: modelToolName
+            };
+        } else {
+            const serverId = modelToolName.substring(0, firstColonIndex);
+            const toolName = modelToolName.substring(firstColonIndex + 1);
+
+            // 根据serverId获取实际的serverName
+            let serverName = null;
+            const config = this.getSessionConfig();
+            if (config.mcpServers && config.mcpServers.length > 0) {
+                const tools = mcp.getToolsForServer(config.mcpServers);
+                const tool = tools.find(t => t.function.serverId === serverId);
+                if (tool) {
+                    serverName = tool.function.serverName;
+                }
+            }
+
+            log.info(`解析工具名称: ${modelToolName} -> serverId: ${serverId}, serverName: ${serverName}, toolName: ${toolName}`);
+
+            return {
+                serverId: serverId,
+                serverName: serverName,
+                toolName: toolName
+            };
+        }
     }
 
     /**
@@ -571,10 +661,13 @@ class ChatSession {
      * 该函数负责处理AI模型生成的工具调用请求，执行每个工具，并生成最终回复
      * 工作流程：
      * 1. 依次处理每个工具调用
-     * 2. 向前端发送工具执行状态和结果
-     * 3. 收集所有工具执行结果
-     * 4. 将结果发送给AI模型生成最终回复
-     * 5. 将最终回复流式发送给前端
+     * 2. 检查工具授权状态
+     * 3. 如果未授权，发送授权请求到前端
+     * 4. 等待授权结果后执行工具
+     * 5. 向前端发送工具执行状态和结果
+     * 6. 收集所有工具执行结果
+     * 7. 将结果发送给AI模型生成最终回复
+     * 8. 将最终回复流式发送给前端
      *
      * @param {Event} event - 事件通信对象，用于前后端消息传递
      * @param {AbortSignal} signal - 中断信号，用于控制流程中断
@@ -602,55 +695,124 @@ class ChatSession {
                 let toolMsgId = null;
 
                 try {
-                    // 解析工具名称和参数
-                    const toolName = toolCall.function.name;
+                    // 解析工具名称和对应的mcp服务
+                    const mcpInfo = this.parseToolName(toolCall.function.name)
+                    const toolName = mcpInfo.toolName;
+                    const serverId = mcpInfo.serverId;
+                    const serverName = mcpInfo.serverName;
+
                     let args = JSON.parse(toolCall.function.arguments);
 
                     // 向前端发送当前正在执行的工具信息
                     toolMessage += `${i18n.t('toolCalls.tool', { name: toolName })}\n\n`;
-                    toolMsgId = this.replyMessage(event, signal, responseId, toolMsgId, 'tool', toolMessage);
+                    toolMsgId = this.replyMessage(event, signal, responseId, null, 'tool', toolMessage, toolName, serverName);
 
                     // 向前端显示工具参数
                     toolMessage += i18n.t('toolCalls.parameters', { args: JSON.stringify(args, null, 2) });
-                    this.replyMessage(event, signal, responseId, toolMsgId, 'tool', toolMessage);
+                    this.replyMessage(event, signal, responseId, toolMsgId, 'tool', toolMessage, toolName, serverName);
+
+                    // 检查工具是否已授权
+                    const isAuthorized = serverId ? mcp.isToolAuthorized(toolName, serverId) : false;
+                    if (!isAuthorized && serverId) {
+                        log.info(`工具 ${toolName} 未授权，发送授权请求`);
+
+                        // 创建授权请求消息
+                        const authMessage = i18n.t('mcp.authorization.message', {
+                            serverId: serverId,
+                            serverName: serverName || serverId,
+                            name: toolName
+                        });
+
+                        // 发送授权请求消息到前端，使用 serverId 作为 serverName 参数传递，但不保存到会话历史
+                        this.replyMessage(event, signal, responseId, null, 'tool-auth', authMessage, toolName, serverName, serverId);
+
+                        // 等待授权结果
+                        const authResult = await new Promise((resolve) => {
+                            // 监听授权结果
+                            const onAuthResult = (result) => {
+                                if (result.toolName === toolName && result.serverId === serverId) {
+                                    mcp.removeListener('tool-authorization-result', onAuthResult);
+                                    resolve(result);
+                                }
+                            };
+
+                            mcp.on('tool-authorization-result', onAuthResult);
+                        });
+
+                        // 如果授权被拒绝，跳过此工具
+                        if (!authResult.authorized) {
+                            const errorMsg = i18n.t('toolCalls.userDenied', { name: toolName });
+                            log.info(errorMsg);
+
+                            toolMessage = errorMsg;
+                            toolMsgId = this.replyMessage(event, signal, responseId, null, 'tool', toolMessage, toolName, serverName);
+
+                            const message = {
+                                role: "tool",
+                                tool_call_id: toolCall.id,
+                                serverName: serverName,
+                                roleName: toolName,
+                                content: toolMessage
+                            };
+                            messages.push(message);
+                            this.saveMessage(message, responseId, toolMsgId, toolName, serverName);
+                            continue;
+                        }
+
+                        // 如果永久授权，更新授权状态
+                        if (authResult.permanent) {
+                            await mcp.updateToolAuthorizationStatus(toolName, serverId, true);
+                        }
+                    }
 
                     // 调用工具执行器(mcp)执行工具
                     const result = await mcp.executeTool(this.data.id, {
                         name: toolName,
-                        arguments: args
+                        arguments: args,
+                        serverId: serverId,
+                        serverName: serverName
                     });
-
-                    // 通知前端工具正在处理中
-                    toolMessage += i18n.t('toolCalls.processing') + "\n\n";
-                    this.replyMessage(event, signal, responseId, toolMsgId, 'tool', toolMessage);
 
                     // 处理工具执行结果
                     if (result && typeof result === 'object') {
+                        // 获取serverId和serverName
+                        const resultServerName = result.serverName || serverName || '';
+
                         // 向前端发送执行结果
                         let toolContents = "";
                         for (const toolContent of result.content) {
                             toolContents += toolContent.text + "\n\n";
                         }
+
+                        // 添加serverId和toolName到工具消息中
                         toolMessage += i18n.t('toolCalls.result', { result: toolContents });
-                        this.replyMessage(event, signal, responseId, toolMsgId, 'tool', toolMessage);
+
+                        // 发送消息到前端，包含serverId和toolName
+                        this.replyMessage(event, signal, responseId, toolMsgId, 'tool', toolMessage, toolName, resultServerName);
 
                         // 设置结果角色并添加到消息列表，稍后发送给AI
-                        const message = { role: "tool", tool_call_id: toolCall.id, name: toolName, content: toolMessage }
+                        const message = {
+                            role: "tool",
+                            tool_call_id: toolCall.id,
+                            serverName: resultServerName,
+                            roleName: toolName,
+                            content: toolMessage
+                        }
                         messages.push(message);
-                        this.addMessage(message);
+                        this.saveMessage(message, responseId, toolMsgId, toolName, resultServerName);
                     } else {
                         // 如果结果不是有效对象，记录错误
                         const errorMsg = i18n.t('toolCalls.invalidResult', { type: typeof result });
                         log.error(errorMsg, result);
                         toolMessage += errorMsg;
-                        this.replyMessage(event, signal, responseId, toolMsgId, 'tool', toolMessage);
+                        this.replyMessage(event, signal, responseId, toolMsgId, 'tool', toolMessage, toolName, serverName);
                     }
                 } catch (toolError) {
                     // 捕获并处理工具执行过程中的错误
                     const errorMsg = i18n.t('toolCalls.error', { message: toolError.message });
                     log.error('工具执行错误:', toolError);
                     toolMessage += errorMsg;
-                    this.replyMessage(event, signal, responseId, toolMsgId, 'tool', toolMessage);
+                    this.replyMessage(event, signal, responseId, toolMsgId, 'tool', toolMessage, toolCall.function.name, null);
                 }
             }
         }

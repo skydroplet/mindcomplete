@@ -4,7 +4,7 @@
         "description": "让每个人都能自由地和数字世界交互。"
     },
     "ui": {
-        "inputPlaceholder": "请输入您的问题...",
+        "inputPlaceholder": "输入消息，按Enter发送，Ctrl+Enter换行，↑↓切换历史消息，Ctrl+P选择用户提示词...",
         "sendButton": "发送",
         "status": {
             "ready": "就绪",
@@ -44,7 +44,8 @@
         "user": "用户",
         "ai": "AI",
         "tool": "工具",
-        "thinking": "思考过程"
+        "thinking": "推理过程",
+        "server": "服务器"
     },
     "errors": {
         "apiKeyMissing": "未找到 API 密钥，请检查 .env 文件",
@@ -118,8 +119,8 @@
     },
     "chat": {
         "send": "发送",
-        "placeholder": "输入消息，按Enter发送，Ctrl+Enter换行...",
-        "inputPlaceholder": "输入消息，按Enter发送，Ctrl+Enter换行..."
+        "placeholder": "输入消息，按Enter发送，Ctrl+Enter换行，↑↓切换历史消息...",
+        "inputPlaceholder": "输入消息，按Enter发送，Ctrl+Enter换行，↑↓切换历史消息..."
     },
     "env": {
         "keyPlaceholder": "变量名",
@@ -295,12 +296,13 @@
     },
     "toolCalls": {
         "executing": "**⚙️ 正在执行工具调用...**",
-        "tool": "**🔧 执行工具:** `{name}`",
+        "tool": "**🔧 工具名称:** `{name}`",
         "parameters": "**📋 参数:**\n```json\n{args}\n```\n",
         "processing": "**⏳ 处理中...**\n",
         "result": "**✅ 工具执行结果:**\n```json\n{result}\n```\n",
         "invalidResult": "**❌ 工具返回了无效结果:** {type}\n",
         "error": "**❌ 工具执行错误:** {message}\n",
+        "userDenied": "**❌ 用户拒绝了工具 `{name}` 的执行请求**\n",
         "generatingResponse": "**🤔 正在生成最终回复...**\n",
         "responseFailed": "**❌ 生成最终回复失败:** {message}\n"
     },
@@ -364,6 +366,7 @@
         "models": "模型配置",
         "prompts": "提示词",
         "mcp": "MCP配置",
+        "agents": "Agent配置",
         "cancel": "取消",
         "confirm": "导出",
         "success": "配置导出成功！",
@@ -392,7 +395,9 @@
         "selectAllEnvVars": "选择/取消选择所有环境变量",
         "selectAllArgs": "选择/取消选择所有参数",
         "selectEnvVars": "选择/取消选择环境变量",
-        "selectArgs": "选择/取消选择参数"
+        "selectArgs": "选择/取消选择参数",
+        "selectAllAgents": "选择/取消选择所有Agent",
+        "selectAgent": "选择/取消选择Agent"
     },
     "import": {
         "title": "导入配置",

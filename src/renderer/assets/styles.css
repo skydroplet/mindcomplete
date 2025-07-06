@@ -110,12 +110,22 @@ body {
     padding: 10px 15px;
     border-radius: 8px;
     max-width: 80%;
+    position: relative;
+}
+
+.message-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 5px;
 }
 
 .message-sender {
     font-size: 1em;
-    color: #666;
-    margin-bottom: 5px;
+    color: #444;
+    flex: 1;
+    font-weight: 500;
 }
 
 .message-content {
@@ -229,6 +239,10 @@ body {
 .user-message {
     background-color: #e3f2fd;
     margin-left: auto;
+    margin-right: 20px;
+    /* 给用户消息添加右侧边距 */
+    width: 85%;
+    /* 设置用户消息宽度 */
     box-shadow: 0 0 8px rgba(0, 123, 255, 0.3);
     transition: box-shadow 0.3s ease;
 }
@@ -246,15 +260,14 @@ body {
 
 /* 工具消息样式 */
 .tool-message {
-    background-color: var(--message-tool-bg);
+    background-color: var(--message-tool-bg, rgba(255, 245, 235, 0.7));
     margin-right: auto;
-    box-shadow: 0 0 8px var(--message-box-shadow);
+    box-shadow: 0 0 8px var(--message-box-shadow, rgba(0, 0, 0, 0.1));
     transition: box-shadow 0.3s ease;
     position: relative;
-    /* 添加相对定位，用于放置授权按钮 */
 }
 
-/* 思考过程消息样式 */
+/* 推理过程消息样式 */
 .thinking-message {
     margin-right: auto;
     border-left: 3px solid #8bc34a;
@@ -267,7 +280,7 @@ body {
 }
 
 .tool-message .message-sender {
-    color: var(--secondary-text-color);
+    color: var(--message-tool-sender, #9e5731);
 }
 
 .tool-message .message-content {
@@ -1396,4 +1409,291 @@ select.settings-select {
     border: 1px solid var(--border-color);
     border-radius: 4px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* 可折叠内容的样式 */
+.collapsible-content {
+    overflow: hidden;
+    transition: max-height 0.3s ease, opacity 0.3s ease;
+    max-height: 2000px;
+    /* 足够大的高度以容纳展开内容 */
+}
+
+.collapsible-content.collapsed {
+    max-height: 1.5em;
+    /* 折叠状态下显示一行文本 */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    opacity: 0.95;
+}
+
+/* 预览文本的特殊样式 */
+.collapsible-content.collapsed p[data-preview="true"] {
+    margin: 0;
+    padding: 0;
+    display: inline;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    font-weight: normal;
+}
+
+/* 隐藏折叠状态下的其他元素 */
+.collapsible-content.collapsed *:not(p[data-preview="true"]) {
+    display: none;
+}
+
+/* 工具调用消息折叠时的特殊样式 */
+.response-container .tool-message .collapsible-content.collapsed {
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    white-space: normal;
+    background-color: rgba(255, 245, 230, 0.5);
+}
+
+.response-container .tool-message .collapsible-content.collapsed p[data-preview="true"] {
+    display: -webkit-box;
+}
+
+/* 推理过程折叠时的特殊样式 */
+.response-container .thinking-message .collapsible-content.collapsed {
+    opacity: 0.85;
+    /* 推理过程稍微淡一点 */
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    white-space: normal;
+    font-style: italic;
+    background-color: rgba(240, 240, 245, 0.5);
+}
+
+.response-container .thinking-message .collapsible-content.collapsed p[data-preview="true"] {
+    display: -webkit-box;
+    font-style: italic;
+}
+
+/* 折叠/展开按钮样式 */
+.toggle-content-btn {
+    background: transparent;
+    border: none;
+    padding: 2px 4px;
+    cursor: pointer;
+    font-size: 0.8em;
+    color: #555;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.toggle-content-btn:hover {
+    background-color: rgba(0, 0, 0, 0.08);
+    transform: scale(1.1);
+}
+
+.toggle-icon {
+    display: inline-block;
+    transition: transform 0.2s;
+}
+
+/* 响应容器样式 */
+.response-container {
+    margin-bottom: 20px;
+    padding: 12px;
+    border-radius: 12px;
+    background-color: var(--response-container-bg, rgba(245, 248, 250, 0.7));
+    border: 1px solid var(--response-container-border, rgba(200, 210, 220, 0.8));
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    position: relative;
+    width: 90%;
+    /* 设置容器宽度 */
+    margin-left: 20px;
+    /* 相对于用户消息有一定的缩进 */
+}
+
+/* 响应容器内消息样式 */
+.response-container .message {
+    max-width: 100%;
+    margin-bottom: 12px;
+    background-color: transparent;
+    box-shadow: none;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 8px;
+}
+
+/* 响应容器内的AI消息样式 */
+.response-container .ai-message {
+    background-color: rgba(235, 245, 250, 0.7);
+    border-left: 3px solid #4caf50;
+}
+
+/* 响应容器内的工具消息样式 */
+.response-container .tool-message {
+    background-color: rgba(255, 245, 230, 0.8);
+    border-left: 3px solid #ff9800;
+}
+
+/* 响应容器内的推理过程消息样式 */
+.response-container .thinking-message {
+    background-color: rgba(240, 240, 245, 0.7);
+    border-left: 3px solid #9c27b0;
+    font-style: italic;
+}
+
+.response-container .message:last-child {
+    margin-bottom: 0;
+}
+
+/* 用户消息与响应容器的间距 */
+.user-message+.response-container {
+    margin-top: 15px;
+}
+
+.response-container+.user-message {
+    margin-top: 25px;
+}
+
+/* 保持用户消息样式不变 */
+.user-message {
+    background-color: #e3f2fd;
+    margin-left: auto;
+    margin-right: 20px;
+    /* 给用户消息添加右侧边距 */
+    width: 85%;
+    /* 设置用户消息宽度 */
+    box-shadow: 0 0 8px rgba(0, 123, 255, 0.3);
+    transition: box-shadow 0.3s ease;
+}
+
+/* AI消息样式 */
+.ai-message {
+    background-color: #f5f5f5;
+    margin-right: auto;
+    box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
+    transition: box-shadow 0.3s ease;
+}
+
+/* 工具消息样式 */
+.tool-message {
+    background-color: var(--message-tool-bg, rgba(255, 245, 235, 0.7));
+    margin-right: auto;
+    box-shadow: 0 0 8px var(--message-box-shadow, rgba(0, 0, 0, 0.1));
+    transition: box-shadow 0.3s ease;
+    position: relative;
+}
+
+/* 响应容器内消息样式 */
+.response-container .ai-message {
+    background-color: rgba(245, 245, 245, 0.5);
+}
+
+.response-container .tool-message {
+    background-color: var(--message-tool-bg, rgba(255, 245, 235, 0.5));
+}
+
+.response-container .thinking-message {
+    background-color: transparent;
+}
+
+.response-container .message:last-child {
+    margin-bottom: 0;
+}
+
+/* 深色模式下的响应容器和消息样式 */
+[data-theme="dark"] .response-container {
+    background-color: var(--response-container-bg-dark, rgba(40, 44, 52, 0.7));
+    border-color: var(--response-container-border-dark, rgba(60, 65, 75, 0.8));
+}
+
+[data-theme="dark"] .response-container .ai-message {
+    background-color: rgba(45, 55, 65, 0.7);
+    border-left: 3px solid #5caf60;
+}
+
+[data-theme="dark"] .response-container .tool-message {
+    background-color: rgba(65, 55, 45, 0.8);
+    border-left: 3px solid #ffa820;
+}
+
+[data-theme="dark"] .response-container .thinking-message {
+    background-color: rgba(55, 50, 65, 0.7);
+    border-left: 3px solid #b54dc0;
+}
+
+[data-theme="dark"] .message-sender {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+[data-theme="dark"] .message-content {
+    color: rgba(255, 255, 255, 0.85);
+}
+
+[data-theme="dark"] .toggle-content-btn {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+[data-theme="dark"] .toggle-content-btn:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+}
+
+/* 深色模式下折叠内容的预览样式 */
+[data-theme="dark"] .collapsible-content.collapsed {
+    opacity: 0.9;
+}
+
+[data-theme="dark"] .response-container .tool-message .collapsible-content.collapsed {
+    background-color: rgba(65, 55, 45, 0.6);
+}
+
+[data-theme="dark"] .response-container .thinking-message .collapsible-content.collapsed {
+    background-color: rgba(55, 50, 65, 0.6);
+    color: rgba(255, 255, 255, 0.8);
+}
+
+/* 深色模式下用户消息样式 */
+[data-theme="dark"] .user-message {
+    background-color: var(--user-message-bg-dark, #2c5282);
+    box-shadow: 0 0 8px rgba(30, 64, 175, 0.4);
+}
+
+/* 深色模式下代码块和文本元素样式 */
+[data-theme="dark"] .message-content pre {
+    background-color: rgba(30, 30, 35, 0.9);
+    border-color: rgba(70, 70, 80, 0.8);
+    color: rgba(255, 255, 255, 0.9);
+}
+
+[data-theme="dark"] .message-content code {
+    color: #e6e6e6;
+    background-color: rgba(40, 40, 45, 0.7);
+}
+
+[data-theme="dark"] .message-content a {
+    color: #63b3ed;
+}
+
+[data-theme="dark"] .message-content a:hover {
+    color: #90cdf4;
+}
+
+[data-theme="dark"] .message-content blockquote {
+    border-left-color: rgba(100, 100, 120, 0.6);
+    color: rgba(220, 220, 220, 0.8);
+}
+
+[data-theme="dark"] .message-content h1,
+[data-theme="dark"] .message-content h2,
+[data-theme="dark"] .message-content h3 {
+    color: rgba(255, 255, 255, 0.95);
+}
+
+[data-theme="dark"] .collapsible-content.collapsed p[data-preview="true"] {
+    color: rgba(255, 255, 255, 0.85);
 }

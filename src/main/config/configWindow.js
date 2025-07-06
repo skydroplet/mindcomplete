@@ -157,9 +157,9 @@ function registerConfigIPC() {
 
     ipcMain.handle('add-model', async (event, model) => {
         log.info('处理添加模型请求, 模型数据:', JSON.stringify(model, null, 2));
-        const result = modelManager.addModel(model);
-        log.info('添加模型结果:', result);
-        return result;
+        const modelId = modelManager.addModel(model);
+        log.info('添加模型结果:', modelId);
+        return !!modelId;
     });
 
     ipcMain.handle('update-model', async (event, { modelId, model }) => {

@@ -4,7 +4,7 @@
         "description": "Let everyone can freely interact with the digital world."
     },
     "ui": {
-        "inputPlaceholder": "Enter your question...",
+        "inputPlaceholder": "Type a message, press Enter to send, Ctrl+Enter for new line, ↑↓ for history, Ctrl+P for prompts...",
         "sendButton": "Send",
         "status": {
             "ready": "Ready",
@@ -44,7 +44,8 @@
         "user": "User",
         "ai": "AI",
         "tool": "Tool",
-        "thinking": "Thinking..."
+        "thinking": "Thinking",
+        "server": "Server"
     },
     "errors": {
         "apiKeyMissing": "API key not found, please check .env file",
@@ -113,8 +114,8 @@
     },
     "chat": {
         "send": "Send",
-        "placeholder": "Type a message, press Enter to send, Ctrl+Enter for new line...",
-        "inputPlaceholder": "Type a message, press Enter to send, Ctrl+Enter for new line..."
+        "placeholder": "Type a message, press Enter to send, Ctrl+Enter for new line, ↑↓ for history...",
+        "inputPlaceholder": "Type a message, press Enter to send, Ctrl+Enter for new line, ↑↓ for history..."
     },
     "env": {
         "keyPlaceholder": "Variable name",
@@ -194,8 +195,8 @@
         "tabs": {
             "models": "Models",
             "prompts": "Prompts",
-            "mcp": "MCP Configuration",
-            "agents": "Agents",
+            "mcp": "MCP Configurations",
+            "agents": "Agent Configurations",
             "newSession": "New Session",
             "close": "Close Tab",
             "newTab": "New Tab",
@@ -288,12 +289,13 @@
     },
     "toolCalls": {
         "executing": "**⚙️ Executing tool call...**",
-        "tool": "**🔧 Executing tool:** `{name}`",
+        "tool": "**🔧 Tool name:** `{name}`",
         "parameters": "**📋 Parameters:**\n```json\n{args}\n```\n",
         "processing": "**⏳ Processing...**\n",
         "result": "**✅ Tool execution result:**\n```json\n{result}\n```\n",
         "invalidResult": "**❌ Tool returned invalid result:** {type}\n",
         "error": "**❌ Tool execution error:** {message}\n",
+        "userDenied": "**❌ User denied the execution request for tool `{name}`**\n",
         "generatingResponse": "**🤔 Generating final response...**\n",
         "responseFailed": "**❌ Failed to generate final response:** {message}\n"
     },
@@ -357,6 +359,7 @@
         "models": "Model Configurations",
         "prompts": "Prompts",
         "mcp": "MCP Configurations",
+        "agents": "Agent Configurations",
         "cancel": "Cancel",
         "confirm": "Export",
         "success": "Configuration exported successfully!",
@@ -385,7 +388,9 @@
         "selectAllEnvVars": "Select/Deselect all environment variables",
         "selectAllArgs": "Select/Deselect all command arguments",
         "selectEnvVars": "Select/Deselect environment variables",
-        "selectArgs": "Select/Deselect command arguments"
+        "selectArgs": "Select/Deselect command arguments",
+        "selectAllAgents": "Select/Deselect all agents",
+        "selectAgent": "Select/Deselect agent"
     },
     "import": {
         "title": "Import Configuration",

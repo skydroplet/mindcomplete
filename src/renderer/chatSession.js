@@ -66,20 +66,66 @@ class ChatSessionService {
         }
     }
 
-    setResponseMessages(rspId, msgId, role, content) {
-        let rsp = this.responses[rspId];
-        if (!rsp) {
-            rsp = { id: rspId, messages: {} };
-            this.responses[rspId] = rsp;
+    setResponseMessages(rspId, msgId, role, content, roleName, serverName, serverId) {
+        if (!this.responses[rspId]) {
+            // 创建响应容器，用于包含同一个响应的所有消息
+            const responseContainer = document.createElement('div');
+            responseContainer.className = 'response-container';
+            this.chatMessages.appendChild(responseContainer);
+
+            this.responses[rspId] = {
+                id: rspId,
+                messages: {},
+                container: responseContainer
+            };
         }
 
+        let rsp = this.responses[rspId];
         let msgElement = rsp.messages[msgId]?.element || null;
         if (!msgElement) {
-            msgElement = this.addMessage('', role);
+            // 根据消息类型添加消息
+            // 如果是工具授权请求，需要包含授权按钮
+            if (role === 'tool-auth') {
+                msgElement = this.addMessageToContainer('', role, rsp.container, roleName, serverName, {
+                    toolName: roleName,
+                    serverId: serverId,
+                    serverName: serverName
+                });
+            } else {
+                msgElement = this.addMessageToContainer('', role, rsp.container, roleName, serverName);
+            }
             rsp.messages[msgId] = { element: msgElement };
         }
 
         const processedText = this.preprocessCodeBlocks(content);
+
+        // 如果是工具调用消息，更新发送者显示
+        if (role === 'tool') {
+            // 查找消息元素的父元素直到message元素
+            let parentElement = msgElement;
+            while (parentElement && !parentElement.classList.contains('message')) {
+                parentElement = parentElement.parentElement;
+            }
+
+            if (parentElement) {
+                // 更新工具名称和服务器信息
+                const senderEl = parentElement.querySelector('.message-sender');
+                if (senderEl) {
+                    let senderText = i18n.t('messages.tool');
+
+                    // 添加工具名称
+                    if (roleName) {
+                        senderText = roleName;
+                        if (serverName) {
+                            senderText = `${serverName} : ${roleName}`;
+                        }
+                    }
+
+                    senderEl.textContent = senderText;
+                }
+            }
+        }
+
         this.updateMessage(msgElement, processedText);
     }
 
@@ -89,15 +135,8 @@ class ChatSessionService {
         }
 
         // 接收响应消息
-        ipcRenderer.on('response-stream-' + this.sessionId, (event, rspId, msgId, role, content) => {
-            this.setResponseMessages(rspId, msgId, role, content);
-        });
-
-        // 工具授权请求监听
-        ipcRenderer.on('tool-authorization-request-' + this.sessionId, (event, authRequest) => {
-            // 添加包含授权按钮的工具消息
-            const messageContent = i18n.t('mcp.authorization.message', { serverName: authRequest.serverName, name: authRequest.toolName });
-            this.addMessage(messageContent, 'tool', authRequest);
+        ipcRenderer.on('response-stream-' + this.sessionId, (event, rspId, msgId, role, content, roleName, serverName, serverId) => {
+            this.setResponseMessages(rspId, msgId, role, content, roleName, serverName, serverId);
         });
 
         // 对话触发的会话名称变更
@@ -183,9 +222,35 @@ class ChatSessionService {
 
         // 渲染消息历史
         if (this.data.messages) {
-            this.data.messages.forEach(msg => {
-                this.addMessage(msg.content, msg.role);
+            // 按照消息顺序组织用户消息和响应
+            let currentResponseContainer = null;
+            let lastMessageRole = null;
+
+            // 按照原始顺序处理消息
+            this.data.messages.forEach((msg) => {
+                if (msg.role === 'user') {
+                    // 用户消息直接添加到主容器
+                    this.addMessage(msg.content, msg.role, msg.roleName);
+                    // 标记下一个非用户消息需要创建新的响应容器
+                    lastMessageRole = 'user';
+                    currentResponseContainer = null;
+                } else {
+                    // AI消息、工具消息或推理过程
+                    if (lastMessageRole === 'user' || currentResponseContainer === null) {
+                        // 如果上一条是用户消息，或者还没有响应容器，创建新的响应容器
+                        currentResponseContainer = document.createElement('div');
+                        currentResponseContainer.className = 'response-container';
+                        this.chatMessages.appendChild(currentResponseContainer);
+                    }
+
+                    // 将消息添加到当前响应容器
+                    this.addMessageToContainer(msg.content, msg.role, currentResponseContainer, msg.roleName, msg.serverName);
+                    lastMessageRole = msg.role;
+                }
             });
+
+            // 加载历史消息后，折叠所有工具和推理过程消息
+            this.collapseToolAndThinkingMessages();
         }
 
         // 延迟滚动，确保渲染完成
@@ -257,21 +322,47 @@ class ChatSessionService {
     }
 
     /**
-     * 向聊天界面添加一条消息
+     * 创建折叠切换按钮
+     * 
+     * @param {HTMLDivElement} contentDiv - 消息内容元素
+     * @param {string} type - 消息类型
+     * @returns {HTMLButtonElement} 折叠/展开按钮
+     */
+    createToggleButton(contentDiv, type) {
+        const toggleBtn = document.createElement('button');
+        toggleBtn.className = 'toggle-content-btn';
+        toggleBtn.innerHTML = `<span class="toggle-icon">▼</span>`;  // 默认显示展开状态的图标
+
+        toggleBtn.addEventListener('click', () => {
+            const isCollapsed = contentDiv.classList.contains('collapsed');
+            if (isCollapsed) {
+                // 展开内容
+                contentDiv.classList.remove('collapsed');
+                toggleBtn.innerHTML = `<span class="toggle-icon">▼</span>`;
+            } else {
+                // 折叠内容
+                contentDiv.classList.add('collapsed');
+                toggleBtn.innerHTML = `<span class="toggle-icon">▶</span>`;
+            }
+        });
+
+        return toggleBtn;
+    }
+
+    /**
+     * 向指定容器添加一条消息
      *
-     * 此函数用于在聊天界面中添加一条新消息，支持三种类型的消息：
-     * - user: 用户发送的消息，靠右显示，不解析Markdown
-     * - assistant: AI助手的回复，靠左显示，解析Markdown
-     * - tool 工具执行的消息，靠左显示，解析Markdown，有特殊样式
-     *
-     * @param {string} content - 消息内容。
+     * @param {string} content - 消息内容
      * @param {string} type - 消息类型，可选值为 'user'、'assistant'、'thinking'、 'tool'，默认为 'assistant'
+     * @param {HTMLElement} container - 容器元素，如果未提供则使用this.chatMessages
      * @param {Object} authRequest - 授权请求对象，包含toolName、serverId等信息
      * @returns {HTMLDivElement} - 消息内容元素，用于后续更新
      */
-    addMessage(content, type = 'assistant', authRequest = null) {
-        if (!this.chatMessages) {
-            log.error(`尝试添加消息但未找到消息容器，tabId=${this.tabId}`);
+    addMessageToContainer(content, type = 'assistant', container = null, roleName = null, serverName = null, authRequest = null) {
+        const targetContainer = container || this.chatMessages;
+
+        if (!targetContainer) {
+            log.error(`尝试添加消息但未找到消息容器`);
             return null;
         }
 
@@ -286,39 +377,103 @@ class ChatSessionService {
         if (type === 'user') {
             messageDiv.className = 'message user-message';
             sender.textContent = i18n.t('messages.user');
+        } else if (type === 'tool-auth') {
+            messageDiv.className = 'message tool-message';
+            sender.textContent = i18n.t('messages.tool');
         } else if (type === 'tool') {
             messageDiv.className = 'message tool-message';
             sender.textContent = i18n.t('messages.tool');
         } else if (type === 'thinking') {
             messageDiv.className = 'message thinking-message';
-            sender.textContent = i18n.t('messages.ai');
+            sender.textContent = i18n.t('messages.ai') + ': ' + i18n.t('messages.thinking', '推理过程');
         } else {
             messageDiv.className = 'message ai-message';
             sender.textContent = i18n.t('messages.ai');
         }
 
-        messageDiv.appendChild(sender);
+        if (roleName) {
+            sender.textContent = roleName;
+            if (serverName) {
+                sender.textContent = `${serverName} : ${roleName}`;
+            }
 
-        // 消息内容
-        const contentDiv = document.createElement('div');
-        contentDiv.className = 'message-content';
-        this.updateMessage(contentDiv, content);
-        messageDiv.appendChild(contentDiv);
+            if (type === 'thinking') {
+                sender.textContent = `${roleName} : ${i18n.t('messages.thinking', '推理过程')}`;
+            }
+        }
 
-        // 如果是工具消息，并且存在授权元数据，添加授权按钮
-        if (authRequest) {
+        // 创建发送者头部容器，包含发送者信息和折叠按钮
+        const headerDiv = document.createElement('div');
+        headerDiv.className = 'message-header';
+        headerDiv.appendChild(sender);
+
+        // 为推理过程和工具调用添加折叠功能
+        if (type === 'thinking' || type === 'tool') {
+            // 添加用于折叠效果的CSS类，但默认展开(不添加collapsed类)
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content collapsible-content';
+            contentDiv.dataset.messageType = type; // 添加数据属性以便后续识别
+
+            // 创建折叠/展开按钮
+            const toggleBtn = this.createToggleButton(contentDiv, type);
+            headerDiv.appendChild(toggleBtn);
+
+            messageDiv.appendChild(headerDiv);
+            this.updateMessage(contentDiv, content);
+            messageDiv.appendChild(contentDiv);
+        } else {
+            messageDiv.appendChild(headerDiv);
+
+            // 消息内容
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+            this.updateMessage(contentDiv, content);
+            messageDiv.appendChild(contentDiv);
+        }
+
+        // 如果是工具授权请求或工具消息，并且存在授权元数据，添加授权按钮
+        if (type === 'tool-auth' && authRequest) {
             const authButtons = this.createToolAuthButtons(authRequest);
             messageDiv.appendChild(authButtons);
         }
 
-        // 将消息添加到聊天容器中
-        this.chatMessages.appendChild(messageDiv);
+        // 将消息添加到目标容器中
+        targetContainer.appendChild(messageDiv);
 
         // 滚动到最新消息
         this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
 
-        // 保存引用以便后续使用updateMessage函数更新内容 这对于实现流式响应非常重要
-        return contentDiv;
+        // 返回消息内容元素以便后续更新
+        return messageDiv.querySelector('.message-content');
+    }
+
+    /**
+     * 向聊天界面添加一条消息
+     *
+     * @param {string} content - 消息内容。
+     * @param {string} type - 消息类型，可选值为 'user'、'assistant'、'thinking'、 'tool'，默认为 'assistant'
+     * @param {Object} authRequest - 授权请求对象，包含toolName、serverId等信息
+     * @returns {HTMLDivElement} - 消息内容元素，用于后续更新
+     */
+    addMessage(content, type = 'assistant', roleName = null, serverName = null, authRequest = null) {
+        if (!this.chatMessages) {
+            log.error(`尝试添加消息但未找到消息容器，tabId=${this.tabId}`);
+            return null;
+        }
+
+        // 如果是用户消息，直接添加到主容器
+        if (type === 'user') {
+            // 用户消息直接添加到主容器
+            return this.addMessageToContainer(content, type, this.chatMessages, roleName, serverName, authRequest);
+        } else {
+            // 对于AI响应、推理过程或工具调用，创建一个新的响应容器
+            const responseContainer = document.createElement('div');
+            responseContainer.className = 'response-container';
+            this.chatMessages.appendChild(responseContainer);
+
+            // 将AI响应消息添加到新容器
+            return this.addMessageToContainer(content, type, responseContainer, roleName, serverName, authRequest);
+        }
     }
 
     /**
@@ -414,6 +569,9 @@ class ChatSessionService {
             : i18n.t('mcp.authorization.denied');
 
         this.statusElement.textContent = i18n.t('ui.status.ready');
+
+        // 消息处理完成后折叠剩余的工具和推理过程消息
+        this.collapseToolAndThinkingMessages();
     }
 
     /**
@@ -430,6 +588,9 @@ class ChatSessionService {
             return;
         }
 
+        // 保存当前折叠状态
+        const wasCollapsed = messageDiv.classList.contains('collapsed');
+
         // 解析普通消息内容
         messageDiv.innerHTML = marked.parse(content);
 
@@ -440,6 +601,18 @@ class ChatSessionService {
         messageDiv.querySelectorAll('pre code').forEach((block) => {
             hljs.highlightElement(block);
         });
+
+        // 恢复折叠状态
+        if (wasCollapsed) {
+            messageDiv.classList.add('collapsed');
+
+            // 尝试找到第一行文本作为预览文本
+            const firstParagraph = messageDiv.querySelector('p');
+            if (firstParagraph) {
+                // 给第一行文本添加data-preview属性，用于CSS样式特殊处理
+                firstParagraph.setAttribute('data-preview', 'true');
+            }
+        }
 
         // 滚动到最新内容，保持消息可见
         this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
@@ -603,6 +776,9 @@ class ChatSessionService {
             setTimeout(() => {
                 this.isGenerating = false;
                 this.responses.delete(requestId);
+
+                // 在消息生成完成后折叠所有工具和推理过程消息
+                this.collapseToolAndThinkingMessages();
             }, 100);
         }
     }
@@ -617,6 +793,37 @@ class ChatSessionService {
         } else {
             log.error('尝试清空消息但未找到消息容器');
         }
+    }
+
+    /**
+     * 在消息生成完成后折叠所有工具和推理过程消息
+     */
+    collapseToolAndThinkingMessages() {
+        if (!this.chatMessages) return;
+
+        // 查找所有工具和推理过程消息
+        const collapsibleContents = this.chatMessages.querySelectorAll('.collapsible-content:not(.collapsed)');
+
+        collapsibleContents.forEach(contentDiv => {
+            // 添加折叠类
+            contentDiv.classList.add('collapsed');
+
+            // 更新对应的折叠按钮图标
+            const messageHeader = contentDiv.parentElement.querySelector('.message-header');
+            if (messageHeader) {
+                const toggleBtn = messageHeader.querySelector('.toggle-content-btn');
+                if (toggleBtn) {
+                    toggleBtn.innerHTML = `<span class="toggle-icon">▶</span>`;
+                }
+            }
+
+            // 尝试找到第一行文本作为预览文本
+            const firstParagraph = contentDiv.querySelector('p');
+            if (firstParagraph) {
+                // 给第一行文本添加data-preview属性，用于CSS样式特殊处理
+                firstParagraph.setAttribute('data-preview', 'true');
+            }
+        });
     }
 }
 
