@@ -1438,6 +1438,42 @@ class TabManagerService {
     }
 
     /**
+     * 生成唯一的标签ID
+     * 检查DOM中是否已存在相同ID的元素，确保ID的唯一性
+     * @returns {string} 唯一的标签ID
+     */
+    generateUniqueTabId() {
+        let tabId;
+        let attempts = 0;
+        const maxAttempts = 1000; // 防止无限循环
+
+        do {
+            this.tabCounter++;
+            tabId = `tab-${this.tabCounter}`;
+            attempts++;
+
+            // 防止无限循环
+            if (attempts > maxAttempts) {
+                // 如果尝试次数过多，使用时间戳确保唯一性
+                tabId = `tab-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+                log.warn(`标签ID生成尝试次数过多，使用时间戳生成: ${tabId}`);
+                break;
+            }
+
+        } while (
+            // 检查DOM中是否已存在该ID的元素
+            document.getElementById(tabId) ||
+            document.getElementById(`tab-content-${tabId}`) ||
+            // 检查内存中的映射关系
+            this.tabSessions.has(tabId) ||
+            this.tabSessionIds.has(tabId)
+        );
+
+        log.info(`生成唯一标签ID: ${tabId} (尝试次数: ${attempts})`);
+        return tabId;
+    }
+
+    /**
      * 创建新标签
      * @param {string} sessionId 可选的会话ID，如果提供则加载这个会话到新标签
      * @returns {string} 新创建的标签ID
@@ -1451,8 +1487,8 @@ class TabManagerService {
 
         this._creatingTab = true;
 
-        this.tabCounter++;
-        const tabId = `tab-${this.tabCounter}`;
+        // 生成唯一的标签ID
+        const tabId = this.generateUniqueTabId();
 
         log.info(`开始创建新标签: ${tabId}${sessionId ? ` (会话ID: ${sessionId})` : ' (新会话)'}`);
 
@@ -2028,6 +2064,9 @@ class TabManagerService {
             await this.restoreTab(tabInfo);
         }
 
+        // 重新校准tabCounter，确保其正确反映当前状态
+        this.recalibrateTabCounter();
+
         // 激活之前的活动标签
         if (tabState.activeTabId && document.getElementById(tabState.activeTabId)) {
             this.activateTab(tabState.activeTabId);
@@ -2041,6 +2080,57 @@ class TabManagerService {
 
         log.info(i18n.t('logs.tabStateRestored'));
         return true;
+    }
+
+    /**
+     * 重新校准标签计数器
+     * 确保tabCounter正确反映当前所有标签的最高编号
+     */
+    recalibrateTabCounter() {
+        let maxCounter = 0;
+
+        // 检查所有已恢复的标签ID
+        this.tabSessionIds.forEach((sessionId, tabId) => {
+            // 从tabId中提取数字部分（如果是标准格式 tab-{number}）
+            const match = tabId.match(/^tab-(\d+)$/);
+            if (match) {
+                const counter = parseInt(match[1], 10);
+                if (counter > maxCounter) {
+                    maxCounter = counter;
+                }
+            }
+        });
+
+        // 检查DOM中的所有标签元素
+        const tabElements = this.tabsContainer.querySelectorAll('.tab[data-tab-id]');
+        tabElements.forEach(element => {
+            const tabId = element.getAttribute('data-tab-id');
+            const match = tabId.match(/^tab-(\d+)$/);
+            if (match) {
+                const counter = parseInt(match[1], 10);
+                if (counter > maxCounter) {
+                    maxCounter = counter;
+                }
+            }
+        });
+
+        // 检查DOM中的所有内容元素
+        const contentElements = this.tabsContent.querySelectorAll('[id^="tab-content-tab-"]');
+        contentElements.forEach(element => {
+            const contentId = element.id;
+            const match = contentId.match(/^tab-content-tab-(\d+)$/);
+            if (match) {
+                const counter = parseInt(match[1], 10);
+                if (counter > maxCounter) {
+                    maxCounter = counter;
+                }
+            }
+        });
+
+        // 设置tabCounter为最高编号，这样下次创建时会从maxCounter+1开始
+        this.tabCounter = maxCounter;
+
+        log.info(`重新校准标签计数器: ${this.tabCounter} (检测到的最高编号: ${maxCounter})`);
     }
 
     /**
@@ -2099,11 +2189,13 @@ class TabManagerService {
         const contents = this.tabsContent.querySelectorAll('.tab-content');
         contents.forEach(content => content.remove());
 
-        // 重置计数器和状态
-        this.tabCounter = 0;
+        // 重置状态
         this.activeTabId = null;
         this.showingTabs.clear();
         this.hiddenTabs.clear();
+
+        // 重新校准tabCounter，确保从正确的值开始
+        this.recalibrateTabCounter();
 
         // 更新下拉菜单
         this.updateTabsDropdownMenu();
