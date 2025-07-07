@@ -210,16 +210,8 @@ class ChatSession {
         // 删除消息中的thinking和前端展示相关字段
         return messages.map(message => {
             // 提取AI需要的字段
-            const { role, content, tool_calls, tool_call_id } = message;
+            const { role, content } = message;
             const aiMessage = { role, content };
-
-            // 如果有工具调用信息，添加到消息中
-            if (tool_calls) {
-                aiMessage.tool_calls = tool_calls;
-            }
-            if (tool_call_id) {
-                aiMessage.tool_call_id = tool_call_id;
-            }
 
             return aiMessage;
         });
