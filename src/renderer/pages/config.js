@@ -273,6 +273,272 @@ document.addEventListener('DOMContentLoaded', async () => {
             mcpDetailSection.style.display = '';
             mcpEnvsSection.style.display = 'none';
         }
+
+        // ========== 模型标签页三栏切换逻辑 ========== 
+        const modelMenuItems = document.querySelectorAll('.model-menu-item');
+        const modelConfigSection = document.getElementById('model-config-section');
+        const modelMarketSection = document.querySelector('.model-market-section');
+        const modelConfigDetail = document.getElementById('model-config-detail');
+        const modelMarketDetail = document.querySelector('.model-market-detail');
+
+        // 模型市场数据存储
+        let marketModels = [];
+
+        // 从API获取模型市场数据
+        async function fetchMarketModels() {
+            try {
+                const response = await fetch('http://127.0.0.1:8080/v1/models');
+                const data = await response.json();
+
+                if (data && data.models && Array.isArray(data.models)) {
+                    marketModels = data.models.map(model => ({
+                        id: model.name.replace(/[^a-zA-Z0-9-_]/g, '-'), // 生成安全的ID
+                        name: model.name,
+                        modelType: model.modelType,
+                        provider: model.provider,
+                        description: model.description,
+                        apiUrl: model.apiUrl,
+                        contextWindow: Math.floor(model.windowSize / 1024), // 转换为K单位
+                        temperature: 0.7, // 默认温度
+                        features: extractFeatures(model.description) // 从描述中提取特性
+                    }));
+                    log.info('成功获取模型市场数据:', marketModels.length, '个模型');
+                    return true;
+                } else {
+                    log.warn('API返回数据格式异常:', data);
+                    return false;
+                }
+            } catch (error) {
+                log.error('获取模型市场数据失败:', error.message);
+                return false;
+            }
+        }
+
+        // 从模型描述中提取特性关键词
+        function extractFeatures(description) {
+            const features = [];
+            const keywordMap = {
+                '推理': '逻辑推理',
+                '数学': '数学计算',
+                '编程': '代码生成',
+                '代码': '代码生成',
+                '对话': '智能对话',
+                '翻译': '多语言翻译',
+                '创意': '创意写作',
+                '写作': '创意写作',
+                '多语言': '多语言支持'
+            };
+
+            for (const [keyword, feature] of Object.entries(keywordMap)) {
+                if (description.includes(keyword) && !features.includes(feature)) {
+                    features.push(feature);
+                }
+            }
+
+            // 如果没有找到特性，添加默认特性
+            if (features.length === 0) {
+                features.push('通用对话', '文本生成');
+            }
+
+            return features;
+        }
+
+        // 渲染模型市场列表
+        function renderMarketModelList() {
+            const marketModelsContainer = document.getElementById('market-models-container');
+            const marketLoading = document.getElementById('market-loading');
+            const marketError = document.getElementById('market-error');
+
+            if (!marketModelsContainer) return;
+
+            // 隐藏加载和错误状态
+            marketLoading.style.display = 'none';
+            marketError.style.display = 'none';
+
+            if (marketModels.length === 0) {
+                marketError.style.display = 'block';
+                document.getElementById('market-error-message').textContent = '暂无可用的模型数据';
+                return;
+            }
+
+            marketModelsContainer.innerHTML = marketModels.map((model, index) => `
+                <div class="market-model-item ${index === 0 ? 'active' : ''}" data-model="${model.id}">
+                    <div class="market-model-name">${model.name}</div>
+                    <div class="market-model-meta">
+                        <span class="market-model-type">${model.provider}</span>
+                    </div>
+                </div>
+            `).join('');
+
+            // 重新绑定点击事件
+            initMarketModelItems();
+
+            // 默认显示第一个模型的详情
+            if (marketModels.length > 0) {
+                showMarketModelDetail(marketModels[0].id);
+            }
+        }
+
+        modelMenuItems.forEach(item => {
+            item.addEventListener('click', async function () {
+                modelMenuItems.forEach(i => i.classList.remove('active'));
+                this.classList.add('active');
+                const menu = this.getAttribute('data-menu');
+
+                if (menu === 'config') {
+                    // 显示模型配置
+                    modelConfigSection.style.display = 'flex';
+                    modelMarketSection.style.display = 'none';
+                    modelConfigDetail.style.display = 'flex';
+                    modelMarketDetail.style.display = 'none';
+                } else if (menu === 'market') {
+                    // 显示模型市场
+                    modelConfigSection.style.display = 'none';
+                    modelMarketSection.style.display = 'flex';
+                    modelConfigDetail.style.display = 'none';
+                    modelMarketDetail.style.display = 'flex';
+
+                    // 如果还没有加载过模型数据，则获取
+                    if (marketModels.length === 0) {
+                        const marketLoading = document.getElementById('market-loading');
+                        const marketError = document.getElementById('market-error');
+
+                        // 显示加载状态
+                        if (marketLoading) {
+                            marketLoading.style.display = 'block';
+                        }
+                        if (marketError) {
+                            marketError.style.display = 'none';
+                        }
+
+                        const success = await fetchMarketModels();
+                        if (success) {
+                            renderMarketModelList();
+                        } else {
+                            if (marketLoading) {
+                                marketLoading.style.display = 'none';
+                            }
+                            if (marketError) {
+                                marketError.style.display = 'block';
+                                document.getElementById('market-error-message').textContent = '加载模型数据失败，请检查网络连接';
+                            }
+                        }
+                    } else {
+                        // 如果已经有数据，确保第一个模型被选中并显示详情
+                        const firstModelItem = document.querySelector('.market-model-item');
+                        if (firstModelItem && marketModels.length > 0) {
+                            // 重置所有项的active状态
+                            document.querySelectorAll('.market-model-item').forEach(item => item.classList.remove('active'));
+                            // 激活第一个项
+                            firstModelItem.classList.add('active');
+                            // 显示第一个模型的详情
+                            showMarketModelDetail(marketModels[0].id);
+                        }
+                    }
+                }
+            });
+        });
+
+        // 模型市场项点击事件
+        function initMarketModelItems() {
+            const marketModelItems = document.querySelectorAll('.market-model-item');
+            marketModelItems.forEach(item => {
+                item.addEventListener('click', function () {
+                    marketModelItems.forEach(i => i.classList.remove('active'));
+                    this.classList.add('active');
+                    const modelId = this.getAttribute('data-model');
+                    showMarketModelDetail(modelId);
+                });
+            });
+        }
+
+        // 显示模型市场详情
+        function showMarketModelDetail(modelId) {
+            const marketDetailTemplate = document.getElementById('market-detail-template');
+            const marketEmptyState = document.getElementById('market-empty-state');
+
+            if (!modelId) {
+                // 隐藏所有状态
+                marketDetailTemplate.style.display = 'none';
+                marketEmptyState.style.display = 'none';
+                return;
+            }
+
+            const model = marketModels.find(m => m.id === modelId);
+            if (!model) {
+                // 显示空状态
+                marketDetailTemplate.style.display = 'none';
+                marketEmptyState.style.display = 'block';
+                return;
+            }
+
+            // 隐藏空状态，显示详情
+            marketEmptyState.style.display = 'none';
+            marketDetailTemplate.style.display = 'block';
+
+            // 填充模型信息
+            document.getElementById('market-model-name').textContent = model.name;
+            document.getElementById('market-model-provider').textContent = model.provider;
+            document.getElementById('market-model-description').textContent = model.description;
+            document.getElementById('market-context-window').textContent = model.contextWindow + 'K';
+            document.getElementById('market-temperature').textContent = model.temperature;
+            document.getElementById('market-model-type').textContent = model.modelType;
+            document.getElementById('market-api-url').textContent = model.apiUrl;
+
+            // 填充特性标签
+            const featuresContainer = document.getElementById('market-model-features');
+            featuresContainer.innerHTML = model.features.map(feature =>
+                `<span class="market-feature-tag">${feature}</span>`
+            ).join('');
+
+            // 设置添加按钮的数据属性
+            const addButton = document.getElementById('add-market-model-btn');
+            if (addButton) {
+                addButton.setAttribute('data-model-id', model.id);
+
+                // 移除旧的事件监听器并添加新的
+                const newButton = addButton.cloneNode(true);
+                addButton.parentNode.replaceChild(newButton, addButton);
+
+                newButton.addEventListener('click', function () {
+                    addMarketModelToConfig(model.id);
+                });
+            }
+        }
+
+        // 添加市场模型到配置
+        function addMarketModelToConfig(modelId) {
+            const model = marketModels.find(m => m.id === modelId);
+            if (!model) return;
+
+            // 切换到模型配置视图
+            const configMenuItem = document.querySelector('.model-menu-item[data-menu="config"]');
+            if (configMenuItem) {
+                configMenuItem.click();
+            }
+
+            // 清空并填充表单
+            document.getElementById('modelName').value = model.name;
+            document.getElementById('modelType').value = model.modelType;
+            document.getElementById('apiUrl').value = model.apiUrl + '/chat/completions'; // 补全完整的API路径
+            document.getElementById('apiKey').value = ''; // 需要用户自己填写
+            document.getElementById('contextWindowSize').value = model.contextWindow;
+            document.getElementById('temperature').value = model.temperature;
+
+            // 更新按钮状态
+            modelService.updateDeleteButton();
+
+            // 提示用户
+            alert(`已将 ${model.name} 的配置信息填入表单，请填写API密钥后保存。`);
+        }
+
+        // 默认显示模型配置
+        if (modelConfigSection && modelMarketSection && modelConfigDetail && modelMarketDetail) {
+            modelConfigSection.style.display = 'flex';
+            modelMarketSection.style.display = 'none';
+            modelConfigDetail.style.display = 'flex';
+            modelMarketDetail.style.display = 'none';
+        }
     } catch (error) {
         log.error('配置页面初始化失败:', error.message);
         alert(`初始化配置页面失败: ${error.message}`);
