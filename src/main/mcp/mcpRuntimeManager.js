@@ -221,7 +221,7 @@ class McpRuntimeManager {
      * @returns {Promise<void>}
      */
     async installNodeWithProgress(version, taskKey, event) {
-        const nodeInfo = this.isNodeInstalled(version);
+        const nodeInfo = await this.isNodeInstalled(version);
         if (nodeInfo.installed) {
             event.sender.send('node-install-progress', {
                 taskKey,
@@ -323,7 +323,7 @@ class McpRuntimeManager {
      * @returns {boolean} 是否配置成功
      */
     async configureNode(version) {
-        const nodeInfo = this.isNodeInstalled(version);
+        const nodeInfo = await this.isNodeInstalled(version);
         if (!nodeInfo.installed) {
             log.warn(`Node.js ${version} 未安装，无法配置`);
             return false;
@@ -373,7 +373,7 @@ class McpRuntimeManager {
      * @returns {Promise<void>}
      */
     async installPythonWithProgress(version, taskKey, event) {
-        const pythonInfo = this.isPythonInstalled(version);
+        const pythonInfo = await this.isPythonInstalled(version);
         if (pythonInfo.installed) {
             event.sender.send('python-install-progress', {
                 taskKey,
@@ -494,9 +494,9 @@ class McpRuntimeManager {
     /**
      * 判断Node.js是否已安装，先查环境变量，再查自定义目录
      * @param {string} [version] 指定版本，不传则检测是否有任意版本
-     * @returns {{installed: boolean, path: string|null}}
+     * @returns {Promise<{installed: boolean, path: string|null}>}
      */
-    isNodeInstalled(version) {
+    async isNodeInstalled(version) {
         const nodeExe = os.platform() === 'win32' ? 'node.exe' : 'node';
         // 1. 先查环境变量
         const pathEnv = process.env.PATH || process.env.Path || '';
@@ -507,8 +507,8 @@ class McpRuntimeManager {
                 const nodePath = path.join(dir, 'node' + ext);
                 if (fs.existsSync(nodePath)) {
                     try {
-                        const ver = execSync(`"${nodePath}" --version`).toString().trim();
-                        if (ver.replace(/^v/, '') === version.replace(/^v/, '')) {
+                        const result = await this.getVersionAsync(nodePath);
+                        if (result && result.version.replace(/^v/, '') === version.replace(/^v/, '')) {
                             return { installed: true, path: nodePath };
                         }
                     } catch (err) {
@@ -540,9 +540,9 @@ class McpRuntimeManager {
     /**
      * 判断Python是否已安装，先查环境变量，再查自定义目录
      * @param {string} [version] 指定版本，不传则检测是否有任意版本
-     * @returns {{installed: boolean, path: string|null}}
+     * @returns {Promise<{installed: boolean, path: string|null}>}
      */
-    isPythonInstalled(version) {
+    async isPythonInstalled(version) {
         const pyNames = os.platform() === 'win32' ? ['python.exe', 'python3.exe', 'python'] : ['python3', 'python'];
         // 1. 先查环境变量
         const pathEnv = process.env.PATH || process.env.Path || '';
@@ -552,8 +552,8 @@ class McpRuntimeManager {
                 const pyPath = path.join(dir, pyName);
                 if (fs.existsSync(pyPath)) {
                     try {
-                        const ver = execSync(`"${pyPath}" --version`).toString().replace('Python', '').trim();
-                        if (ver.startsWith(version)) {
+                        const result = await this.getVersionAsync(pyPath, 'Python');
+                        if (result && result.version.startsWith(version)) {
                             return { installed: true, path: pyPath };
                         }
                     } catch (e) {
@@ -656,15 +656,43 @@ class McpRuntimeManager {
     }
 
     /**
-     * 获取所有已安装的 Node.js 信息（版本和路径）
-     * @returns {Array<{version: string, path: string}>}
+     * 异步获取可执行文件版本信息
+     * @param {string} execPath 可执行文件路径
+     * @param {string} prefix 要替换的前缀字符串
+     * @returns {Promise<{path: string, version: string}|null>}
      */
-    getAllInstalledNodes() {
+    async getVersionAsync(execPath, prefix = '') {
+        return new Promise((resolve) => {
+            const { exec } = require('child_process');
+            const timeout = 3000; // 3秒超时
+
+            exec(`"${execPath}" --version`, { timeout }, (error, stdout) => {
+                if (error) {
+                    resolve(null);
+                    return;
+                }
+
+                const version = stdout.toString().replace(prefix, '').trim();
+                if (version) {
+                    resolve({ path: execPath, version });
+                } else {
+                    resolve(null);
+                }
+            });
+        });
+    }
+
+    /**
+     * 获取所有已安装的 Node.js 信息（版本和路径）
+     * @returns {Promise<Array<{version: string, path: string}>>}
+     */
+    async getAllInstalledNodes() {
         const nodeExeNames = os.platform() === 'win32' ? ['node.exe'] : ['node'];
         const pathEnv = process.env.PATH || process.env.Path || '';
         const pathSep = os.platform() === 'win32' ? ';' : ':';
         const exts = os.platform() === 'win32' ? ['.exe', '.cmd', '.bat', ''] : [''];
         const found = new Map();
+        const promises = [];
 
         // 1. 查找环境变量中的 node
         for (const dir of pathEnv.split(pathSep)) {
@@ -672,29 +700,41 @@ class McpRuntimeManager {
                 for (const ext of exts) {
                     const nodePath = path.join(dir, exe.replace('.exe', '') + ext);
                     if (fs.existsSync(nodePath)) {
-                        const version = execSync(`"${nodePath}" --version`).toString().trim();
-                        if (!found.has(nodePath)) {
-                            found.set(nodePath, version);
-                        }
+                        promises.push(this.getVersionAsync(nodePath));
                     }
                 }
             }
         }
 
         // 2. 查找自定义安装目录
-        const versions = fs.readdirSync(this.nodeDir, { withFileTypes: true })
-            .filter(d => d.isDirectory())
-            .map(d => d.name);
-        for (const version of versions) {
-            let nodePath = path.join(this.nodeDir, version, nodeExeNames[0]);
-            if (!fs.existsSync(nodePath)) {
-                nodePath = path.join(this.nodeDir, version, 'bin', nodeExeNames[0]);
-            }
-            if (fs.existsSync(nodePath)) {
-                if (!found.has(nodePath)) {
-                    found.set(nodePath, version);
+        if (fs.existsSync(this.nodeDir)) {
+            const versions = fs.readdirSync(this.nodeDir, { withFileTypes: true })
+                .filter(d => d.isDirectory())
+                .map(d => d.name);
+            for (const version of versions) {
+                let nodePath = path.join(this.nodeDir, version, nodeExeNames[0]);
+                if (!fs.existsSync(nodePath)) {
+                    nodePath = path.join(this.nodeDir, version, 'bin', nodeExeNames[0]);
+                }
+                if (fs.existsSync(nodePath)) {
+                    promises.push(this.getVersionAsync(nodePath));
                 }
             }
+        }
+
+        // 等待所有版本检查完成
+        try {
+            const results = await Promise.allSettled(promises);
+            results.forEach(result => {
+                if (result.status === 'fulfilled' && result.value) {
+                    const { path, version } = result.value;
+                    if (!found.has(path)) {
+                        found.set(path, version);
+                    }
+                }
+            });
+        } catch (error) {
+            log.warn('获取Node.js版本信息时发生错误:', error.message);
         }
 
         // 返回数组
@@ -703,53 +743,59 @@ class McpRuntimeManager {
 
     /**
      * 获取所有已安装的 Python 信息（版本和路径）
-     * @returns {Array<{version: string, path: string}>}
+     * @returns {Promise<Array<{version: string, path: string}>>}
      */
-    getAllInstalledPythons() {
+    async getAllInstalledPythons() {
         const pyNames = os.platform() === 'win32' ? ['python.exe', 'python3.exe', 'python'] : ['python3', 'python'];
         const pathEnv = process.env.PATH || process.env.Path || '';
         const pathSep = os.platform() === 'win32' ? ';' : ':';
         const found = new Map();
+        const promises = [];
 
         // 1. 查找环境变量中的 python
         for (const dir of pathEnv.split(pathSep)) {
             for (const pyName of pyNames) {
                 const pyPath = path.join(dir, pyName);
                 if (fs.existsSync(pyPath)) {
-                    const ver = execSync(`"${pyPath}" --version`).toString().replace('Python', '').trim();
-                    if (ver) {
-                        if (!found.has(pyPath)) {
-                            found.set(pyPath, ver);
-                        }
-                    }
+                    promises.push(this.getVersionAsync(pyPath, 'Python'));
                 }
             }
         }
 
         // 2. 查找自定义安装目录
-        const versions = fs.readdirSync(this.pythonDir, { withFileTypes: true })
-            .filter(d => d.isDirectory())
-            .map(d => d.name);
-        for (const version of versions) {
-            let pyPath = os.platform() === 'win32'
-                ? path.join(this.pythonDir, version, 'python.exe')
-                : path.join(this.pythonDir, version, 'bin', 'python3');
-            if (!fs.existsSync(pyPath)) {
-                pyPath = path.join(this.pythonDir, version, 'python3');
-            }
-            if (!fs.existsSync(pyPath)) {
-                pyPath = path.join(this.pythonDir, version, 'python');
-            }
-            if (fs.existsSync(pyPath)) {
-                try {
-                    const ver = execSync(`"${pyPath}" --version`).toString().replace('Python', '').trim();
-                    if (ver && !found.has(pyPath)) {
-                        found.set(pyPath, ver);
-                    }
-                } catch (e) {
-                    // 忽略异常
+        if (fs.existsSync(this.pythonDir)) {
+            const versions = fs.readdirSync(this.pythonDir, { withFileTypes: true })
+                .filter(d => d.isDirectory())
+                .map(d => d.name);
+            for (const version of versions) {
+                let pyPath = os.platform() === 'win32'
+                    ? path.join(this.pythonDir, version, 'python.exe')
+                    : path.join(this.pythonDir, version, 'bin', 'python3');
+                if (!fs.existsSync(pyPath)) {
+                    pyPath = path.join(this.pythonDir, version, 'python3');
+                }
+                if (!fs.existsSync(pyPath)) {
+                    pyPath = path.join(this.pythonDir, version, 'python');
+                }
+                if (fs.existsSync(pyPath)) {
+                    promises.push(this.getVersionAsync(pyPath, 'Python'));
                 }
             }
+        }
+
+        // 等待所有版本检查完成
+        try {
+            const results = await Promise.allSettled(promises);
+            results.forEach(result => {
+                if (result.status === 'fulfilled' && result.value) {
+                    const { path, version } = result.value;
+                    if (!found.has(path)) {
+                        found.set(path, version);
+                    }
+                }
+            });
+        } catch (error) {
+            log.warn('获取Python版本信息时发生错误:', error.message);
         }
 
         // 返回数组
@@ -758,13 +804,26 @@ class McpRuntimeManager {
 
     /**
      * 获取所有运行环境信息，包括 Node.js 和 Python 的安装列表
-     * @returns {{ node: Array<{version: string, path: string}>, python: Array<{version: string, path: string}> }}
+     * @returns {Promise<{ node: Array<{version: string, path: string}>, python: Array<{version: string, path: string}> }>}
      */
-    getAllRuntimeInfo() {
-        return {
-            node: this.getAllInstalledNodes(),
-            python: this.getAllInstalledPythons()
-        };
+    async getAllRuntimeInfo() {
+        try {
+            const [nodeInfo, pythonInfo] = await Promise.all([
+                this.getAllInstalledNodes(),
+                this.getAllInstalledPythons()
+            ]);
+
+            return {
+                node: nodeInfo,
+                python: pythonInfo
+            };
+        } catch (error) {
+            log.error('获取运行环境信息失败:', error.message);
+            return {
+                node: [],
+                python: []
+            };
+        }
     }
 
     /**
@@ -822,7 +881,7 @@ module.exports = new McpRuntimeManager();
 
 // 处理获取MCP运行环境信息的请求
 ipcMain.handle('get-mcp-runtime-info', async () => {
-    return module.exports.getAllRuntimeInfo();
+    return await module.exports.getAllRuntimeInfo();
 });
 
 // 处理安装Node.js运行环境的请求
