@@ -1511,12 +1511,11 @@ textarea {
 }
 
 .market-model-type {
-    background-color: var(--button-bg);
-    color: var(--button-text);
+    background-color: #2196F3;
     padding: 2px 6px;
     border-radius: 3px;
     font-weight: 500;
-    font-size: 11px;
+    font-size: 1em;
 }
 
 .market-model-context {
