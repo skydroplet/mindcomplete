@@ -535,6 +535,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (success) {
                     log.info('模型配置已自动保存成功:', model.name);
                     alert(`${model.name} 添加成功！`);
+                    ipcRenderer.invoke('reset-window-focus');
                 } else {
                     log.error('模型配置保存失败:', model.name);
                     alert(`添加 ${model.name} 失败，请检查配置信息后手动保存。`);
