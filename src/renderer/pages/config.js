@@ -509,7 +509,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         // 添加市场模型到配置
         function addMarketModelToConfig(modelId) {
             const model = marketModels.find(m => m.id === modelId);
-            if (!model) return;
+            if (!model) {
+                return;
+            }
 
             // 切换到模型配置视图
             const configMenuItem = document.querySelector('.model-menu-item[data-menu="config"]');
@@ -528,8 +530,19 @@ document.addEventListener('DOMContentLoaded', async () => {
             // 更新按钮状态
             modelService.updateDeleteButton();
 
-            // 提示用户
-            alert(`已将 ${model.name} 的配置信息填入表单，请填写API密钥后保存。`);
+            // 自动触发保存操作
+            modelService.saveCurrentModel().then(success => {
+                if (success) {
+                    log.info('模型配置已自动保存成功:', model.name);
+                    alert(`${model.name} 添加成功！`);
+                } else {
+                    log.error('模型配置保存失败:', model.name);
+                    alert(`添加 ${model.name} 失败，请检查配置信息后手动保存。`);
+                }
+            }).catch(error => {
+                log.error('保存模型配置时出错:', error.message);
+                alert(`保存 ${model.name} 时出错: ${error.message}`);
+            });
         }
 
         // 默认显示模型配置
