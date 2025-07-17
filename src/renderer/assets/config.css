@@ -1621,6 +1621,56 @@ textarea {
     font-size: 12px;
 }
 
+.market-detail-links {
+    background-color: var(--session-hover-bg);
+    padding: 16px;
+    border-radius: 6px;
+}
+
+.market-links-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    font-size: 14px;
+}
+
+.market-link-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.market-link-label {
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+.market-link-value {
+    color: var(--text-color);
+    font-weight: 500;
+    word-break: break-all;
+}
+
+.market-link {
+    color: #007bff;
+    text-decoration: none;
+    font-size: 12px;
+    word-break: break-all;
+}
+
+.market-link:hover {
+    text-decoration: underline;
+    color: #0056b3;
+}
+
+[data-theme="dark"] .market-link {
+    color: #4da6ff;
+}
+
+[data-theme="dark"] .market-link:hover {
+    color: #80c7ff;
+}
+
 .market-detail-actions {
     margin-bottom: 24px;
 }

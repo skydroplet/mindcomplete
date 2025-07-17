@@ -300,6 +300,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                         provider: model.provider,
                         description: model.description,
                         apiUrl: model.apiUrl,
+                        mainUrl: model.mainUrl,
+                        registerUrl: model.registerUrl,
+                        apiKeyUrl: model.apiKeyUrl,
                         contextWindow: Math.floor(model.windowSize / 1024), // 转换为K单位
                         features: extractFeatures(model.description) // 从描述中提取特性
                     }));
@@ -491,6 +494,28 @@ document.addEventListener('DOMContentLoaded', async () => {
                 `<span class="market-feature-tag">${feature}</span>`
             ).join('');
 
+            // 设置常用链接
+            const mainUrlElement = document.getElementById('market-main-url');
+            if (model.mainUrl) {
+                mainUrlElement.innerHTML = `<a href="${model.mainUrl}" target="_blank" class="market-link">${model.mainUrl}</a>`;
+            } else {
+                mainUrlElement.textContent = '暂无';
+            }
+
+            const inviteUrlElement = document.getElementById('market-invite-url');
+            if (model.registerUrl) {
+                inviteUrlElement.innerHTML = `<a href="${model.registerUrl}" target="_blank" class="market-link">${model.registerUrl}</a>`;
+            } else {
+                inviteUrlElement.textContent = '暂无';
+            }
+
+            const apikeyUrlElement = document.getElementById('market-apikey-url');
+            if (model.apiKeyUrl) {
+                apikeyUrlElement.innerHTML = `<a href="${model.apiKeyUrl}" target="_blank" class="market-link">${model.apiKeyUrl}</a>`;
+            } else {
+                apikeyUrlElement.textContent = '暂无';
+            }
+
             // 设置添加按钮的数据属性
             const addButton = document.getElementById('add-market-model-btn');
             if (addButton) {
@@ -522,7 +547,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             // 清空并填充表单
             document.getElementById('modelName').value = model.name;
             document.getElementById('modelType').value = model.modelType;
-            document.getElementById('apiUrl').value = model.apiUrl + '/chat/completions'; // 补全完整的API路径
+            document.getElementById('apiUrl').value = model.apiUrl;
             document.getElementById('apiKey').value = ''; // 需要用户自己填写
             document.getElementById('contextWindowSize').value = model.contextWindow;
 
