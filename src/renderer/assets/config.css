@@ -1539,7 +1539,10 @@ textarea {
 
 /* 模型市场详情内容 */
 .market-detail-container {
-    max-width: 600px;
+    max-width: 100%;
+    width: 100%;
+    padding: 0 20px;
+    box-sizing: border-box;
 }
 
 .market-detail-header {
@@ -1552,6 +1555,7 @@ textarea {
 .market-detail-title {
     margin: 0;
     color: var(--text-color);
+    flex: 1;
 }
 
 .market-detail-section {
@@ -1561,6 +1565,7 @@ textarea {
 .market-detail-section h4 {
     color: var(--text-color);
     margin-bottom: 8px;
+    font-size: 16px;
 }
 
 .market-detail-section.features h4 {
@@ -1571,6 +1576,7 @@ textarea {
     color: var(--text-muted);
     line-height: 1.6;
     margin: 0;
+    font-size: 14px;
 }
 
 .market-detail-features {
@@ -1609,6 +1615,7 @@ textarea {
 .market-spec-label {
     color: var(--text-muted);
     white-space: nowrap;
+    min-width: 100px;
 }
 
 .market-spec-value {
@@ -1643,6 +1650,7 @@ textarea {
 .market-link-label {
     color: var(--text-muted);
     white-space: nowrap;
+    min-width: 100px;
 }
 
 .market-link-value {
@@ -1673,6 +1681,8 @@ textarea {
 
 .market-detail-actions {
     margin-bottom: 24px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border-color);
 }
 
 .market-add-button {
