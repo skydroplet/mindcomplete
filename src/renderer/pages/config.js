@@ -538,13 +538,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 return;
             }
 
-            // 切换到模型配置视图
-            const configMenuItem = document.querySelector('.model-menu-item[data-menu="config"]');
-            if (configMenuItem) {
-                configMenuItem.click();
-            }
-
-            // 清空并填充表单
+            // 不再切换到模型配置视图，保持在模型市场页面
+            // 填充表单数据到后台（不显示在UI上）
             document.getElementById('modelName').value = model.name;
             document.getElementById('modelType').value = model.modelType;
             document.getElementById('apiUrl').value = model.apiUrl;
@@ -558,7 +553,21 @@ document.addEventListener('DOMContentLoaded', async () => {
             modelService.saveCurrentModel().then(success => {
                 if (success) {
                     log.info('模型配置已自动保存成功:', model.name);
-                    alert(`${model.name} 添加成功！`);
+
+                    // 构建提示信息
+                    let message = `${model.name} 添加成功！\n\n`;
+                    message += '请按照以下步骤完成配置：\n';
+                    message += '1. 点击邀请链接进行注册\n';
+                    message += '2. 点击API秘钥获取秘钥更新模型配置\n\n';
+
+                    if (model.registerUrl) {
+                        message += `注册链接: ${model.registerUrl}\n`;
+                    }
+                    if (model.apiKeyUrl) {
+                        message += `API秘钥获取: ${model.apiKeyUrl}`;
+                    }
+
+                    alert(message);
                     ipcRenderer.invoke('reset-window-focus');
                 } else {
                     log.error('模型配置保存失败:', model.name);
