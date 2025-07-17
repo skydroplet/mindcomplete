@@ -301,7 +301,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                         description: model.description,
                         apiUrl: model.apiUrl,
                         contextWindow: Math.floor(model.windowSize / 1024), // 转换为K单位
-                        temperature: 0.7, // 默认温度
                         features: extractFeatures(model.description) // 从描述中提取特性
                     }));
                     log.info('成功获取模型市场数据:', marketModels.length, '个模型');
@@ -483,7 +482,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             document.getElementById('market-model-provider').textContent = model.provider;
             document.getElementById('market-model-description').textContent = model.description;
             document.getElementById('market-context-window').textContent = model.contextWindow + 'K';
-            document.getElementById('market-temperature').textContent = model.temperature;
             document.getElementById('market-model-type').textContent = model.modelType;
             document.getElementById('market-api-url').textContent = model.apiUrl;
 
@@ -527,7 +525,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             document.getElementById('apiUrl').value = model.apiUrl + '/chat/completions'; // 补全完整的API路径
             document.getElementById('apiKey').value = ''; // 需要用户自己填写
             document.getElementById('contextWindowSize').value = model.contextWindow;
-            document.getElementById('temperature').value = model.temperature;
 
             // 更新按钮状态
             modelService.updateDeleteButton();
