@@ -288,7 +288,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         async function fetchMarketModels() {
             try {
                 const url = 'https://api.mindcomplete.me/v1/market/models';
-                log.info('get models from:', url);
+                log.info(i18n.t('settings.modelMarket.messages.logFetchStart'));
                 const response = await fetch(url);
                 const rsp = await response.json();
                 log.info('get models :', rsp);
@@ -307,14 +307,14 @@ document.addEventListener('DOMContentLoaded', async () => {
                         contextWindow: Math.floor(model.windowSize / 1024), // 转换为K单位
                         features: extractFeatures(model.description) // 从描述中提取特性
                     }));
-                    log.info('成功获取模型市场数据:', marketModels.length, '个模型');
+                    log.info(i18n.t('settings.modelMarket.messages.logFetchSuccess', { count: marketModels.length }));
                     return true;
                 } else {
-                    log.warn('API返回数据格式异常:', rsp);
+                    log.warn(i18n.t('settings.modelMarket.messages.logFetchFailed'));
                     return false;
                 }
             } catch (error) {
-                log.error('获取模型市场数据失败:', error.message);
+                log.error(i18n.t('settings.modelMarket.messages.logFetchFailedWithError', { error: error.message }));
                 return false;
             }
         }
@@ -323,15 +323,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         function extractFeatures(description) {
             const features = [];
             const keywordMap = {
-                '推理': '逻辑推理',
-                '数学': '数学计算',
-                '编程': '代码生成',
-                '代码': '代码生成',
-                '对话': '智能对话',
-                '翻译': '多语言翻译',
-                '创意': '创意写作',
-                '写作': '创意写作',
-                '多语言': '多语言支持'
+                '推理': i18n.t('settings.modelMarket.features.reasoning'),
+                '数学': i18n.t('settings.modelMarket.features.math'),
+                '编程': i18n.t('settings.modelMarket.features.code'),
+                '代码': i18n.t('settings.modelMarket.features.code'),
+                '对话': i18n.t('settings.modelMarket.features.chat'),
+                '翻译': i18n.t('settings.modelMarket.features.translation'),
+                '创意': i18n.t('settings.modelMarket.features.creative'),
+                '写作': i18n.t('settings.modelMarket.features.creative'),
+                '多语言': i18n.t('settings.modelMarket.features.multilingual')
             };
 
             for (const [keyword, feature] of Object.entries(keywordMap)) {
@@ -342,7 +342,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             // 如果没有找到特性，添加默认特性
             if (features.length === 0) {
-                features.push('通用对话', '文本生成');
+                features.push(i18n.t('settings.modelMarket.features.general'), i18n.t('settings.modelMarket.features.textGeneration'));
             }
 
             return features;
@@ -362,7 +362,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             if (marketModels.length === 0) {
                 marketError.style.display = 'block';
-                document.getElementById('market-error-message').textContent = '暂无可用的模型数据';
+                document.getElementById('market-error-message').textContent = i18n.t('settings.modelMarket.messages.noModelData');
                 return;
             }
 
@@ -425,7 +425,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                             }
                             if (marketError) {
                                 marketError.style.display = 'block';
-                                document.getElementById('market-error-message').textContent = '加载模型数据失败，请检查网络连接';
+                                document.getElementById('market-error-message').textContent = i18n.t('settings.modelMarket.messages.loadFailed');
                             }
                         }
                     } else {
@@ -500,21 +500,21 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (model.mainUrl) {
                 mainUrlElement.innerHTML = `<a href="${model.mainUrl}" target="_blank" class="market-link">${model.mainUrl}</a>`;
             } else {
-                mainUrlElement.textContent = '暂无';
+                mainUrlElement.textContent = i18n.t('settings.modelMarket.messages.noData');
             }
 
             const inviteUrlElement = document.getElementById('market-invite-url');
             if (model.registerUrl) {
                 inviteUrlElement.innerHTML = `<a href="${model.registerUrl}" target="_blank" class="market-link">${model.registerUrl}</a>`;
             } else {
-                inviteUrlElement.textContent = '暂无';
+                inviteUrlElement.textContent = i18n.t('settings.modelMarket.messages.noData');
             }
 
             const apikeyUrlElement = document.getElementById('market-apikey-url');
             if (model.apiKeyUrl) {
                 apikeyUrlElement.innerHTML = `<a href="${model.apiKeyUrl}" target="_blank" class="market-link">${model.apiKeyUrl}</a>`;
             } else {
-                apikeyUrlElement.textContent = '暂无';
+                apikeyUrlElement.textContent = i18n.t('settings.modelMarket.messages.noData');
             }
 
             // 设置添加按钮的数据属性
@@ -556,27 +556,25 @@ document.addEventListener('DOMContentLoaded', async () => {
                     log.info('模型配置已自动保存成功:', model.name);
 
                     // 构建提示信息
-                    let message = `${model.name} 添加成功！\n\n`;
-                    message += '请按照以下步骤完成配置：\n';
-                    message += '1. 点击邀请链接进行注册\n';
-                    message += '2. 点击API秘钥获取秘钥更新模型配置\n\n';
+                    let message = i18n.t('settings.modelMarket.messages.addSuccess', { name: model.name }) + '\n\n';
+                    message += i18n.t('settings.modelMarket.messages.setupInstructions') + '\n\n';
 
                     if (model.registerUrl) {
-                        message += `注册链接: ${model.registerUrl}\n`;
+                        message += i18n.t('settings.modelMarket.messages.registerLink', { url: model.registerUrl }) + '\n';
                     }
                     if (model.apiKeyUrl) {
-                        message += `API秘钥获取: ${model.apiKeyUrl}`;
+                        message += i18n.t('settings.modelMarket.messages.apiKeyLink', { url: model.apiKeyUrl });
                     }
 
                     alert(message);
                     ipcRenderer.invoke('reset-window-focus');
                 } else {
                     log.error('模型配置保存失败:', model.name);
-                    alert(`添加 ${model.name} 失败，请检查配置信息后手动保存。`);
+                    alert(i18n.t('settings.modelMarket.messages.addFailed', { name: model.name }));
                 }
             }).catch(error => {
                 log.error('保存模型配置时出错:', error.message);
-                alert(`保存 ${model.name} 时出错: ${error.message}`);
+                alert(i18n.t('settings.modelMarket.messages.saveError', { name: model.name, error: error.message }));
             });
         }
 

@@ -263,7 +263,36 @@
             "addAgent": "Add Agent",
             "deleteAgentBtn": "Delete",
             "copyAgentBtn": "Copy",
-            "addMcpServer": "Add MCP Server"
+            "addMcpServer": "Add MCP Server",
+            "addMarketModel": "Add to Config"
+        },
+        "modelMarket": {
+            "features": {
+                "reasoning": "Logical Reasoning",
+                "math": "Mathematical Computation",
+                "code": "Code Generation",
+                "chat": "Smart Conversation",
+                "translation": "Multi-language Translation",
+                "creative": "Creative Writing",
+                "multilingual": "Multi-language Support",
+                "general": "General Conversation",
+                "textGeneration": "Text Generation"
+            },
+            "messages": {
+                "noModelData": "No available model data",
+                "loadFailed": "Failed to load model data, please check network connection",
+                "noData": "N/A",
+                "addSuccess": "{name} added successfully!",
+                "addFailed": "Failed to add {name}, please check configuration and save manually.",
+                "saveError": "Error saving {name}: {error}",
+                "setupInstructions": "Please follow these steps to complete configuration:\n1. Click the registration link to register\n2. Click the API key link to get the key and update model configuration",
+                "registerLink": "Registration link: {url}",
+                "apiKeyLink": "API key: {url}",
+                "logFetchSuccess": "Successfully fetched model market data: {count} models",
+                "logFetchStart": "Fetching model market data from API",
+                "logFetchFailed": "API returned abnormal data format",
+                "logFetchFailedWithError": "Failed to fetch model market data: {error}"
+            }
         }
     },
     "logs": {
