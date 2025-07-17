@@ -287,11 +287,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         // 从API获取模型市场数据
         async function fetchMarketModels() {
             try {
-                const response = await fetch('http://127.0.0.1:8080/v1/models');
+                const url = 'https://api.mindcomplete.me/v1/market/models';
+                log.info('get models from:', url);
+                const response = await fetch(url);
                 const data = await response.json();
 
-                if (data && data.models && Array.isArray(data.models)) {
-                    marketModels = data.models.map(model => ({
+                if (data && data.code === 0 && data.data && data.data.models && Array.isArray(data.data.models)) {
+                    marketModels = data.data.models.map(model => ({
                         id: model.name.replace(/[^a-zA-Z0-9-_]/g, '-'), // 生成安全的ID
                         name: model.name,
                         modelType: model.modelType,
