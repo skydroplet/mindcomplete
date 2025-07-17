@@ -290,10 +290,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const url = 'https://api.mindcomplete.me/v1/market/models';
                 log.info('get models from:', url);
                 const response = await fetch(url);
-                const data = await response.json();
+                const rsp = await response.json();
+                log.info('get models :', rsp);
 
-                if (data && data.code === 0 && data.data && data.data.models && Array.isArray(data.data.models)) {
-                    marketModels = data.data.models.map(model => ({
+                if (rsp && rsp.models && Array.isArray(rsp.models)) {
+                    marketModels = rsp.models.map(model => ({
                         id: model.name.replace(/[^a-zA-Z0-9-_]/g, '-'), // 生成安全的ID
                         name: model.name,
                         modelType: model.modelType,
@@ -309,7 +310,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     log.info('成功获取模型市场数据:', marketModels.length, '个模型');
                     return true;
                 } else {
-                    log.warn('API返回数据格式异常:', data);
+                    log.warn('API返回数据格式异常:', rsp);
                     return false;
                 }
             } catch (error) {
