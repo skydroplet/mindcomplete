@@ -90,14 +90,20 @@ class ModelMarketConfig extends BaseConfigManager {
                 const client = urlObj.protocol === 'https:' ? https : http;
 
                 const request = client.get(urlObj, (response) => {
-                    let data = '';
+                    // 使用Buffer数组收集原始数据，避免编码问题
+                    const chunks = [];
 
                     response.on('data', (chunk) => {
-                        data += chunk;
+                        // 将每个chunk存储在数组中，保持原始Buffer格式
+                        chunks.push(chunk);
                     });
 
                     response.on('end', () => {
                         try {
+                            // 将所有Buffer合并后统一解码为UTF-8字符串
+                            const buffer = Buffer.concat(chunks);
+                            const data = buffer.toString('utf8');
+
                             const rsp = JSON.parse(data);
                             log.info('获取到模型市场数据:', rsp);
 
