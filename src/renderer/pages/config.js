@@ -288,7 +288,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         async function fetchMarketModels() {
             try {
                 const url = 'https://api.mindcomplete.me/v1/market/models';
-                log.info(i18n.t('settings.modelMarket.messages.logFetchStart'));
+                log.info('get models from:', url);
                 const response = await fetch(url);
                 const rsp = await response.json();
                 log.info('get models :', rsp);
@@ -305,7 +305,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                         registerUrl: model.registerUrl,
                         apiKeyUrl: model.apiKeyUrl,
                         contextWindow: Math.floor(model.windowSize / 1024), // 转换为K单位
-                        features: extractFeatures(model.description) // 从描述中提取特性
+                        features: extractFeatures(model.description), // 从描述中提取特性
+                        pricingMode: determinePricingMode(model) // 确定收费模式
                     }));
                     log.info(i18n.t('settings.modelMarket.messages.logFetchSuccess', { count: marketModels.length }));
                     return true;
@@ -317,6 +318,40 @@ document.addEventListener('DOMContentLoaded', async () => {
                 log.error(i18n.t('settings.modelMarket.messages.logFetchFailedWithError', { error: error.message }));
                 return false;
             }
+        }
+
+        // 确定模型的收费模式
+        function determinePricingMode(model) {
+            // 如果API返回了明确的收费模式字段
+            if (model.pricingMode) {
+                return model.pricingMode;
+            }
+
+            // 否则根据描述内容判断
+            const description = (model.description || '').toLowerCase();
+            const name = (model.name || '').toLowerCase();
+            const provider = (model.provider || '').toLowerCase();
+
+            // 检查免费关键词
+            if (description.includes('免费') || description.includes('free') ||
+                name.includes('free') || provider.includes('free')) {
+                return 'free';
+            }
+
+            // 检查限时免费关键词
+            if (description.includes('限时免费') || description.includes('试用') ||
+                description.includes('limited free') || description.includes('trial')) {
+                return 'limitedFree';
+            }
+
+            // 检查收费关键词
+            if (description.includes('收费') || description.includes('付费') ||
+                description.includes('paid') || description.includes('premium')) {
+                return 'paid';
+            }
+
+            // 默认返回未知
+            return 'unknown';
         }
 
         // 从模型描述中提取特性关键词
@@ -348,6 +383,17 @@ document.addEventListener('DOMContentLoaded', async () => {
             return features;
         }
 
+        // 获取收费模式的样式类名和文本
+        function getPricingInfo(pricingMode) {
+            const pricingMap = {
+                'free': { class: 'pricing-free', text: i18n.t('settings.modelMarket.pricing.free') },
+                'limitedFree': { class: 'pricing-limited-free', text: i18n.t('settings.modelMarket.pricing.limitedFree') },
+                'paid': { class: 'pricing-paid', text: i18n.t('settings.modelMarket.pricing.paid') },
+                'unknown': { class: 'pricing-unknown', text: i18n.t('settings.modelMarket.pricing.unknown') }
+            };
+            return pricingMap[pricingMode] || pricingMap['unknown'];
+        }
+
         // 渲染模型市场列表
         function renderMarketModelList() {
             const marketModelsContainer = document.getElementById('market-models-container');
@@ -366,14 +412,18 @@ document.addEventListener('DOMContentLoaded', async () => {
                 return;
             }
 
-            marketModelsContainer.innerHTML = marketModels.map((model, index) => `
-                <div class="market-model-item ${index === 0 ? 'active' : ''}" data-model="${model.id}">
-                    <div class="market-model-name">${model.name}</div>
-                    <div class="market-model-meta">
-                        <span class="market-model-type">${model.provider}</span>
+            marketModelsContainer.innerHTML = marketModels.map((model, index) => {
+                const pricingInfo = getPricingInfo(model.pricingMode);
+                return `
+                    <div class="market-model-item ${index === 0 ? 'active' : ''}" data-model="${model.id}">
+                        <div class="market-model-name">${model.name}</div>
+                        <div class="market-model-meta">
+                            <span class="market-model-type">${model.provider}</span>
+                            <span class="market-pricing-tag ${pricingInfo.class}">${pricingInfo.text}</span>
+                        </div>
                     </div>
-                </div>
-            `).join('');
+                `;
+            }).join('');
 
             // 重新绑定点击事件
             initMarketModelItems();
@@ -488,6 +538,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             document.getElementById('market-context-window').textContent = model.contextWindow + 'K';
             document.getElementById('market-model-type').textContent = model.modelType;
             document.getElementById('market-api-url').textContent = model.apiUrl;
+
+            // 设置收费模式显示
+            const pricingModeElement = document.getElementById('market-pricing-mode');
+            if (pricingModeElement) {
+                const pricingInfo = getPricingInfo(model.pricingMode);
+                pricingModeElement.textContent = pricingInfo.text;
+                pricingModeElement.className = `market-spec-value market-pricing-display ${pricingInfo.class}`;
+            }
 
             // 填充特性标签
             const featuresContainer = document.getElementById('market-model-features');

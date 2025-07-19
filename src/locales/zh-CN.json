@@ -285,6 +285,12 @@
                 "general": "通用对话",
                 "textGeneration": "文本生成"
             },
+            "pricing": {
+                "free": "免费",
+                "limitedFree": "限时免费",
+                "paid": "收费",
+                "unknown": "未知"
+            },
             "messages": {
                 "noModelData": "暂无可用的模型数据",
                 "loadFailed": "加载模型数据失败，请检查网络连接",

@@ -278,6 +278,12 @@
                 "general": "General Conversation",
                 "textGeneration": "Text Generation"
             },
+            "pricing": {
+                "free": "Free",
+                "limitedFree": "Limited Free",
+                "paid": "Paid",
+                "unknown": "Unknown"
+            },
             "messages": {
                 "noModelData": "No available model data",
                 "loadFailed": "Failed to load model data, please check network connection",
