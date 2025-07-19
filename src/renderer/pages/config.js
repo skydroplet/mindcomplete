@@ -328,13 +328,26 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // 获取收费模式的样式类名和文本
         function getPricingInfo(pricingMode) {
-            const pricingMap = {
-                'free': { class: 'pricing-free', text: i18n.t('settings.modelMarket.pricing.free') },
-                'limitedFree': { class: 'pricing-limited-free', text: i18n.t('settings.modelMarket.pricing.limitedFree') },
-                'paid': { class: 'pricing-paid', text: i18n.t('settings.modelMarket.pricing.paid') },
-                'unknown': { class: 'pricing-unknown', text: i18n.t('settings.modelMarket.pricing.unknown') }
+            // 如果没有收费模式信息，返回null表示不显示
+            if (!pricingMode) {
+                return null;
+            }
+
+            // 直接使用API返回的收费模式值作为显示文本
+            // 根据常见的收费模式设置样式类
+            let className = 'pricing-unknown';
+            if (pricingMode.toLowerCase().includes('free')) {
+                className = 'pricing-free';
+            } else if (pricingMode.toLowerCase().includes('paid') || pricingMode.toLowerCase().includes('premium')) {
+                className = 'pricing-paid';
+            } else if (pricingMode.toLowerCase().includes('trial') || pricingMode.toLowerCase().includes('limited')) {
+                className = 'pricing-limited-free';
+            }
+
+            return {
+                class: className,
+                text: pricingMode
             };
-            return pricingMap[pricingMode] || pricingMap['unknown'];
         }
 
         // 渲染模型市场列表
@@ -357,12 +370,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             marketModelsContainer.innerHTML = marketModels.map((model, index) => {
                 const pricingInfo = getPricingInfo(model.pricingMode);
+                const pricingTag = pricingInfo ? `<span class="market-pricing-tag ${pricingInfo.class}">${pricingInfo.text}</span>` : '';
                 return `
                     <div class="market-model-item ${index === 0 ? 'active' : ''}" data-model="${model.id}">
                         <div class="market-model-name">${model.name}</div>
                         <div class="market-model-meta">
                             <span class="market-model-type">${model.provider}</span>
-                            <span class="market-pricing-tag ${pricingInfo.class}">${pricingInfo.text}</span>
+                            ${pricingTag}
                         </div>
                     </div>
                 `;
@@ -486,8 +500,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             const pricingModeElement = document.getElementById('market-pricing-mode');
             if (pricingModeElement) {
                 const pricingInfo = getPricingInfo(model.pricingMode);
-                pricingModeElement.textContent = pricingInfo.text;
-                pricingModeElement.className = `market-spec-value market-pricing-display ${pricingInfo.class}`;
+                if (pricingInfo) {
+                    pricingModeElement.textContent = pricingInfo.text;
+                    pricingModeElement.className = `market-spec-value market-pricing-display ${pricingInfo.class}`;
+                    pricingModeElement.style.display = '';
+                } else {
+                    // 如果没有收费信息，隐藏该元素
+                    pricingModeElement.style.display = 'none';
+                }
             }
 
             // 填充特性标签

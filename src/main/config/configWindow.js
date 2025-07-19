@@ -50,6 +50,9 @@ function createConfigWindow(activeTab) {
     // 注册配置窗口以接收提示词更新
     promptManager.registerWindow(configWindow.webContents);
 
+    // 注册配置窗口以接收模型市场数据更新
+    modelMarketConfig.registerWindow(configWindow.webContents);
+
     // 如果指定了激活的标签页，在窗口加载完成后切换到该标签页
     if (activeTab) {
         configWindow.webContents.once('did-finish-load', () => {

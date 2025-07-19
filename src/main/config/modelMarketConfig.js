@@ -115,7 +115,7 @@ class ModelMarketConfig extends BaseConfigManager {
                                     apiKeyUrl: model.apiKeyUrl,
                                     contextWindow: Math.floor(model.windowSize / 1024), // 转换为K单位
                                     features: this.extractFeatures(model.description), // 从描述中提取特性
-                                    pricingMode: this.determinePricingMode(model) // 确定收费模式
+                                    pricingMode: model.pricingMode,
                                 }));
 
                                 // 更新内存缓存
@@ -130,7 +130,7 @@ class ModelMarketConfig extends BaseConfigManager {
                                 resolve(processedModels);
 
                                 // 通知所有注册的窗口
-                                this.notifyWindows('model-market-updated', {
+                                this.notifyRegisteredWindows('model-market-updated', {
                                     models: processedModels,
                                     lastUpdated: this.config.lastUpdated
                                 });
@@ -162,42 +162,6 @@ class ModelMarketConfig extends BaseConfigManager {
                 reject(error);
             }
         });
-    }
-
-    /**
-     * 确定模型的收费模式
-     */
-    determinePricingMode(model) {
-        // 如果API返回了明确的收费模式字段
-        if (model.pricingMode) {
-            return model.pricingMode;
-        }
-
-        // 否则根据描述内容判断
-        const description = (model.description || '').toLowerCase();
-        const name = (model.name || '').toLowerCase();
-        const provider = (model.provider || '').toLowerCase();
-
-        // 检查免费关键词
-        if (description.includes('免费') || description.includes('free') ||
-            name.includes('free') || provider.includes('free')) {
-            return 'free';
-        }
-
-        // 检查限时免费关键词
-        if (description.includes('限时免费') || description.includes('试用') ||
-            description.includes('limited free') || description.includes('trial')) {
-            return 'limitedFree';
-        }
-
-        // 检查收费关键词
-        if (description.includes('收费') || description.includes('付费') ||
-            description.includes('paid') || description.includes('premium')) {
-            return 'paid';
-        }
-
-        // 默认返回未知
-        return 'unknown';
     }
 
     /**
@@ -282,6 +246,19 @@ class ModelMarketConfig extends BaseConfigManager {
             cacheFile: this.configPath,
             updateInterval: this.updateInterval / (1000 * 60 * 60) // 转换为小时
         };
+    }
+
+    /**
+     * 通知所有注册的窗口
+     * @param {string} eventName - 事件名称
+     * @param {Object} data - 要发送的数据
+     */
+    notifyRegisteredWindows(eventName, data) {
+        for (const webContents of this.registeredWindows) {
+            if (!webContents.isDestroyed()) {
+                webContents.send(eventName, data);
+            }
+        }
     }
 }
 
