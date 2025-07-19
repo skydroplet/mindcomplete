@@ -124,8 +124,7 @@ class MCPClientManager extends EventEmitter {
 
             // 处理工具列表，转换为特定格式
             const tools = toolsResult.tools.map((tool) => {
-                const toolName = serverId + ":" + tool.name;
-                toolNames.push(toolName);
+                toolNames.push(tool.name);
 
                 // 确保工具有合法的JSON Schema
                 let parameters = tool.inputSchema;
@@ -152,7 +151,7 @@ class MCPClientManager extends EventEmitter {
                 return {
                     type: "function",
                     function: {
-                        name: toolName,
+                        name: tool.name,
                         description: tool.description,
                         parameters: parameters,
                         serverId: serverId, // 使用serverId替代serverName
@@ -233,7 +232,15 @@ class MCPClientManager extends EventEmitter {
             }
 
             if (client.tools && client.tools.length > 0) {
-                tools.push(...client.tools);
+                // 将工具名称转换为serverId:name格式
+                const convertedTools = client.tools.map(tool => ({
+                    ...tool,
+                    function: {
+                        ...tool.function,
+                        name: serverId + ":" + tool.function.name
+                    }
+                }));
+                tools.push(...convertedTools);
             }
 
             log.info(`${serverId} 共 ${client.tools.length} 个工具`);

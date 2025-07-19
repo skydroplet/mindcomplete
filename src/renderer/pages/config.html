@@ -22,7 +22,7 @@
                 data-i18n="settings.tabs.mcp">MCP服务</button>
             <button class="tab-link" data-target="agents" data-tab="agents"
                 data-i18n="settings.tabs.agents">Agent配置</button>
-            <div style="flex: 1;"></div>
+            <div class="tab-spacer"></div>
             <button id="import-config-btn" class="import-btn" title="" data-i18n-title="settings.buttons.importConfig"
                 data-i18n="settings.buttons.importConfig">
                 导入配置
@@ -38,70 +38,191 @@
 
         <!-- 模型配置标签页 -->
         <div class="tab-content active" id="models">
-            <div class="model-list">
-                <button class="add-btn" id="addModelBtn" data-i18n="settings.buttons.addModel">添加模型</button>
-                <div id="modelList"></div>
-            </div>
-            <div class="model-form">
-                <form id="modelForm">
-                    <div class="form-group">
-                        <label for="modelName" data-i18n="settings.labels.modelName">模型名称</label>
-                        <input type="text" id="modelName" name="modelName" placeholder=""
-                            data-i18n-placeholder="settings.placeholders.modelName">
+            <div class="model-flex-container">
+                <!-- 左侧一级目录 -->
+                <div class="model-sidebar">
+                    <ul class="model-menu">
+                        <li class="model-menu-item active" data-menu="config">模型配置</li>
+                        <li class="model-menu-item" data-menu="market">模型市场</li>
+                    </ul>
+                </div>
+                <!-- 中间列表面板 -->
+                <div class="model-list-panel">
+                    <!-- 模型配置列表 -->
+                    <div class="model-list" id="model-config-section">
+                        <button class="add-btn" id="addModelBtn" data-i18n="settings.buttons.addModel">添加模型</button>
+                        <div id="modelList"></div>
                     </div>
-                    <div class="form-group">
-                        <label for="modelType" data-i18n="settings.labels.modelType">模型类型</label>
-                        <input type="text" id="modelType" name="modelType" placeholder=""
-                            data-i18n-placeholder="settings.placeholders.modelType">
-                    </div>
-                    <div class="form-group">
-                        <label for="apiUrl" data-i18n="settings.labels.apiUrl">API 地址</label>
-                        <input type="text" id="apiUrl" name="apiUrl" placeholder=""
-                            data-i18n-placeholder="settings.placeholders.apiUrl">
-                    </div>
-                    <div class="form-group">
-                        <label for="apiKey" data-i18n="settings.labels.apiKey">API 密钥</label>
-                        <input type="text" id="apiKey" name="apiKey" placeholder=""
-                            data-i18n-placeholder="settings.placeholders.apiKey">
-                    </div>
-                    <div class="form-group">
-                        <div style="display: flex; align-items: center;">
-                            <label for="contextWindowSize" style="margin-bottom: 0; margin-right: 10px; width: 120px;"
-                                data-i18n="settings.labels.contextWindowSize">上下文窗口大小</label>
-                            <div style="display: flex; align-items: center; flex: 1;">
-                                <input type="number" id="contextWindowSize" name="contextWindowSize" min="1" value="32"
-                                    style="flex: 1;">
-                                <span style="margin-left: 8px; color: var(--text-color);">K</span>
+                    <!-- 模型市场列表 -->
+                    <div class="model-market-section">
+                        <div class="market-model-list">
+                            <!-- 刷新按钮 -->
+                            <div class="market-actions">
+                                <button class="add-btn" id="refresh-market-btn"
+                                    data-i18n="settings.buttons.refreshMarket">刷新数据</button>
                             </div>
+                            <!-- 加载状态 -->
+                            <div id="market-loading" class="market-loading-state hidden-display">
+                                <p>正在加载模型数据...</p>
+                            </div>
+                            <!-- 错误状态 -->
+                            <div id="market-error" class="market-error-state hidden-display">
+                                <p id="market-error-message">加载模型数据失败，请检查网络连接</p>
+                                <button onclick="location.reload()" class="add-btn">重试</button>
+                            </div>
+                            <!-- 模型列表容器 -->
+                            <div id="market-models-container"></div>
                         </div>
                     </div>
-                    <div class="form-group">
-                        <div style="display: flex; align-items: center;">
-                            <label for="temperature" style="margin-bottom: 0; margin-right: 10px; width: 120px;"
-                                data-i18n="settings.labels.temperature">温度</label>
-                            <div style="display: flex; align-items: center; flex: 1;">
-                                <input type="number" id="temperature" name="temperature" min="0" max="2" step="0.1"
-                                    value="0.7" style="flex: 1;">
+                </div>
+                <!-- 右侧详情面板 -->
+                <div class="model-detail-panel">
+                    <!-- 模型配置表单 -->
+                    <div class="model-form" id="model-config-detail">
+                        <form id="modelForm">
+                            <div class="form-group">
+                                <label for="modelName" data-i18n="settings.labels.modelName">模型名称</label>
+                                <input type="text" id="modelName" name="modelName" placeholder=""
+                                    data-i18n-placeholder="settings.placeholders.modelName">
                             </div>
-                        </div>
-                    </div>
-                </form>
+                            <div class="form-group">
+                                <label for="modelType" data-i18n="settings.labels.modelType">模型类型</label>
+                                <input type="text" id="modelType" name="modelType" placeholder=""
+                                    data-i18n-placeholder="settings.placeholders.modelType">
+                            </div>
+                            <div class="form-group">
+                                <label for="apiUrl" data-i18n="settings.labels.apiUrl">API 地址</label>
+                                <input type="text" id="apiUrl" name="apiUrl" placeholder=""
+                                    data-i18n-placeholder="settings.placeholders.apiUrl">
+                            </div>
+                            <div class="form-group">
+                                <label for="apiKey" data-i18n="settings.labels.apiKey">API 密钥</label>
+                                <input type="text" id="apiKey" name="apiKey" placeholder=""
+                                    data-i18n-placeholder="settings.placeholders.apiKey">
+                            </div>
+                            <div class="form-group">
+                                <div class="form-row-flex">
+                                    <label for="contextWindowSize" class="form-label-fixed"
+                                        data-i18n="settings.labels.contextWindowSize">上下文窗口大小</label>
+                                    <div class="form-input-group">
+                                        <input type="number" id="contextWindowSize" name="contextWindowSize" min="1"
+                                            value="32" class="form-input-flex">
+                                        <span class="form-unit-label">K</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <div class="form-row-flex">
+                                    <label for="temperature" class="form-label-fixed"
+                                        data-i18n="settings.labels.temperature">温度</label>
+                                    <div class="form-input-group">
+                                        <input type="number" id="temperature" name="temperature" min="0" max="2"
+                                            step="0.1" value="0.7" class="form-input-flex">
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
 
-                <!-- 模型配置按钮 -->
-                <div class="form-buttons" id="model-buttons">
-                    <button class="delete-btn hidden" id="deleteModelBtn"
-                        data-i18n="settings.buttons.deleteModelBtn">删除模型</button>
-                    <button class="copy-btn hidden" id="copyModelBtn"
-                        data-i18n="settings.buttons.copyModelBtn">复制模型</button>
-                    <button class="cancel-btn" id="cancelBtn" data-i18n="settings.buttons.cancelBtn">取消</button>
-                    <button class="save-btn" id="saveBtn" data-i18n="settings.buttons.saveBtn">保存</button>
+                        <!-- 模型配置按钮 -->
+                        <div class="form-buttons" id="model-buttons">
+                            <button class="delete-btn hidden" id="deleteModelBtn"
+                                data-i18n="settings.buttons.deleteModelBtn">删除模型</button>
+                            <button class="copy-btn hidden" id="copyModelBtn"
+                                data-i18n="settings.buttons.copyModelBtn">复制模型</button>
+                            <button class="cancel-btn" id="cancelBtn" data-i18n="settings.buttons.cancelBtn">取消</button>
+                            <button class="save-btn" id="saveBtn" data-i18n="settings.buttons.saveBtn">保存</button>
+                        </div>
+                    </div>
+                    <!-- 模型市场详情 -->
+                    <div class="model-market-detail">
+                        <div id="market-model-info">
+                            <!-- 模型详情模板 -->
+                            <div id="market-detail-template" class="market-detail-container hidden-display">
+                                <div class="market-detail-header">
+                                    <h2 id="market-model-name" class="market-detail-title"></h2>
+                                    <span id="market-model-provider" class="market-model-type"></span>
+                                </div>
+
+                                <div class="market-detail-section">
+                                    <h4>模型描述</h4>
+                                    <p id="market-model-description" class="market-detail-description"></p>
+                                </div>
+
+                                <div class="market-detail-section features">
+                                    <h4>主要特性</h4>
+                                    <div id="market-model-features" class="market-detail-features">
+                                        <!-- 特性标签将由JavaScript动态填充 -->
+                                    </div>
+                                </div>
+
+                                <div class="market-detail-section">
+                                    <h4>技术规格</h4>
+                                    <div class="market-detail-specs">
+                                        <div class="market-specs-grid">
+                                            <div class="market-spec-item">
+                                                <span class="market-spec-label">上下文窗口:</span>
+                                                <span id="market-context-window" class="market-spec-value"></span>
+                                            </div>
+                                            <div class="market-spec-item">
+                                                <span class="market-spec-label">模型类型:</span>
+                                                <span id="market-model-type" class="market-spec-value"></span>
+                                            </div>
+                                            <div class="market-spec-item">
+                                                <span class="market-spec-label">收费模式:</span>
+                                                <span id="market-pricing-mode"
+                                                    class="market-spec-value market-pricing-display"></span>
+                                            </div>
+                                            <div class="market-spec-item">
+                                                <span class="market-spec-label">API地址:</span>
+                                                <span id="market-api-url" class="market-spec-value api-url"></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="market-detail-section">
+                                    <h4>常用链接</h4>
+                                    <div class="market-detail-links">
+                                        <div class="market-links-grid">
+                                            <div class="market-link-item">
+                                                <span class="market-link-label">官网链接:</span>
+                                                <span id="market-main-url" class="market-link-value"></span>
+                                            </div>
+                                            <div class="market-link-item">
+                                                <span class="market-link-label">注册链接:</span>
+                                                <span id="market-invite-url" class="market-link-value"></span>
+                                            </div>
+                                            <div class="market-link-item">
+                                                <span class="market-link-label">API秘钥链接:</span>
+                                                <span id="market-apikey-url" class="market-link-value"></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="market-detail-actions">
+                                    <button id="add-market-model-btn" class="add-btn market-add-button"
+                                        data-i18n="settings.buttons.addMarketModel">
+                                        添加到我的模型
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- 空状态（模型不存在时显示） -->
+                            <div id="market-empty-state" class="empty-state hidden-display">
+                                <div class="empty-state-icon">❌</div>
+                                <h3>模型不存在</h3>
+                                <p>无法找到指定的模型信息。</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
         <!-- MCP服务配置标签页 -->
         <div class="tab-content" id="mcp-servers">
-            <div class="mcp-flex-container" style="display: flex; height: 100%;">
+            <div class="mcp-flex-container">
                 <!-- 左侧一级目录 -->
                 <div class="mcp-sidebar">
                     <ul class="mcp-menu">
@@ -110,15 +231,14 @@
                     </ul>
                 </div>
                 <!-- 中间服务列表 -->
-                <div class="mcp-list-panel"
-                    style="width: 250px; background: var(--sidebar-bg); border-right: 1px solid var(--border-color); display: flex; flex-direction: column;">
+                <div class="mcp-list-panel">
                     <div class="model-list" id="mcp-list-section">
                         <button class="add-btn" id="addMcpServerBtn" data-i18n="mcp.buttons.addServer">添加MCP服务</button>
                         <div id="mcpServersList" class="config-list"></div>
                     </div>
                 </div>
                 <!-- 右侧详情表单 -->
-                <div class="mcp-detail-panel" style="flex: 1; display: flex; flex-direction: column;">
+                <div class="mcp-detail-panel">
                     <div class="model-form" id="mcp-detail-section">
                         <form id="mcpServerForm">
                             <div class="form-group">
@@ -164,9 +284,9 @@
                         <div id="runtime-info-loading" data-i18n="status.loadingRuntimeInfo">正在加载运行环境信息...</div>
                         <div id="runtime-info-list">
                             <div class="runtime-section">
-                                <div style="display: flex; align-items: center; justify-content: space-between;">
-                                    <h3 style="margin: 0;">NodeJS 运行环境</h3>
-                                    <div style="display: flex; align-items: center;">
+                                <div class="runtime-section-header">
+                                    <h3 class="runtime-section-title">NodeJS 运行环境</h3>
+                                    <div class="runtime-section-actions">
                                         <button class="add-btn" id="installNodeBtn">安装Node.js</button>
                                     </div>
                                 </div>
@@ -186,9 +306,9 @@
                             </div>
 
                             <div class="runtime-section">
-                                <div style="display: flex; align-items: center; justify-content: space-between;">
-                                    <h3 style="margin: 0;">Python 运行环境</h3>
-                                    <div style="display: flex; align-items: center;">
+                                <div class="runtime-section-header">
+                                    <h3 class="runtime-section-title">Python 运行环境</h3>
+                                    <div class="runtime-section-actions">
                                         <button class="add-btn" id="installPythonBtn">安装Python</button>
                                     </div>
                                 </div>

@@ -26,6 +26,7 @@ const promptConfig = require('./config/promptConfig');
 const mcpConfig = require('./config/mcpConfig');
 const mcpRuntimeManager = require('./mcp/mcpRuntimeManager');
 const agentConfig = require('./config/agentConfig');
+const modelMarketConfig = require('./config/modelMarketConfig');
 
 let mainWindow = null;
 

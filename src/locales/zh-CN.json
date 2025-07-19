@@ -270,7 +270,43 @@
             "addAgent": "添加Agent",
             "deleteAgentBtn": "删除",
             "copyAgentBtn": "复制",
-            "addMcpServer": "添加MCP服务"
+            "addMcpServer": "添加MCP服务",
+            "addMarketModel": "添加到配置",
+            "refreshMarket": "刷新数据"
+        },
+        "modelMarket": {
+            "features": {
+                "reasoning": "逻辑推理",
+                "math": "数学计算",
+                "code": "代码生成",
+                "chat": "智能对话",
+                "translation": "多语言翻译",
+                "creative": "创意写作",
+                "multilingual": "多语言支持",
+                "general": "通用对话",
+                "textGeneration": "文本生成"
+            },
+            "pricing": {
+                "free": "免费",
+                "limitedFree": "限时免费",
+                "paid": "收费",
+                "unknown": "未知"
+            },
+            "messages": {
+                "noModelData": "暂无可用的模型数据",
+                "loadFailed": "加载模型数据失败，请检查网络连接",
+                "noData": "暂无",
+                "addSuccess": "{name} 添加成功！",
+                "addFailed": "添加 {name} 失败，请检查配置信息后手动保存。",
+                "saveError": "保存 {name} 时出错: {error}",
+                "setupInstructions": "请按照以下步骤完成配置：\n1. 点击邀请链接进行注册\n2. 点击API秘钥获取秘钥更新模型配置",
+                "registerLink": "注册链接: {url}",
+                "apiKeyLink": "API秘钥获取: {url}",
+                "logFetchSuccess": "成功获取模型市场数据: {count} 个模型",
+                "logFetchStart": "从API获取模型市场数据",
+                "logFetchFailed": "API返回数据格式异常",
+                "logFetchFailedWithError": "获取模型市场数据失败: {error}"
+            }
         }
     },
     "logs": {
