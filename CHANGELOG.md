@@ -1,5 +1,16 @@
 # Changelog
 
+
+## [0.1.7](https://github.com/skydroplet/mindcomplete/compare/v0.1.6...v0.1.7) (2025-07-19)
+
+### ✨ 新功能
+
+* 增加模型市场, 显示模型基本信息、费用、配置信息, 一键添加模型到我的配置 ([878cdf8](https://github.com/skydroplet/mindcomplete/commit/878cdf87ebdaedd1091d2a7acd25a5ca758eb913))
+
+### 🐛 修复
+
+* 优化mcp环境获取太慢导致配置窗口打开时间长问题 ([38d7a5d](https://github.com/skydroplet/mindcomplete/commit/38d7a5dfaa89c1a15360071535a50afd25a18751))
+
 ## [0.1.6](https://github.com/skydroplet/mindcomplete/compare/v0.1.5...v0.1.6) (2025-07-06)
 
 ### ✨ 新功能
