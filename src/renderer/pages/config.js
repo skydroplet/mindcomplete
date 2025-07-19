@@ -403,6 +403,27 @@ document.addEventListener('DOMContentLoaded', async () => {
                     modelMarketSection.style.display = 'none';
                     modelConfigDetail.style.display = 'flex';
                     modelMarketDetail.style.display = 'none';
+
+                    // 确保模型配置页面有数据显示
+                    if (!modelService.selectedModelId || !window.currentModelId) {
+                        // 如果没有选中的模型，选择第一个可用的模型
+                        const models = modelService.models || window.models || {};
+                        const modelIds = Object.keys(models);
+                        if (modelIds.length > 0) {
+                            const firstModelId = modelIds[0];
+                            log.info('切换到模型配置页面，自动选择第一个模型:', firstModelId);
+                            modelService.selectModel(firstModelId);
+                        } else {
+                            // 如果没有模型，重置表单显示
+                            log.info('切换到模型配置页面，但没有可用模型');
+                            modelService.resetModelForm();
+                        }
+                    } else {
+                        // 如果已经有选中的模型，确保详情正确显示
+                        log.info('切换到模型配置页面，当前选中模型:', modelService.selectedModelId || window.currentModelId);
+                        const currentId = modelService.selectedModelId || window.currentModelId;
+                        modelService.selectModel(currentId);
+                    }
                 } else if (menu === 'market') {
                     // 显示模型市场
                     modelConfigSection.style.display = 'none';
@@ -634,6 +655,20 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (success) {
                     renderMarketModelList();
                     log.info('模型市场数据刷新成功');
+
+                    // 刷新模型市场数据成功后，同时更新模型配置数据
+                    // 确保模型配置页面的数据也是最新的
+                    try {
+                        const latestModels = await ipcRenderer.invoke('get-models');
+                        if (latestModels) {
+                            window.models = latestModels;
+                            modelService.models = latestModels;
+                            modelService.updateModelList(latestModels);
+                            log.info('模型配置数据已同步更新');
+                        }
+                    } catch (error) {
+                        log.error('同步更新模型配置数据失败:', error.message);
+                    }
                 } else {
                     if (marketError) {
                         marketError.style.display = 'block';
@@ -645,7 +680,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         // 监听主进程发送的模型市场数据更新事件
-        ipcRenderer.on('model-market-updated', (event, data) => {
+        ipcRenderer.on('model-market-updated', async (event, data) => {
             log.info('收到模型市场数据更新通知:', data);
             if (data && data.models && Array.isArray(data.models)) {
                 marketModels = data.models;
@@ -654,6 +689,19 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (isMarketActive) {
                     renderMarketModelList();
                     log.info('模型市场界面已自动更新');
+                }
+
+                // 同时更新模型配置数据，确保数据同步
+                try {
+                    const latestModels = await ipcRenderer.invoke('get-models');
+                    if (latestModels) {
+                        window.models = latestModels;
+                        modelService.models = latestModels;
+                        modelService.updateModelList(latestModels);
+                        log.info('收到模型市场更新通知后，模型配置数据已同步更新');
+                    }
+                } catch (error) {
+                    log.error('同步更新模型配置数据失败:', error.message);
                 }
             }
         });
