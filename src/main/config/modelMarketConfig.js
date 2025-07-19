@@ -37,8 +37,11 @@ class ModelMarketConfig extends BaseConfigManager {
 
         super('model-market.json', defaultConfig);
 
-        // 远程API地址
-        this.apiUrl = 'https://api.mindcomplete.me/v1/market/models';
+        // 获取appConfig实例来读取API URL
+        const appConfig = require('./appConfig');
+
+        // 从配置文件获取远程API地址
+        this.apiUrl = appConfig.getModelMarketApiUrl();
 
         // 缓存更新间隔（毫秒）- 4小时
         this.updateInterval = 4 * 60 * 60 * 1000;
