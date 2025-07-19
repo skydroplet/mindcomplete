@@ -264,7 +264,8 @@
             "deleteAgentBtn": "Delete",
             "copyAgentBtn": "Copy",
             "addMcpServer": "Add MCP Server",
-            "addMarketModel": "Add to Config"
+            "addMarketModel": "Add to Config",
+            "refreshMarket": "Refresh Data"
         },
         "modelMarket": {
             "features": {

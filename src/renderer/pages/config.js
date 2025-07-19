@@ -284,30 +284,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         // 模型市场数据存储
         let marketModels = [];
 
-        // 从API获取模型市场数据
+        // 从主进程获取模型市场数据
         async function fetchMarketModels() {
             try {
-                const url = 'https://api.mindcomplete.me/v1/market/models';
-                log.info('get models from:', url);
-                const response = await fetch(url);
-                const rsp = await response.json();
-                log.info('get models :', rsp);
+                log.info('从主进程获取模型市场数据');
+                const response = await ipcRenderer.invoke('get-market-models');
+                log.info('获取到模型市场数据:', response);
 
-                if (rsp && rsp.models && Array.isArray(rsp.models)) {
-                    marketModels = rsp.models.map(model => ({
-                        id: model.name.replace(/[^a-zA-Z0-9-_]/g, '-'), // 生成安全的ID
-                        name: model.name,
-                        modelType: model.modelType,
-                        provider: model.provider,
-                        description: model.description,
-                        apiUrl: model.apiUrl,
-                        mainUrl: model.mainUrl,
-                        registerUrl: model.registerUrl,
-                        apiKeyUrl: model.apiKeyUrl,
-                        contextWindow: Math.floor(model.windowSize / 1024), // 转换为K单位
-                        features: extractFeatures(model.description), // 从描述中提取特性
-                        pricingMode: determinePricingMode(model) // 确定收费模式
-                    }));
+                if (response && response.models && Array.isArray(response.models)) {
+                    marketModels = response.models;
                     log.info(i18n.t('settings.modelMarket.messages.logFetchSuccess', { count: marketModels.length }));
                     return true;
                 } else {
@@ -320,67 +305,25 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         }
 
-        // 确定模型的收费模式
-        function determinePricingMode(model) {
-            // 如果API返回了明确的收费模式字段
-            if (model.pricingMode) {
-                return model.pricingMode;
-            }
+        // 手动刷新模型市场数据
+        async function refreshMarketModels() {
+            try {
+                log.info('手动刷新模型市场数据');
+                const response = await ipcRenderer.invoke('refresh-market-models');
+                log.info('刷新模型市场数据结果:', response);
 
-            // 否则根据描述内容判断
-            const description = (model.description || '').toLowerCase();
-            const name = (model.name || '').toLowerCase();
-            const provider = (model.provider || '').toLowerCase();
-
-            // 检查免费关键词
-            if (description.includes('免费') || description.includes('free') ||
-                name.includes('free') || provider.includes('free')) {
-                return 'free';
-            }
-
-            // 检查限时免费关键词
-            if (description.includes('限时免费') || description.includes('试用') ||
-                description.includes('limited free') || description.includes('trial')) {
-                return 'limitedFree';
-            }
-
-            // 检查收费关键词
-            if (description.includes('收费') || description.includes('付费') ||
-                description.includes('paid') || description.includes('premium')) {
-                return 'paid';
-            }
-
-            // 默认返回未知
-            return 'unknown';
-        }
-
-        // 从模型描述中提取特性关键词
-        function extractFeatures(description) {
-            const features = [];
-            const keywordMap = {
-                '推理': i18n.t('settings.modelMarket.features.reasoning'),
-                '数学': i18n.t('settings.modelMarket.features.math'),
-                '编程': i18n.t('settings.modelMarket.features.code'),
-                '代码': i18n.t('settings.modelMarket.features.code'),
-                '对话': i18n.t('settings.modelMarket.features.chat'),
-                '翻译': i18n.t('settings.modelMarket.features.translation'),
-                '创意': i18n.t('settings.modelMarket.features.creative'),
-                '写作': i18n.t('settings.modelMarket.features.creative'),
-                '多语言': i18n.t('settings.modelMarket.features.multilingual')
-            };
-
-            for (const [keyword, feature] of Object.entries(keywordMap)) {
-                if (description.includes(keyword) && !features.includes(feature)) {
-                    features.push(feature);
+                if (response && response.success && response.models && Array.isArray(response.models)) {
+                    marketModels = response.models;
+                    log.info(i18n.t('settings.modelMarket.messages.logFetchSuccess', { count: marketModels.length }));
+                    return true;
+                } else {
+                    log.warn('刷新模型市场数据失败:', response ? response.message : '未知错误');
+                    return false;
                 }
+            } catch (error) {
+                log.error('刷新模型市场数据时出错:', error.message);
+                return false;
             }
-
-            // 如果没有找到特性，添加默认特性
-            if (features.length === 0) {
-                features.push(i18n.t('settings.modelMarket.features.general'), i18n.t('settings.modelMarket.features.textGeneration'));
-            }
-
-            return features;
         }
 
         // 获取收费模式的样式类名和文本
@@ -643,6 +586,57 @@ document.addEventListener('DOMContentLoaded', async () => {
             modelConfigDetail.style.display = 'flex';
             modelMarketDetail.style.display = 'none';
         }
+
+        // 添加刷新按钮事件监听器
+        const refreshMarketBtn = document.getElementById('refresh-market-btn');
+        if (refreshMarketBtn) {
+            refreshMarketBtn.addEventListener('click', async () => {
+                log.info('用户点击刷新模型市场数据按钮');
+                const marketLoading = document.getElementById('market-loading');
+                const marketError = document.getElementById('market-error');
+
+                // 显示加载状态
+                if (marketLoading) {
+                    marketLoading.style.display = 'block';
+                }
+                if (marketError) {
+                    marketError.style.display = 'none';
+                }
+
+                // 刷新数据
+                const success = await refreshMarketModels();
+
+                // 隐藏加载状态
+                if (marketLoading) {
+                    marketLoading.style.display = 'none';
+                }
+
+                if (success) {
+                    renderMarketModelList();
+                    log.info('模型市场数据刷新成功');
+                } else {
+                    if (marketError) {
+                        marketError.style.display = 'block';
+                        document.getElementById('market-error-message').textContent = i18n.t('settings.modelMarket.messages.loadFailed');
+                    }
+                    log.error('模型市场数据刷新失败');
+                }
+            });
+        }
+
+        // 监听主进程发送的模型市场数据更新事件
+        ipcRenderer.on('model-market-updated', (event, data) => {
+            log.info('收到模型市场数据更新通知:', data);
+            if (data && data.models && Array.isArray(data.models)) {
+                marketModels = data.models;
+                // 如果当前正在显示模型市场页面，更新界面
+                const isMarketActive = document.querySelector('.model-menu-item[data-menu="market"]').classList.contains('active');
+                if (isMarketActive) {
+                    renderMarketModelList();
+                    log.info('模型市场界面已自动更新');
+                }
+            }
+        });
     } catch (error) {
         log.error('配置页面初始化失败:', error.message);
         alert(`初始化配置页面失败: ${error.message}`);

@@ -271,7 +271,8 @@
             "deleteAgentBtn": "删除",
             "copyAgentBtn": "复制",
             "addMcpServer": "添加MCP服务",
-            "addMarketModel": "添加到配置"
+            "addMarketModel": "添加到配置",
+            "refreshMarket": "刷新数据"
         },
         "modelMarket": {
             "features": {

@@ -15,6 +15,7 @@ const modelManager = require('./modelConfig');
 const mcpManager = require('./mcpConfig');
 const promptManager = require('./promptConfig');
 const agentManager = require('./agentConfig');
+const modelMarketConfig = require('./modelMarketConfig');
 
 // 配置窗口实例引用
 let configWindow;
@@ -294,6 +295,64 @@ function registerConfigIPC() {
         const result = agentManager.copyAgent(agentId);
         log.info('复制Agent结果:', result);
         return result;
+    });
+
+    // 模型市场相关IPC处理程序
+    ipcMain.handle('get-market-models', async (event) => {
+        log.info('处理获取模型市场数据请求');
+        try {
+            const result = modelMarketConfig.getMarketModels();
+            log.info('获取模型市场数据成功，共', result.count, '个模型');
+            return result;
+        } catch (error) {
+            log.error('获取模型市场数据失败:', error.message);
+            throw error;
+        }
+    });
+
+    ipcMain.handle('get-market-model-by-id', async (event, modelId) => {
+        log.info('处理获取指定模型市场数据请求, modelId:', modelId);
+        try {
+            const result = modelMarketConfig.getModelById(modelId);
+            if (result) {
+                log.info('获取模型市场数据成功:', result.name);
+            } else {
+                log.warn('未找到指定的模型市场数据, modelId:', modelId);
+            }
+            return result;
+        } catch (error) {
+            log.error('获取模型市场数据失败:', error.message);
+            throw error;
+        }
+    });
+
+    ipcMain.handle('refresh-market-models', async (event) => {
+        log.info('处理刷新模型市场数据请求');
+        try {
+            const result = await modelMarketConfig.refreshData();
+            log.info('刷新模型市场数据结果:', result.success ? '成功' : '失败');
+            return result;
+        } catch (error) {
+            log.error('刷新模型市场数据失败:', error.message);
+            return {
+                success: false,
+                message: error.message,
+                models: [],
+                lastUpdated: null
+            };
+        }
+    });
+
+    ipcMain.handle('get-market-cache-info', async (event) => {
+        log.info('处理获取模型市场缓存信息请求');
+        try {
+            const result = modelMarketConfig.getCacheInfo();
+            log.info('获取模型市场缓存信息成功');
+            return result;
+        } catch (error) {
+            log.error('获取模型市场缓存信息失败:', error.message);
+            throw error;
+        }
     });
 }
 
