@@ -313,6 +313,22 @@ class SessionManager extends EventEmitter {
         this.updateSessionInfo(session);
         return true;
     }
+
+    /**
+     * 重置会话起始消息
+     * @param {string} sessionId 
+     * @returns 
+     */
+    resetSessionStartMessage(sessionId) {
+        const session = this.loadSession(sessionId);
+        if (!session) {
+            log.error("未找到会话", sessionId)
+            return false;
+        }
+
+        session.resetSessionStartMessage();
+        return true;
+    }
 }
 
 // 创建并导出单例实例

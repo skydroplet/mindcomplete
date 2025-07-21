@@ -64,6 +64,10 @@ function registerSessionIPC(ipcMain) {
     ipcMain.handle('abort-message-generation', (event, sessionId) => {
         return sessionManager.abortMessageGeneration(sessionId);
     });
+
+    ipcMain.handle('reset-session-start-message', (event, sessionId) => {
+        return sessionManager.resetSessionStartMessage(sessionId);
+    });
 }
 
 module.exports = {

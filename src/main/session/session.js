@@ -126,6 +126,7 @@ class ChatSession {
             createdAt: now,
             updatedAt: now,
             messageCount: 0,
+            sessionStartMessageId: 0,
             conversationMode: 'multi-turn',
             messages: []
         }
@@ -197,6 +198,11 @@ class ChatSession {
         return true;
     }
 
+    resetSessionStartMessage() {
+        this.data.sessionStartMessageId = length(this.data.messages);
+        this.saveToFile();
+    }
+
     /**
      * 获取当前会话的消息，用于发送给ai，只返回role为user和assistant的消息
      */
@@ -206,7 +212,13 @@ class ChatSession {
             return [];
         }
 
-        const messages = this.data.messages.filter(message => message.role === 'user' || message.role === 'assistant');
+        if (this.data.sessionStartMessageId === undefined || this.data.sessionStartMessageId === null) {
+            this.data.sessionStartMessageId = 0;
+        }
+
+        const sessionMessages = this.data.messages.slice(this.data.sessionStartMessageId);
+
+        const messages = sessionMessages.filter(message => message.role === 'user' || message.role === 'assistant');
         // 删除消息中的thinking和前端展示相关字段
         return messages.map(message => {
             // 提取AI需要的字段
