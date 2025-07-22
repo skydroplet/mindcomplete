@@ -199,7 +199,7 @@ class ChatSession {
     }
 
     resetSessionStartMessage() {
-        this.data.sessionStartMessageId = length(this.data.messages);
+        this.data.sessionStartMessageId = this.data.messages.length;
         this.saveToFile();
     }
 

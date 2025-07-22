@@ -568,15 +568,10 @@ class TabManagerService {
                 if (newSessionBtn.disabled) return;
                 newSessionBtn.disabled = true;
 
-                log.info(`标签 ${tabId} 中点击新建会话按钮`);
-
-                // 创建新标签并新建会话
-                await this.createNewTab();
-
-                // 刷新侧边栏会话列表
-                sidebarSessionService.loadSessions();
-
-                log.info(`标签 ${tabId} 中成功创建新标签和新会话`);
+                const session = this.tabSessions.get(tabId);
+                const sessionId = session.data.id
+                log.info(`tab ${tabId} reset session ${sessionId}`);
+                await ipcRenderer.invoke('reset-session-start-message', sessionId);
 
                 // 重新启用按钮
                 setTimeout(() => {
