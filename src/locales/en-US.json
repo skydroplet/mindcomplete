@@ -151,7 +151,7 @@
         "toggleTheme": "Toggle Dark/Light Mode"
     },
     "session": {
-        "newSession": "New Session",
+        "newSession": "Start new Session",
         "rename": "Rename Session",
         "delete": "Delete Session",
         "noSessions": "No sessions available",
@@ -161,7 +161,8 @@
         "confirm": "Confirm",
         "confirmDelete": "Are you sure you want to delete this session? This action cannot be undone.",
         "confirmClear": "Are you sure you want to clear all messages in the current session? This action cannot be undone.",
-        "defaultNewName": "New Session - {date}"
+        "defaultNewName": "New Session - {date}",
+        "newSessionMessage": "A new conversation has started. Please enter your question."
     },
     "modelSelector": {
         "selectModel": "Please select a model first",

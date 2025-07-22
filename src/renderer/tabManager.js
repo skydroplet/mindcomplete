@@ -570,8 +570,18 @@ class TabManagerService {
 
                 const session = this.tabSessions.get(tabId);
                 const sessionId = session.data.id
-                log.info(`tab ${tabId} reset session ${sessionId}`);
-                await ipcRenderer.invoke('reset-session-start-message', sessionId);
+                log.info(`Reset session for tab ${tabId} with session ID ${sessionId}`);
+
+                try {
+                    await ipcRenderer.invoke('reset-session-start-message', sessionId);
+
+                    // 新会话成功后，在消息框中添加居中的提示信息
+                    this.addNewSessionMessage(tabId);
+
+                    log.info(`New session created successfully for tab ${tabId}`);
+                } catch (error) {
+                    log.error(`Failed to create new session for tab ${tabId}:`, error);
+                }
 
                 // 重新启用按钮
                 setTimeout(() => {
@@ -586,7 +596,32 @@ class TabManagerService {
             newSessionBtn._newSessionHandler = newSessionHandler;
         }
 
-        log.info(`标签 ${tabId} 的下拉菜单初始化完成`);
+        log.info(`Dropdown menus initialization completed for tab ${tabId}`);
+    }
+
+    /**
+     * 添加新会话提示消息
+     * @param {string} tabId 标签ID
+     */
+    addNewSessionMessage(tabId) {
+        const messagesContainer = document.getElementById(`chat-messages-${tabId}`);
+        if (!messagesContainer) {
+            log.warn(`Messages container not found for tab ${tabId}`);
+            return;
+        }
+
+        // 创建新会话提示消息元素
+        const messageElement = document.createElement('div');
+        messageElement.className = 'system-message new-session-message';
+        messageElement.textContent = i18n.t('session.newSessionMessage');
+
+        // 添加到消息容器
+        messagesContainer.appendChild(messageElement);
+
+        // 滚动到底部
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+        log.info(`New session message added for tab ${tabId}`);
     }
 
     /**

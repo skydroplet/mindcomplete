@@ -1697,3 +1697,24 @@ select.settings-select {
 [data-theme="dark"] .collapsible-content.collapsed p[data-preview="true"] {
     color: rgba(255, 255, 255, 0.85);
 }
+
+/* 新会话提示消息样式 */
+.system-message.new-session-message {
+    text-align: center;
+    margin: 1px auto;
+    margin-bottom: 1em;
+    background-color: #e8f4fd;
+    color: #6c757d;
+    font-style: italic;
+    font-size: 0.8em;
+    max-width: 300px;
+    transition: box-shadow 0.3s ease;
+    border-radius: 8px;
+}
+
+/* 深色模式下的新会话提示消息样式 */
+[data-theme="dark"] .system-message.new-session-message {
+    background-color: #324558;
+    color: #b0bdcf;
+    border-radius: 8px;
+}

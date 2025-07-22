@@ -156,7 +156,7 @@
         "toggleTheme": "切换深色/浅色模式"
     },
     "session": {
-        "newSession": "新建会话",
+        "newSession": "开启新会话",
         "rename": "重命名会话",
         "delete": "删除会话",
         "noSessions": "没有会话记录",
@@ -166,7 +166,8 @@
         "confirm": "确定",
         "confirmDelete": "确定要删除这个会话吗？此操作不可恢复。",
         "confirmClear": "确定要清空当前会话的所有消息吗？此操作不可恢复。",
-        "defaultNewName": "新会话 - {date}"
+        "defaultNewName": "新会话 - {date}",
+        "newSessionMessage": "新的对话已开始，请输入您的问题"
     },
     "modelSelector": {
         "selectModel": "请先选择一个模型",
