@@ -2425,7 +2425,42 @@ class TabManagerService {
 
         log.info(`更新会话 ${session.data.id} 配置: ${configType} = ${newValue} `);
     }
+
+    /**
+     * 处理重置会话功能 - 供外部调用的全局方法
+     * @param {string} tabId 标签ID
+     */
+    async resetSessionForTab(tabId) {
+        const session = this.tabSessions.get(tabId);
+        if (!session) {
+            log.warn(`标签 ${tabId} 对应的会话不存在`);
+            return;
+        }
+
+        const sessionId = session.data.id;
+        log.info(`Reset session for tab ${tabId} with session ID ${sessionId}`);
+
+        try {
+            await ipcRenderer.invoke('reset-session-start-message', sessionId);
+
+            // 新会话成功后，在消息框中添加居中的提示信息
+            this.addNewSessionMessage(tabId);
+
+            log.info(`New session created successfully for tab ${tabId}`);
+        } catch (error) {
+            log.error(`Failed to create new session for tab ${tabId}:`, error);
+        }
+    }
 }
 
 // 创建并导出标签管理服务实例
-module.exports = new TabManagerService(); 
+const tabManagerService = new TabManagerService();
+
+// 暴露全局方法供其他模块调用
+if (typeof window !== 'undefined') {
+    window.resetSessionForTab = (tabId) => {
+        return tabManagerService.resetSessionForTab(tabId);
+    };
+}
+
+module.exports = tabManagerService; 

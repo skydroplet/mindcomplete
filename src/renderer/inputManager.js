@@ -245,7 +245,7 @@ class InputManagerService {
      */
     initInputHandlers() {
         // 处理回车键 - 使用keydown事件处理所有输入框
-        document.addEventListener('keydown', (e) => {
+        document.addEventListener('keydown', async (e) => {
             // 标签特定的输入框处理
             if (e.target.matches('textarea[id^="message-input-"]')) {
                 // 检查是否在输入法编辑状态
@@ -296,6 +296,24 @@ class InputManagerService {
                     // Ctrl+P 显示提示词选择器
                     e.preventDefault();
                     this.showPromptSelector(e.target);
+                } else if (e.key === 'n' && e.ctrlKey) {
+                    // Ctrl+N 重置会话
+                    e.preventDefault();
+
+                    // 从输入框ID中提取tabId (格式: message-input-{tabId})
+                    const inputId = e.target.id;
+                    const tabId = inputId.replace('message-input-', '');
+
+                    if (tabId && typeof window.resetSessionForTab === 'function') {
+                        log.info(`通过快捷键Ctrl+N重置会话，标签: ${tabId}`);
+                        await window.resetSessionForTab(tabId);
+
+                        // 重置会话后清空输入框
+                        e.target.value = '';
+                        this.adjustTextareaHeight(e.target);
+                    } else {
+                        log.warn('无法重置会话：未找到标签ID或重置函数');
+                    }
                 }
             }
         });
@@ -421,7 +439,7 @@ class InputManagerService {
             <div class="input-group">
                 <textarea 
                     id="message-input-${tabId}" 
-                    placeholder="输入消息，按Enter发送，Ctrl+Enter换行，↑↓切换历史消息，Ctrl+P选择用户提示词..." 
+                    placeholder="输入消息，按Enter发送，Ctrl+Enter换行，↑↓切换历史消息，Ctrl+P选择用户提示词，Ctrl+N重置会话..." 
                     rows="1"
                 ></textarea>
             </div>
