@@ -30,6 +30,16 @@ class ChatSession {
                 const data = fs.readFileSync(filePath, 'utf8');
                 this.data = JSON.parse(data);
                 this.data.createdAt = new Date(this.data.createdAt);
+
+                // 确保promptId是数组格式，兼容旧格式
+                if (!Array.isArray(this.data.promptId)) {
+                    if (this.data.promptId) {
+                        this.data.promptId = [this.data.promptId];
+                    } else {
+                        this.data.promptId = [];
+                    }
+                }
+
                 this.filePath = filePath;
                 log.info("加载会话: ", filePath)
             } else {
@@ -37,7 +47,16 @@ class ChatSession {
                 if (sessionTemplate) {
                     this.data.agentId = sessionTemplate.data.agentId;
                     this.data.modelId = sessionTemplate.data.modelId;
-                    this.data.promptId = sessionTemplate.data.promptId;
+
+                    // 确保promptId是数组格式
+                    if (Array.isArray(sessionTemplate.data.promptId)) {
+                        this.data.promptId = sessionTemplate.data.promptId;
+                    } else if (sessionTemplate.data.promptId) {
+                        this.data.promptId = [sessionTemplate.data.promptId];
+                    } else {
+                        this.data.promptId = [];
+                    }
+
                     this.data.mcpServers = sessionTemplate.data.mcpServers;
                     this.data.conversationMode = sessionTemplate.data.conversationMode;
                 }
@@ -60,10 +79,15 @@ class ChatSession {
         this.saveToFile();
     }
 
-    setPromptId(promptId) {
-        this.data.promptId = promptId;
+    setPromptId(promptIds) {
+        // 支持数组格式和单个值格式
+        if (Array.isArray(promptIds)) {
+            this.data.promptId = promptIds;
+        } else {
+            this.data.promptId = [promptIds];
+        }
         this.data.agentId = 'free-mode';
-        log.info(`id: ${this.data.id}, agentId: ${this.data.agentId}, promptId: ${this.data.promptId}`)
+        log.info(`id: ${this.data.id}, agentId: ${this.data.agentId}, promptId: ${JSON.stringify(this.data.promptId)}`);
         this.saveToFile();
     }
 
@@ -73,20 +97,34 @@ class ChatSession {
             const agent = agentConfig.getAgent(this.data.agentId);
             if (agent) {
                 this.data.modelId = agent.modelId;
-                this.data.promptId = agent.promptId;
+                // 确保promptId是数组格式
+                if (Array.isArray(agent.promptId)) {
+                    this.data.promptId = agent.promptId;
+                } else if (agent.promptId) {
+                    this.data.promptId = [agent.promptId];
+                } else {
+                    this.data.promptId = [];
+                }
                 this.data.mcpServers = agent.mcpServers;
             }
         } else {
             const agent = agentConfig.getAgent(agentId);
             if (agent) {
                 this.data.modelId = agent.modelId;
-                this.data.promptId = agent.promptId;
+                // 确保promptId是数组格式
+                if (Array.isArray(agent.promptId)) {
+                    this.data.promptId = agent.promptId;
+                } else if (agent.promptId) {
+                    this.data.promptId = [agent.promptId];
+                } else {
+                    this.data.promptId = [];
+                }
                 this.data.mcpServers = agent.mcpServers;
             }
         }
 
         this.data.agentId = agentId;
-        log.info(`id: ${this.data.id}, agentId: ${this.data.agentId}, modelId: ${this.data.modelId}, promptId: ${this.data.promptId}, mcpServers: ${this.data.mcpServers}`)
+        log.info(`id: ${this.data.id}, agentId: ${this.data.agentId}, modelId: ${this.data.modelId}, promptId: ${JSON.stringify(this.data.promptId)}, mcpServers: ${this.data.mcpServers}`);
         this.saveToFile();
     }
 
@@ -128,6 +166,7 @@ class ChatSession {
             messageCount: 0,
             sessionStartMessageId: 0,
             conversationMode: 'multi-turn',
+            promptId: [], // 改为数组格式
             messages: []
         }
     }
@@ -233,6 +272,14 @@ class ChatSession {
      * 获取摘要信息
      */
     getSummary() {
+        // 确保promptId是数组格式，兼容旧格式
+        let promptIds = [];
+        if (Array.isArray(this.data.promptId)) {
+            promptIds = this.data.promptId;
+        } else if (this.data.promptId) {
+            promptIds = [this.data.promptId];
+        }
+
         return {
             id: this.data.id,
             name: this.data.name,
@@ -241,7 +288,7 @@ class ChatSession {
             messageCount: this.data.messageCount,
             agentId: this.data.agentId,
             modelId: this.data.modelId,
-            promptId: this.data.promptId,
+            promptId: promptIds,
             mcpServers: this.data.mcpServers || [],
             conversationMode: this.data.conversationMode || 'single-turn',
             dataFile: this.filePath
@@ -305,9 +352,17 @@ class ChatSession {
      * @returns {Object} 配置对象 {modelId, promptId, mcpServers}
      */
     getSessionConfig() {
+        // 确保promptId是数组格式，兼容旧格式
+        let promptIds = [];
+        if (Array.isArray(this.data.promptId)) {
+            promptIds = this.data.promptId;
+        } else if (this.data.promptId) {
+            promptIds = [this.data.promptId];
+        }
+
         const config = {
             modelId: this.data.modelId,
-            promptId: this.data.promptId,
+            promptId: promptIds,
             mcpServers: this.data.mcpServers || []
         };
 
@@ -316,19 +371,36 @@ class ChatSession {
 
     /**
      * 获取系统提示词消息
-     * @param {string} promptId 提示词ID
+     * @param {Array} promptIds 提示词ID数组
      * @returns {Array} 提示词消息数组
      */
-    getPromptMessages(promptId) {
+    getPromptMessages(promptIds) {
         const messages = [];
 
-        if (promptId) {
-            const prompt = promptConfig.getPromptById(promptId);
-            if (prompt) {
-                const promptType = prompt.type || 'system';
+        if (promptIds && promptIds.length > 0) {
+            let combinedContent = '';
+            let promptType = 'system'; // 默认类型
+
+            // 遍历所有promptId，获取内容并拼接
+            for (const promptId of promptIds) {
+                const prompt = promptConfig.getPromptById(promptId);
+                if (prompt) {
+                    log.warn(`get prompt ${promptId} failed`);
+                    continue;
+                }
+
+                if (prompt.type !== 'system') {
+                    continue;
+                }
+
+                combinedContent += prompt.content;
+                combinedContent += '\n';
+            }
+
+            if (combinedContent) {
                 messages.push({
                     role: promptType,
-                    content: prompt.content
+                    content: combinedContent
                 });
             }
         }
