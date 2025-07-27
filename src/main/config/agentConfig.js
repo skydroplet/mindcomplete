@@ -43,7 +43,23 @@ class AgentConfig extends BaseConfigManager {
         if (!this.config.agents) {
             return null;
         }
-        return this.config.agents[agentId] || null;
+
+        const agent = this.config.agents[agentId];
+        if (!agent) {
+            return null;
+        }
+
+        // 确保promptId是数组格式，兼容旧格式
+        const clonedAgent = { ...agent };
+        if (!Array.isArray(clonedAgent.promptId)) {
+            if (clonedAgent.promptId) {
+                clonedAgent.promptId = [clonedAgent.promptId];
+            } else {
+                clonedAgent.promptId = [];
+            }
+        }
+
+        return clonedAgent;
     }
 
     /**
@@ -51,7 +67,7 @@ class AgentConfig extends BaseConfigManager {
      * @param {Object} agent - Agent配置对象
      * @param {string} agent.name - Agent名称
      * @param {string} agent.modelId - 关联的模型ID
-     * @param {string} agent.promptId - 关联的提示词ID
+     * @param {string|Array} agent.promptId - 关联的提示词ID或ID数组
      * @param {Array} agent.mcpServers - MCP服务ID列表
      * @returns {string} 新创建的Agent ID
      */
@@ -65,6 +81,14 @@ class AgentConfig extends BaseConfigManager {
             throw new Error('Agent名称不能为空');
         }
 
+        // 处理promptId格式，确保是数组
+        let promptIds = [];
+        if (Array.isArray(agent.promptId)) {
+            promptIds = agent.promptId;
+        } else if (agent.promptId) {
+            promptIds = [agent.promptId];
+        }
+
         // 生成唯一ID
         const agentId = this.generateUniqueId('agent', this.config.agents);
 
@@ -73,7 +97,7 @@ class AgentConfig extends BaseConfigManager {
             id: agentId,
             name: agent.name,
             modelId: agent.modelId || null,
-            promptId: agent.promptId || null,
+            promptId: promptIds,
             mcpServers: agent.mcpServers || [],
             createdAt: new Date().toLocaleString(),
             updatedAt: new Date().toLocaleString()
@@ -111,13 +135,21 @@ class AgentConfig extends BaseConfigManager {
             throw new Error('Agent名称不能为空');
         }
 
+        // 处理promptId格式，确保是数组
+        let promptIds = [];
+        if (Array.isArray(agent.promptId)) {
+            promptIds = agent.promptId;
+        } else if (agent.promptId) {
+            promptIds = [agent.promptId];
+        }
+
         // 更新Agent配置
         const existingAgent = this.config.agents[agentId];
         this.config.agents[agentId] = {
             ...existingAgent,
             name: agent.name,
             modelId: agent.modelId || null,
-            promptId: agent.promptId || null,
+            promptId: promptIds,
             mcpServers: agent.mcpServers || [],
             updatedAt: new Date().toLocaleString()
         };
@@ -175,7 +207,7 @@ class AgentConfig extends BaseConfigManager {
             const newAgent = {
                 name: sourceAgent.name + ' (副本)',
                 modelId: sourceAgent.modelId,
-                promptId: sourceAgent.promptId,
+                promptId: [...(sourceAgent.promptId || [])], // 复制数组
                 mcpServers: [...(sourceAgent.mcpServers || [])]
             };
 

@@ -396,9 +396,9 @@
                     </div>
                     <div class="form-group">
                         <label for="agentPrompt" data-i18n="settings.labels.agentPrompt">提示词</label>
-                        <select id="agentPrompt" name="agentPrompt">
-                            <option value="" data-i18n="agents.selectPrompt">请选择系统提示词</option>
-                        </select>
+                        <div id="promptsContainer" class="prompts-container">
+                            <!-- 提示词选择行将由JavaScript动态添加 -->
+                        </div>
                     </div>
                     <div class="form-group">
                         <label for="mcpServers" data-i18n="settings.labels.mcpServers">MCP服务列表</label>

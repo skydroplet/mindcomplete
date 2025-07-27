@@ -646,3 +646,60 @@
         transform: scale(1);
     }
 }
+
+/* 在文件末尾添加提示词选择器样式，如果找不到合适位置就放在文件末尾 */
+
+/* 提示词选择器容器样式 */
+.prompt-selector-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-right: 10px;
+}
+
+.prompt-selector-label {
+    font-size: 12px;
+    color: var(--text-color);
+    white-space: nowrap;
+    font-weight: 500;
+}
+
+.prompt-selectors {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 150px;
+    max-width: 200px;
+}
+
+.main-prompt-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.main-prompt-select {
+    flex: 1;
+    padding: 4px;
+    border: 1px solid var(--input-border);
+    border-radius: 4px;
+    background-color: var(--input-bg);
+    color: var(--text-color);
+    font-size: 12px;
+    min-width: 100px;
+}
+
+.delete-main-prompt-btn {
+    padding: 2px 6px;
+    background: #ff6666;
+    color: white;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 10px;
+    line-height: 1;
+}
+
+.delete-main-prompt-btn:hover {
+    background: #ff4444;
+}

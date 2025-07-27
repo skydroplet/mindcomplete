@@ -158,7 +158,12 @@ class ChatSessionService {
 
         // 配置选择
         this.modelSelect = document.getElementById(`model-select-${this.tabId}`);
-        this.promptSelect = document.getElementById(`prompt-select-${this.tabId}`);
+
+        // 修改为查找提示词下拉选择器元素（适应新的下拉结构）
+        this.promptDropdownBtn = document.getElementById(`prompt-dropdown-btn-${this.tabId}`);
+        this.promptDropdownContent = document.getElementById(`prompt-dropdown-content-${this.tabId}`);
+        this.promptSelect = null; // 标记为不使用单个选择器
+
         this.McpSelect = document.getElementById(`mcp-select-${this.tabId}`);
 
         // 新建会话按钮
@@ -261,8 +266,13 @@ class ChatSessionService {
         }
 
         // 仅更新UI显示，不发送IPC消息
-        this.modelSelect.value = this.data.modelId;
-        this.promptSelect.value = this.data.promptId;
+        if (this.modelSelect) {
+            this.modelSelect.value = this.data.modelId;
+        }
+
+        // 提示词现在使用多选结构，由 tabManager 管理，不在此处更新
+        // this.promptSelect.value = this.data.promptId; // 已移除，避免空指针错误
+
         // MCP UI现在由tabManager管理，无需在此处更新
 
         this.statusElement.textContent = i18n.t('ui.status.sessionLoaded', { name: this.data.name });
@@ -289,6 +299,25 @@ class ChatSessionService {
             modelId: session.modelId,
             promptId: session.promptId,
             mcpServers: session.mcpServers
+        }
+    }
+
+    /**
+     * 设置多个提示词ID  
+     * @param {Array} promptIds 提示词ID数组
+     */
+    async setPromptIds(promptIds) {
+        try {
+            // 通过IPC调用后端设置提示词
+            await ipcRenderer.invoke('select-session-prompt', this.sessionId, promptIds);
+
+            // 更新本地数据
+            this.data.promptId = promptIds;
+
+            log.info(`会话 ${this.sessionId} 提示词已更新为:`, promptIds);
+        } catch (error) {
+            log.error('设置提示词失败:', error);
+            throw error;
         }
     }
 

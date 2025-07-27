@@ -97,9 +97,15 @@
                             </select>
                             <select id="model-select" class="settings-select">
                             </select>
-                            <select id="prompt-select" class="settings-select" title="选择提示词作为system message">
-                                <!-- 提示词选项将通过JavaScript动态添加 -->
-                            </select>
+
+                            <!-- 提示词下拉选择框 -->
+                            <div class="mcp-dropdown">
+                                <button id="prompt-dropdown-btn" class="mcp-dropdown-btn settings-select" type="button"
+                                    data-i18n="settings.labels.agentPrompt">提示词</button>
+                                <div id="prompt-dropdown-content" class="mcp-dropdown-content">
+                                    <!-- 提示词选项将通过JavaScript动态添加 -->
+                                </div>
+                            </div>
 
                             <!-- MCP服务下拉选择框 -->
                             <div class="mcp-dropdown">

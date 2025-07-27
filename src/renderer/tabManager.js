@@ -541,7 +541,7 @@ class TabManagerService {
         // 初始化模型下拉菜单
         await this.initModelDropdown(tabId, session);
 
-        // 初始化提示词下拉菜单
+        // 初始化提示词下拉选择器
         await this.initPromptDropdown(tabId, session);
 
         // 初始化MCP下拉菜单
@@ -572,16 +572,12 @@ class TabManagerService {
                 const sessionId = session.data.id
                 log.info(`Reset session for tab ${tabId} with session ID ${sessionId}`);
 
-                try {
-                    await ipcRenderer.invoke('reset-session-start-message', sessionId);
+                await ipcRenderer.invoke('reset-session-start-message', sessionId);
 
-                    // 新会话成功后，在消息框中添加居中的提示信息
-                    this.addNewSessionMessage(tabId);
+                // 新会话成功后，在消息框中添加居中的提示信息
+                this.addNewSessionMessage(tabId);
 
-                    log.info(`New session created successfully for tab ${tabId}`);
-                } catch (error) {
-                    log.error(`Failed to create new session for tab ${tabId}:`, error);
-                }
+                log.info(`New session created successfully for tab ${tabId}`);
 
                 // 重新启用按钮
                 setTimeout(() => {
@@ -679,7 +675,14 @@ class TabManagerService {
 
         const agentSelect = document.getElementById(`agent-select-${tabId}`);
         const modelSelect = document.getElementById(`model-select-${tabId}`);
-        const promptSelect = document.getElementById(`prompt-select-${tabId}`);
+
+        // 修改为查找提示词下拉选择器元素
+        const promptDropdownBtn = document.getElementById(`prompt-dropdown-btn-${tabId}`);
+        const promptDropdownContent = document.getElementById(`prompt-dropdown-content-${tabId}`);
+
+        // 添加调试信息
+        log.info(`元素查找结果 tabId=${tabId}: agentSelect=${!!agentSelect}, modelSelect=${!!modelSelect}, promptDropdownBtn=${!!promptDropdownBtn}, promptDropdownContent=${!!promptDropdownContent}`);
+
         const mcpDropdownBtn = document.getElementById(`mcp-dropdown-btn-${tabId}`);
         const mcpDropdownContent = document.getElementById(`mcp-dropdown-content-${tabId}`);
 
@@ -687,12 +690,12 @@ class TabManagerService {
         if (agentId && agentId !== 'free-mode') {
             // 选择Agent时：使用Agent配置填充模型、提示词、mcp下拉列表
             await this.setModelDropdownWithAgentConfig(modelSelect, tabId, agentId);
-            await this.setPromptDropdownWithAgentConfig(promptSelect, tabId, agentId);
+            await this.setPromptDropdownWithAgentConfig(promptDropdownBtn, promptDropdownContent, tabId, agentId);
             await this.setMcpDropdownWithAgentConfig(mcpDropdownBtn, mcpDropdownContent, tabId, agentId);
         } else {
             // 选择自由模式时：使用会话配置填充模型、提示词、mcp下拉列表
             await this.setModelDropdownWithSessionConfig(modelSelect, tabId);
-            await this.setPromptDropdownWithSessionConfig(promptSelect, tabId);
+            await this.setPromptDropdownWithSessionConfig(promptDropdownBtn, promptDropdownContent, tabId);
             await this.setMcpDropdownWithSessionConfig(mcpDropdownBtn, mcpDropdownContent, tabId);
         }
 
@@ -736,6 +739,12 @@ class TabManagerService {
      * @returns {Promise<void>}
      */
     async setModelDropdownWithAgentConfig(select, tabId, agentId) {
+        // 添加空值检查
+        if (!select) {
+            log.error(`模型选择器元素不存在，tabId: ${tabId}`);
+            return;
+        }
+
         // 获取所有模型
         const models = await ipcRenderer.invoke('get-models');
         log.info("模型列表：", models);
@@ -767,6 +776,12 @@ class TabManagerService {
      * @returns {Promise<void>}
      */
     async setModelDropdownWithSessionConfig(select, tabId) {
+        // 添加空值检查
+        if (!select) {
+            log.error(`模型选择器元素不存在，tabId: ${tabId}`);
+            return;
+        }
+
         // 获取所有模型
         const models = await ipcRenderer.invoke('get-models');
         log.info("模型列表：", models);
@@ -782,10 +797,11 @@ class TabManagerService {
             select.appendChild(option);
         });
 
-        // 获取会话的自定义模型配置
+        // 获取会话的模型配置
         const session = this.tabSessions.get(tabId);
-        select.value = session.data.modelId || '';
-        log.info(`会话 ${session.data.id} ${session.data.name} 的自定义模型：${session.data.modelId}`);
+        const sessionConfig = await session.getConfig();
+        select.value = sessionConfig.modelId;
+        log.info(`会话 ${session.data.id} ${session.data.name} 使用的模型：${sessionConfig.modelId}`);
     }
 
     /**
@@ -819,62 +835,157 @@ class TabManagerService {
 
     /**
      * 使用Agent配置填充提示词下拉选择器
-     * @param {HTMLSelectElement} select 下拉元素
+     * @param {HTMLElement} promptDropdownBtn 提示词下拉按钮
+     * @param {HTMLElement} promptDropdownContent 提示词下拉内容
      * @param {string} tabId 标签ID
      * @param {string} agentId Agent ID
      * @returns {Promise<void>}
      */
-    async setPromptDropdownWithAgentConfig(select, tabId, agentId) {
-        // 获取所有提示词
+    async setPromptDropdownWithAgentConfig(promptDropdownBtn, promptDropdownContent, tabId, agentId) {
+        // 添加空值检查
+        if (!promptDropdownBtn || !promptDropdownContent) {
+            log.error(`提示词下拉选择器元素不存在，tabId: ${tabId}`);
+            return;
+        }
+
+        // 获取提示词列表
         const prompts = await ipcRenderer.invoke('get-prompts');
         log.info("提示词列表：", prompts);
-
-        // 清空并重新填充下拉框
-        select.innerHTML = `<option value="add_new">${i18n.t('prompts.addNew')}</option>`;
-
-        // 添加所有提示词
-        Object.entries(prompts || {}).forEach(([promptId, prompt]) => {
-            const option = document.createElement('option');
-            option.value = promptId;
-            option.textContent = prompt.name;
-            select.appendChild(option);
-        });
 
         // 获取Agent配置的提示词
         const agents = await ipcRenderer.invoke('get-agents');
         const agent = agents[agentId];
+        let selectedPromptIds = [];
+
         if (agent && agent.promptId) {
-            select.value = agent.promptId;
-            log.info(`Agent ${agentId} 使用的提示词：${agent.promptId}`);
+            // 处理Agent的promptId，支持数组格式
+            if (Array.isArray(agent.promptId)) {
+                selectedPromptIds = agent.promptId;
+            } else {
+                selectedPromptIds = [agent.promptId];
+            }
+            log.info(`Agent ${agentId} 使用的提示词：${JSON.stringify(selectedPromptIds)}`);
         }
+
+        // 保存当前的显示状态
+        const wasShown = promptDropdownContent.classList.contains('show');
+
+        // 清空内容
+        promptDropdownContent.innerHTML = '';
+
+        // 设置基础样式，但保留show类
+        if (wasShown) {
+            promptDropdownContent.className = 'mcp-dropdown-content show';
+        } else {
+            promptDropdownContent.className = 'mcp-dropdown-content';
+        }
+
+        // 确保下拉内容的样式正确
+        promptDropdownContent.style.position = 'absolute';
+        promptDropdownContent.style.zIndex = '1000';
+
+        // 根据显示状态设置display属性
+        promptDropdownContent.style.display = wasShown ? 'block' : 'none';
+
+        // 添加"添加提示词"选项
+        const addPromptOption = document.createElement('div');
+        addPromptOption.className = 'mcp-server-item add-server-item';
+        addPromptOption.textContent = i18n.t('prompts.addNew') || '添加提示词';
+        addPromptOption.addEventListener('click', () => {
+            window.openSettingsWindowWithTab('prompts');
+
+            // 确保正确关闭下拉菜单
+            promptDropdownContent.classList.remove('show');
+            promptDropdownContent.style.display = 'none';
+            promptDropdownBtn.classList.remove('active');
+            log.info(`关闭提示词下拉菜单(添加提示词选项点击): ${tabId}`);
+        });
+        promptDropdownContent.appendChild(addPromptOption);
+
+        // 添加分隔线
+        if (Object.keys(prompts || {}).length > 0) {
+            const divider = document.createElement('div');
+            divider.className = 'mcp-dropdown-divider';
+            promptDropdownContent.appendChild(divider);
+        }
+
+        // 遍历所有提示词并创建选项
+        Object.entries(prompts || {}).forEach(([promptId, prompt]) => {
+            const option = document.createElement('div');
+            option.className = 'mcp-server-item';
+
+            const isSelected = selectedPromptIds.includes(promptId);
+
+            const container = document.createElement('label');
+            container.className = 'mcp-server-container';
+
+            // 创建复选框
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.className = 'mcp-server-checkbox';
+            checkbox.checked = isSelected;
+            checkbox.setAttribute('data-prompt-id', promptId);
+
+            // 添加点击事件监听器（确保事件能被捕获）
+            checkbox.addEventListener('click', (e) => {
+                log.info(`提示词复选框点击事件: promptId=${promptId}, checked=${e.target.checked}`);
+                e.stopPropagation(); // 防止事件冒泡
+            });
+
+            // 复选框点击事件
+            checkbox.addEventListener('change', async (e) => {
+                e.stopPropagation();
+                const isChecked = checkbox.checked;
+
+                log.info(`提示词复选框点击事件触发: promptId=${promptId}, isChecked=${isChecked}, tabId=${tabId}`);
+
+                // 获取当前所有选中的提示词ID
+                const allCheckedPromptIds = Array.from(
+                    promptDropdownContent.querySelectorAll('.mcp-server-checkbox:checked')
+                ).map(cb => cb.getAttribute('data-prompt-id'));
+
+                log.info(`当前选中的所有提示词: ${JSON.stringify(allCheckedPromptIds)}`);
+
+                // 检查是否在Agent模式下修改了配置
+                await this.handleConfigurationChange(tabId, 'prompt', allCheckedPromptIds);
+
+                // 更新按钮显示
+                this.updatePromptButtonDisplay(promptDropdownBtn, promptDropdownContent);
+
+                log.info(`提示词选择处理完成: ${promptId}`);
+            });
+
+            const nameSpan = document.createElement('span');
+            nameSpan.textContent = prompt.name;
+            nameSpan.className = 'mcp-server-name';
+
+            container.appendChild(checkbox);
+            container.appendChild(nameSpan);
+            option.appendChild(container);
+
+            promptDropdownContent.appendChild(option);
+        });
+
+        // 更新按钮显示
+        this.updatePromptButtonDisplay(promptDropdownBtn, promptDropdownContent);
     }
 
     /**
      * 使用会话配置填充提示词下拉选择器
-     * @param {HTMLSelectElement} select 下拉元素
+     * @param {HTMLElement} promptDropdownBtn 提示词下拉按钮
+     * @param {HTMLElement} promptDropdownContent 提示词下拉内容
      * @param {string} tabId 标签ID
      * @returns {Promise<void>}
      */
-    async setPromptDropdownWithSessionConfig(select, tabId) {
-        // 获取所有提示词
-        const prompts = await ipcRenderer.invoke('get-prompts');
-        log.info("提示词列表：", prompts);
+    async setPromptDropdownWithSessionConfig(promptDropdownBtn, promptDropdownContent, tabId) {
+        // 添加空值检查
+        if (!promptDropdownBtn || !promptDropdownContent) {
+            log.error(`提示词下拉选择器元素不存在，tabId: ${tabId}`);
+            return;
+        }
 
-        // 清空并重新填充下拉框
-        select.innerHTML = `<option value="add_new">${i18n.t('prompts.addNew')}</option>`;
-
-        // 添加所有提示词
-        Object.entries(prompts || {}).forEach(([promptId, prompt]) => {
-            const option = document.createElement('option');
-            option.value = promptId;
-            option.textContent = prompt.name;
-            select.appendChild(option);
-        });
-
-        // 获取会话的自定义提示词配置
-        const session = this.tabSessions.get(tabId);
-        select.value = session.data.promptId || '';
-        log.info(`会话 ${session.data.id} ${session.data.name} 的自定义提示词：${session.data.promptId}`);
+        // 使用通用的设置方法
+        await this.setPromptDropdown(promptDropdownBtn, promptDropdownContent, tabId);
     }
 
     /**
@@ -1044,173 +1155,6 @@ class TabManagerService {
     }
 
     /**
-     * 使用Agent配置填充MCP下拉选择器
-     * @param {HTMLElement} mcpDropdownBtn MCP下拉按钮
-     * @param {HTMLElement} mcpDropdownContent MCP下拉内容
-     * @param {string} tabId 标签ID
-     * @param {string} agentId Agent ID
-     * @returns {Promise<void>}
-     */
-    async setMcpDropdownWithAgentConfig(mcpDropdownBtn, mcpDropdownContent, tabId, agentId) {
-        // 获取MCP服务器列表
-        const mcpServers = await ipcRenderer.invoke('get-mcp-servers');
-        log.info("MCP服务数量：", mcpServers.length);
-
-        // 获取Agent配置的MCP服务列表
-        const agents = await ipcRenderer.invoke('get-agents');
-        const agent = agents[agentId];
-        const agentMcpServers = (agent && agent.mcpServers) ? agent.mcpServers : [];
-        log.info(`Agent ${agentId} 的MCP服务列表：${JSON.stringify(agentMcpServers)}`);
-
-        // 保存当前的显示状态
-        const wasShown = mcpDropdownContent.classList.contains('show');
-
-        // 清空内容
-        mcpDropdownContent.innerHTML = '';
-
-        // 设置基础样式，但保留show类
-        if (wasShown) {
-            mcpDropdownContent.className = 'mcp-dropdown-content show';
-        } else {
-            mcpDropdownContent.className = 'mcp-dropdown-content';
-        }
-
-        // 确保下拉内容的样式正确
-        mcpDropdownContent.style.position = 'absolute';
-        mcpDropdownContent.style.zIndex = '1000';
-
-        // 根据显示状态设置display属性
-        mcpDropdownContent.style.display = wasShown ? 'block' : 'none';
-
-        // 添加"添加MCP服务"选项
-        const addServerOption = document.createElement('div');
-        addServerOption.className = 'mcp-server-item add-server-item';
-        addServerOption.textContent = i18n.t('mcp.addServer') || '添加MCP服务';
-        addServerOption.addEventListener('click', () => {
-            window.openSettingsWindowWithTab('mcp-servers');
-
-            // 确保正确关闭下拉菜单
-            mcpDropdownContent.classList.remove('show');
-            mcpDropdownContent.style.display = 'none';
-            log.info(`关闭MCP下拉菜单(添加服务选项点击): ${tabId}`);
-        });
-        mcpDropdownContent.appendChild(addServerOption);
-
-        // 添加MCP服务器
-        Object.entries(mcpServers || {}).forEach(([serverId, server]) => {
-            const option = document.createElement('div');
-            option.className = 'mcp-server-item';
-
-            // 创建一个容器来包含复选框和文本，使其布局更好
-            const container = document.createElement('label');
-            container.className = 'mcp-server-container';
-
-            const checkbox = document.createElement('input');
-            checkbox.type = 'checkbox';
-            checkbox.className = 'mcp-server-checkbox';
-            checkbox.setAttribute('data-server-id', serverId);
-            checkbox.checked = agentMcpServers.includes(serverId);  // 使用Agent配置
-
-            checkbox.addEventListener('change', async (e) => {
-                const isChecked = e.target.checked;
-                const serverId = checkbox.getAttribute('data-server-id');
-                log.info(`切换MCP服务 ${serverId} 状态为: ${isChecked}`);
-
-                // 更新连接状态
-                const statusIndicator = option.querySelector('.mcp-status-indicator');
-                if (statusIndicator) {
-                    if (isChecked) {
-                        // 激活时设置为连接中状态
-                        this.setMcpConnectionState(statusIndicator, 'connecting');
-                        // 检查连接状态
-                        setTimeout(() => this.checkMcpServerConnection(serverId, statusIndicator), 500);
-                    } else {
-                        // 停用时设置为断开状态
-                        this.setMcpConnectionState(statusIndicator, 'disconnected');
-                    }
-                }
-
-                // 获取当前所有选中的服务ID
-                const allCheckedServerIds = Array.from(
-                    mcpDropdownContent.querySelectorAll('.mcp-server-checkbox:checked')
-                ).map(cb => cb.getAttribute('data-server-id'));
-
-                log.info(`当前选中的所有MCP服务: ${JSON.stringify(allCheckedServerIds)}`);
-
-                // 检查是否在Agent模式下修改了配置
-                await this.handleConfigurationChange(tabId, 'mcp', allCheckedServerIds);
-
-                // 更新按钮显示
-                this.updateMcpButtonDisplay(mcpDropdownBtn, mcpDropdownContent);
-            });
-
-            const nameSpan = document.createElement('span');
-            nameSpan.textContent = server.name;
-            nameSpan.className = 'mcp-server-name';
-
-            // 创建连接状态指示器
-            const statusIndicator = document.createElement('div');
-            statusIndicator.className = 'mcp-status-indicator status-disconnected';
-
-            // 状态圆点
-            const statusDot = document.createElement('div');
-            statusDot.className = 'status-dot';
-
-            // 状态圆点点击事件：触发重连
-            statusDot.addEventListener('click', async (e) => {
-                e.stopPropagation();
-                e.preventDefault();
-                e.stopImmediatePropagation();
-                await this.reconnectMcpServer(serverId, statusIndicator);
-            });
-
-            // 状态箭头（hover时显示）
-            const statusArrow = document.createElement('div');
-            statusArrow.className = 'status-arrow';
-            statusArrow.innerHTML = '↻'; // 重新连接箭头符号
-
-            // 状态箭头点击事件：触发重连
-            statusArrow.addEventListener('click', async (e) => {
-                e.stopPropagation();
-                e.preventDefault();
-                e.stopImmediatePropagation();
-                await this.reconnectMcpServer(serverId, statusIndicator);
-            });
-
-            statusIndicator.appendChild(statusDot);
-            statusIndicator.appendChild(statusArrow);
-
-            // 添加状态指示器点击事件
-            statusIndicator.addEventListener('click', async (e) => {
-                e.stopPropagation(); // 防止触发复选框事件
-                e.preventDefault(); // 防止默认行为
-                e.stopImmediatePropagation(); // 立即停止事件冒泡
-
-                await this.reconnectMcpServer(serverId, statusIndicator);
-            });
-
-            container.appendChild(checkbox);
-            container.appendChild(nameSpan);
-            container.appendChild(statusIndicator);
-            option.appendChild(container);
-
-            mcpDropdownContent.appendChild(option);
-
-            // 初始化连接状态
-            if (agentMcpServers.includes(serverId)) {
-                // 对于选中的服务，先设置为连接中状态，然后检查实际连接状态
-                this.setMcpConnectionState(statusIndicator, 'connecting');
-                setTimeout(() => this.checkMcpServerConnection(serverId, statusIndicator), 100);
-            } else {
-                this.setMcpConnectionState(statusIndicator, 'disconnected');
-            }
-        });
-
-        // 更新按钮显示
-        this.updateMcpButtonDisplay(mcpDropdownBtn, mcpDropdownContent);
-    }
-
-    /**
      * 使用会话配置填充MCP下拉选择器
      * @param {HTMLElement} mcpDropdownBtn MCP下拉按钮
      * @param {HTMLElement} mcpDropdownContent MCP下拉内容
@@ -1218,6 +1162,12 @@ class TabManagerService {
      * @returns {Promise<void>}
      */
     async setMcpDropdownWithSessionConfig(mcpDropdownBtn, mcpDropdownContent, tabId) {
+        // 添加空值检查
+        if (!mcpDropdownBtn || !mcpDropdownContent) {
+            log.error(`MCP下拉选择器元素不存在，tabId: ${tabId}, mcpDropdownBtn: ${!!mcpDropdownBtn}, mcpDropdownContent: ${!!mcpDropdownContent}`);
+            return;
+        }
+
         // 获取MCP服务器列表
         const mcpServers = await ipcRenderer.invoke('get-mcp-servers');
         log.info("MCP服务数量：", mcpServers.length);
@@ -1649,7 +1599,13 @@ class TabManagerService {
                 <div class="model-selector">
                     <select id="agent-select-${tabId}" class="settings-select" title="${i18n.t('agents.selectModel')}"></select>
                     <select id="model-select-${tabId}" class="settings-select"></select>
-                    <select id="prompt-select-${tabId}" class="settings-select" title="${i18n.t('modelSelector.promptTitle')}"></select>
+                    
+                    <div id="prompt-dropdown-${tabId}" class="mcp-dropdown">
+                        <button id="prompt-dropdown-btn-${tabId}" class="mcp-dropdown-btn settings-select" type="button">${i18n.t('settings.labels.agentPrompt')}</button>
+                        <div id="prompt-dropdown-content-${tabId}" class="mcp-dropdown-content">
+                            <!-- 提示词选项将由JavaScript动态添加 -->
+                        </div>
+                    </div>
                     
                     <div id="mcp-dropdown-${tabId}" class="mcp-dropdown">
                         <button id="mcp-dropdown-btn-${tabId}" class="mcp-dropdown-btn settings-select" type="button">${i18n.t('modelSelector.mcpServer')}</button>
@@ -1689,9 +1645,21 @@ class TabManagerService {
                 modelSelect.id = `model-select-${tabId}`;
             }
 
-            const promptSelect = contentElement.querySelector('#prompt-select');
-            if (promptSelect) {
-                promptSelect.id = `prompt-select-${tabId}`;
+            // 更新提示词下拉选择器的ID
+            const promptDropdownBtn = contentElement.querySelector('#prompt-dropdown-btn');
+            if (promptDropdownBtn) {
+                promptDropdownBtn.id = `prompt-dropdown-btn-${tabId}`;
+            }
+
+            const promptDropdownContent = contentElement.querySelector('#prompt-dropdown-content');
+            if (promptDropdownContent) {
+                promptDropdownContent.id = `prompt-dropdown-content-${tabId}`;
+            }
+
+            // 保留旧的 prompt-selectors 容器处理逻辑（如果存在）
+            const promptSelectorsContainer = contentElement.querySelector('#prompt-selectors');
+            if (promptSelectorsContainer) {
+                promptSelectorsContainer.id = `prompt-selectors-${tabId}`;
             }
 
             const mcpDropdownBtn = contentElement.querySelector('#mcp-dropdown-btn');
@@ -2356,43 +2324,163 @@ class TabManagerService {
     }
 
     /**
-     * 初始化提示词下拉菜单
+     * 初始化提示词下拉选择器
      * @param {string} tabId 标签ID
      * @param {ChatSessionService} session 会话实例
      */
     async initPromptDropdown(tabId, session) {
-        const promptSelect = document.getElementById(`prompt-select-${tabId}`);
-        if (!promptSelect || !window.promptService) return;
+        const promptDropdownBtn = document.getElementById(`prompt-dropdown-btn-${tabId}`);
+        const promptDropdownContent = document.getElementById(`prompt-dropdown-content-${tabId}`);
 
-        // 初始化下拉框
-        await this.setPromptDropdown(promptSelect, tabId);
+        if (!promptDropdownBtn || !promptDropdownContent) {
+            log.error(`提示词下拉选择器元素不存在，tabId: ${tabId}`);
+            return;
+        }
 
-        // 添加选择事件监听器
-        promptSelect.addEventListener('change', async (e) => {
-            const promptId = e.target.value;
+        // 初始化下拉内容
+        await this.setPromptDropdown(promptDropdownBtn, promptDropdownContent, tabId);
 
-            // 处理选择添加提示词的情况
-            if (promptId === 'add_new') {
-                // 重置选择框
-                const session = this.tabSessions.get(tabId);
-                const sessionConfig = await session.getConfig();
-                promptSelect.value = sessionConfig.promptId;
+        // 添加点击事件监听器
+        promptDropdownBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
 
-                // 打开配置窗口
-                window.openSettingsWindowWithTab('prompts');
-                return;
+            // 关闭其他下拉菜单
+            this.closeAllDropdowns(tabId, 'prompt-dropdown-content');
+
+            // 切换当前下拉菜单显示状态
+            const isShown = promptDropdownContent.classList.contains('show');
+            if (isShown) {
+                promptDropdownContent.classList.remove('show');
+                promptDropdownContent.style.display = 'none';
+                promptDropdownBtn.classList.remove('active');
             } else {
-                log.info(`选择提示词 ${session.data.id} ${session.data.name} ${promptId}`);
+                promptDropdownContent.classList.add('show');
+                promptDropdownContent.style.display = 'block';
+                promptDropdownBtn.classList.add('active');
 
-                // 检查是否在Agent模式下修改了配置
-                await this.handleConfigurationChange(tabId, 'prompt', promptId);
+                // 刷新下拉内容
+                this.setPromptDropdown(promptDropdownBtn, promptDropdownContent, tabId);
             }
         });
 
-        // 添加点击事件监听器，在下拉框打开时刷新提示词列表
-        promptSelect.addEventListener('mousedown', async (event) => {
-            await this.setPromptDropdown(promptSelect, tabId);
+        // 添加全局点击事件监听器，点击其他地方时关闭下拉菜单
+        document.addEventListener('click', (event) => {
+            // 如果点击的不是下拉按钮和下拉内容区域
+            if (promptDropdownContent.classList.contains('show') &&
+                !promptDropdownBtn.contains(event.target) &&
+                !promptDropdownContent.contains(event.target)) {
+                // 关闭下拉菜单
+                promptDropdownContent.classList.remove('show');
+                promptDropdownContent.style.display = 'none';
+                promptDropdownBtn.classList.remove('active');
+                log.info(`关闭提示词下拉菜单(点击外部区域): ${tabId}`);
+            }
         });
+
+        // 阻止下拉内容区域的点击事件冒泡
+        promptDropdownContent.addEventListener('click', (event) => {
+            event.stopPropagation();
+        });
+    }
+
+    /**
+     * 添加主界面提示词选择行
+     * @param {string} tabId 标签ID
+     * @param {string} selectedPromptId 选中的提示词ID
+     */
+    async addMainPromptRow(tabId, selectedPromptId = '') {
+        const promptSelectorsContainer = document.getElementById(`prompt-selectors-${tabId}`);
+        if (!promptSelectorsContainer) return;
+
+        // 获取所有提示词
+        const prompts = await ipcRenderer.invoke('get-prompts');
+
+        const row = document.createElement('div');
+        row.className = 'main-prompt-row';
+
+        const select = document.createElement('select');
+        select.className = 'main-prompt-select';
+        select.innerHTML = '<option value="">请选择系统提示词</option>';
+
+        // 填充提示词选项
+        Object.entries(prompts || {}).forEach(([promptId, prompt]) => {
+            const option = document.createElement('option');
+            option.value = promptId;
+            option.textContent = prompt.name;
+            if (promptId === selectedPromptId) {
+                option.selected = true;
+            }
+            select.appendChild(option);
+        });
+
+        // 为选择框添加change事件监听器
+        select.addEventListener('change', async () => {
+            await this.handleMainPromptChange(tabId);
+            this.checkAndAddEmptyMainPromptRow(tabId);
+        });
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.type = 'button';
+        deleteBtn.className = 'delete-main-prompt-btn';
+        deleteBtn.textContent = '删除';
+        deleteBtn.addEventListener('click', async () => {
+            row.remove();
+            await this.handleMainPromptChange(tabId);
+            this.checkAndAddEmptyMainPromptRow(tabId);
+        });
+
+        row.appendChild(select);
+        row.appendChild(deleteBtn);
+        promptSelectorsContainer.appendChild(row);
+    }
+
+    /**
+     * 检查是否需要自动添加空的主界面提示词行
+     * @param {string} tabId 标签ID
+     */
+    checkAndAddEmptyMainPromptRow(tabId) {
+        const promptSelectorsContainer = document.getElementById(`prompt-selectors-${tabId}`);
+        if (!promptSelectorsContainer) return;
+
+        const promptSelects = promptSelectorsContainer.querySelectorAll('.main-prompt-select');
+        let hasEmptyRow = false;
+
+        // 检查是否存在空的选择框
+        promptSelects.forEach(select => {
+            if (!select.value) {
+                hasEmptyRow = true;
+            }
+        });
+
+        // 如果所有选择框都有值，自动添加一个空行
+        if (!hasEmptyRow && promptSelects.length > 0) {
+            this.addMainPromptRow(tabId);
+        }
+    }
+
+    /**
+     * 处理主界面提示词选择变化
+     * @param {string} tabId 标签ID
+     */
+    async handleMainPromptChange(tabId) {
+        const promptSelectorsContainer = document.getElementById(`prompt-selectors-${tabId}`);
+        if (!promptSelectorsContainer) return;
+
+        // 收集所有选中的提示词
+        const selectedPrompts = [];
+        const promptSelects = promptSelectorsContainer.querySelectorAll('.main-prompt-select');
+        promptSelects.forEach(select => {
+            if (select.value) {
+                selectedPrompts.push(select.value);
+            }
+        });
+
+        // 更新会话配置
+        const session = this.tabSessions.get(tabId);
+        if (session) {
+            await session.setPromptIds(selectedPrompts);
+            log.info(`会话 ${session.data.id} 提示词已更新为:`, selectedPrompts);
+        }
     }
 
     /**
@@ -2440,16 +2528,212 @@ class TabManagerService {
         const sessionId = session.data.id;
         log.info(`Reset session for tab ${tabId} with session ID ${sessionId}`);
 
-        try {
-            await ipcRenderer.invoke('reset-session-start-message', sessionId);
+        await ipcRenderer.invoke('reset-session-start-message', sessionId);
 
-            // 新会话成功后，在消息框中添加居中的提示信息
-            this.addNewSessionMessage(tabId);
+        // 新会话成功后，在消息框中添加居中的提示信息
+        this.addNewSessionMessage(tabId);
 
-            log.info(`New session created successfully for tab ${tabId}`);
-        } catch (error) {
-            log.error(`Failed to create new session for tab ${tabId}:`, error);
+        log.info(`New session created successfully for tab ${tabId}`);
+    }
+
+    /**
+     * 设置提示词下拉选择器内容
+     * @param {HTMLElement} promptDropdownBtn 提示词下拉按钮
+     * @param {HTMLElement} promptDropdownContent 提示词下拉内容
+     * @param {string} tabId 标签ID
+     * @returns {Promise<void>}
+     */
+    async setPromptDropdown(promptDropdownBtn, promptDropdownContent, tabId) {
+        // 添加空值检查
+        if (!promptDropdownBtn || !promptDropdownContent) {
+            log.error(`提示词下拉选择器元素不存在，tabId: ${tabId}`);
+            return;
         }
+
+        // 获取提示词列表
+        const prompts = await ipcRenderer.invoke('get-prompts');
+        log.info("提示词列表：", prompts);
+
+        // 获取当前会话的提示词配置
+        const session = this.tabSessions.get(tabId);
+        const sessionConfig = await session.getConfig();
+        let selectedPromptIds = [];
+
+        // 处理promptId数组格式，兼容旧格式
+        if (Array.isArray(sessionConfig.promptId)) {
+            selectedPromptIds = sessionConfig.promptId;
+        } else if (sessionConfig.promptId) {
+            selectedPromptIds = [sessionConfig.promptId];
+        }
+
+        // 保存当前的显示状态
+        const wasShown = promptDropdownContent.classList.contains('show');
+
+        // 清空内容
+        promptDropdownContent.innerHTML = '';
+
+        // 设置基础样式，但保留show类
+        if (wasShown) {
+            promptDropdownContent.className = 'mcp-dropdown-content show';
+        } else {
+            promptDropdownContent.className = 'mcp-dropdown-content';
+        }
+
+        // 确保下拉内容的样式正确
+        promptDropdownContent.style.position = 'absolute';
+        promptDropdownContent.style.zIndex = '1000';
+
+        // 根据显示状态设置display属性
+        promptDropdownContent.style.display = wasShown ? 'block' : 'none';
+
+        // 添加"添加提示词"选项
+        const addPromptOption = document.createElement('div');
+        addPromptOption.className = 'mcp-server-item add-server-item';
+        addPromptOption.textContent = i18n.t('prompts.addNew') || '添加提示词';
+        addPromptOption.addEventListener('click', () => {
+            window.openSettingsWindowWithTab('prompts');
+
+            // 确保正确关闭下拉菜单
+            promptDropdownContent.classList.remove('show');
+            promptDropdownContent.style.display = 'none';
+            promptDropdownBtn.classList.remove('active');
+            log.info(`关闭提示词下拉菜单(添加提示词选项点击): ${tabId}`);
+        });
+        promptDropdownContent.appendChild(addPromptOption);
+
+        // 添加分隔线
+        if (Object.keys(prompts || {}).length > 0) {
+            const divider = document.createElement('div');
+            divider.className = 'mcp-dropdown-divider';
+            promptDropdownContent.appendChild(divider);
+        }
+
+        // 遍历所有提示词并创建选项
+        Object.entries(prompts || {}).forEach(([promptId, prompt]) => {
+            const option = document.createElement('div');
+            option.className = 'mcp-server-item';
+
+            const isSelected = selectedPromptIds.includes(promptId);
+
+            const container = document.createElement('label');
+            container.className = 'mcp-server-container';
+
+            // 创建复选框
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.className = 'mcp-server-checkbox';
+            checkbox.checked = isSelected;
+            checkbox.setAttribute('data-prompt-id', promptId);
+
+            // 添加点击事件监听器（确保事件能被捕获）
+            checkbox.addEventListener('click', (e) => {
+                log.info(`提示词复选框点击事件: promptId=${promptId}, checked=${e.target.checked}`);
+                e.stopPropagation(); // 防止事件冒泡
+            });
+
+            // 复选框点击事件
+            checkbox.addEventListener('change', async (e) => {
+                e.stopPropagation();
+                const isChecked = checkbox.checked;
+
+                log.info(`提示词复选框点击事件触发: promptId=${promptId}, isChecked=${isChecked}, tabId=${tabId}`);
+
+                // 获取当前所有选中的提示词ID
+                const allCheckedPromptIds = Array.from(
+                    promptDropdownContent.querySelectorAll('.mcp-server-checkbox:checked')
+                ).map(cb => cb.getAttribute('data-prompt-id'));
+
+                log.info(`当前选中的所有提示词: ${JSON.stringify(allCheckedPromptIds)}`);
+
+                // 检查是否在Agent模式下修改了配置
+                await this.handleConfigurationChange(tabId, 'prompt', allCheckedPromptIds);
+
+                // 更新按钮显示
+                this.updatePromptButtonDisplay(promptDropdownBtn, promptDropdownContent);
+
+                log.info(`提示词选择处理完成: ${promptId}`);
+            });
+
+            const nameSpan = document.createElement('span');
+            nameSpan.textContent = prompt.name;
+            nameSpan.className = 'mcp-server-name';
+
+            container.appendChild(checkbox);
+            container.appendChild(nameSpan);
+            option.appendChild(container);
+
+            promptDropdownContent.appendChild(option);
+        });
+
+        // 更新按钮显示
+        this.updatePromptButtonDisplay(promptDropdownBtn, promptDropdownContent);
+    }
+
+    /**
+     * 更新提示词按钮显示文本
+     * @param {HTMLElement} promptDropdownBtn 提示词下拉按钮
+     * @param {HTMLElement} promptDropdownContent 提示词下拉内容
+     */
+    updatePromptButtonDisplay(promptDropdownBtn, promptDropdownContent) {
+        if (!promptDropdownBtn || !promptDropdownContent) return;
+
+        // 获取所有选中的提示词
+        const checkedCheckboxes = promptDropdownContent.querySelectorAll('.mcp-server-checkbox:checked');
+        const checkedCount = checkedCheckboxes.length;
+
+        // 处理样式类
+        if (checkedCount === 0) {
+            promptDropdownBtn.classList.add('no-server');
+        } else {
+            promptDropdownBtn.classList.remove('no-server');
+        }
+
+        // 清空按钮内容，创建文本容器
+        promptDropdownBtn.innerHTML = '';
+
+        // 创建文本容器
+        const textContainer = document.createElement('span');
+        textContainer.className = 'dropdown-text';
+
+        // 设置文本内容
+        if (checkedCount === 0) {
+            textContainer.textContent = i18n.t('settings.labels.agentPrompt') || '提示词';
+        } else if (checkedCount === 1) {
+            // 只选中一个时显示提示词名称
+            const promptName = checkedCheckboxes[0].parentElement.querySelector('.mcp-server-name').textContent;
+            textContainer.textContent = promptName;
+        } else {
+            // 选中多个时显示数量，与MCP格式保持一致
+            textContainer.textContent = `已选择 ${checkedCount} 个提示词`;
+        }
+
+        // 将文本容器添加到按钮
+        promptDropdownBtn.appendChild(textContainer);
+    }
+
+    /**
+     * 关闭所有下拉菜单（除了指定的类型）
+     * @param {string} tabId 标签ID
+     * @param {string} excludeType 要排除的下拉类型
+     */
+    closeAllDropdowns(tabId, excludeType) {
+        const dropdownTypes = [
+            { content: 'mcp-dropdown-content', btn: 'mcp-dropdown-btn', name: 'mcp' },
+            { content: 'prompt-dropdown-content', btn: 'prompt-dropdown-btn', name: 'prompt' }
+        ];
+
+        dropdownTypes.forEach(type => {
+            if (type.content === excludeType) return;
+
+            const content = document.getElementById(`${type.btn.replace('-btn', '')}-content-${tabId}`);
+            const btn = document.getElementById(`${type.btn}-${tabId}`);
+
+            if (content && btn) {
+                content.classList.remove('show');
+                content.style.display = 'none';
+                btn.classList.remove('active');
+            }
+        });
     }
 }
 

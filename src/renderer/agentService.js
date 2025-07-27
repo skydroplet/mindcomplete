@@ -171,14 +171,97 @@ class AgentService {
             agentModelSelect.value = agent.modelId || '';
         }
 
-        // 设置提示词选择
-        const agentPromptSelect = document.getElementById('agentPrompt');
-        if (agentPromptSelect) {
-            agentPromptSelect.value = agent.promptId || '';
-        }
+        // 设置提示词列表
+        this.fillPromptsList(agent.promptId || []);
 
         // 设置MCP服务列表
         this.fillMcpServicesList(agent.mcpServers || []);
+    }
+
+    /**
+     * 填充提示词列表
+     * @param {Array} promptIds - 提示词ID列表
+     */
+    fillPromptsList(promptIds) {
+        const promptsContainer = document.getElementById('promptsContainer');
+        if (!promptsContainer) {
+            return;
+        }
+
+        promptsContainer.innerHTML = '';
+
+        promptIds.forEach((promptId, index) => {
+            this.addPromptRow(promptId);
+        });
+
+        this.checkAndAddEmptyPromptRow();
+    }
+
+    /**
+     * 添加提示词选择行
+     * @param {string} selectedPromptId - 选中的提示词ID
+     */
+    addPromptRow(selectedPromptId = '') {
+        const promptsContainer = document.getElementById('promptsContainer');
+        if (!promptsContainer) {
+            return;
+        }
+
+        const row = document.createElement('div');
+        row.className = 'prompt-row';
+
+        const select = document.createElement('select');
+        select.className = 'prompt-select';
+        select.innerHTML = '<option value="">请选择系统提示词</option>';
+
+        // 填充提示词选项
+        Object.entries(this.prompts).forEach(([promptId, prompt]) => {
+            const option = document.createElement('option');
+            option.value = promptId;
+            option.textContent = prompt.name;
+            if (promptId === selectedPromptId) {
+                option.selected = true;
+            }
+            select.appendChild(option);
+        });
+
+        // 为选择框添加change事件监听器
+        select.addEventListener('change', () => {
+            this.checkAndAddEmptyPromptRow();
+        });
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.type = 'button';
+        deleteBtn.className = 'delete-prompt-btn';
+        deleteBtn.textContent = '删除';
+        deleteBtn.addEventListener('click', () => {
+            row.remove();
+            this.checkAndAddEmptyPromptRow();
+        });
+
+        row.appendChild(select);
+        row.appendChild(deleteBtn);
+        promptsContainer.appendChild(row);
+    }
+
+    /**
+     * 检查是否需要自动添加空的提示词行
+     */
+    checkAndAddEmptyPromptRow() {
+        const promptSelects = document.querySelectorAll('.prompt-select');
+        let hasEmptyRow = false;
+
+        // 检查是否存在空的选择框
+        promptSelects.forEach(select => {
+            if (!select.value) {
+                hasEmptyRow = true;
+            }
+        });
+
+        // 如果所有选择框都有值，自动添加一个空行
+        if (!hasEmptyRow && promptSelects.length > 0) {
+            this.addPromptRow();
+        }
     }
 
     /**
@@ -284,9 +367,11 @@ class AgentService {
             agentModelSelect.value = '';
         }
 
-        const agentPromptSelect = document.getElementById('agentPrompt');
-        if (agentPromptSelect) {
-            agentPromptSelect.value = '';
+        // 清空提示词列表
+        const promptsContainer = document.getElementById('promptsContainer');
+        if (promptsContainer) {
+            promptsContainer.innerHTML = '';
+            this.addPromptRow(); // 添加一个空行
         }
 
         // 清空MCP服务列表
@@ -334,11 +419,17 @@ class AgentService {
         try {
             const agentNameInput = document.getElementById('agentName');
             const agentModelSelect = document.getElementById('agentModel');
-            const agentPromptSelect = document.getElementById('agentPrompt');
 
             const agentName = agentNameInput?.value?.trim();
             const agentModel = agentModelSelect?.value;
-            const agentPrompt = agentPromptSelect?.value;
+
+            // 获取选中的多个prompt
+            const selectedPrompts = [];
+            document.querySelectorAll('.prompt-select').forEach(select => {
+                if (select.value) {
+                    selectedPrompts.push(select.value);
+                }
+            });
 
             // 验证必填字段
             if (!agentName) {
@@ -369,7 +460,7 @@ class AgentService {
             const agentData = {
                 name: agentName,
                 modelId: agentModel || null,
-                promptId: agentPrompt || null,
+                promptId: selectedPrompts, // 传递prompt数组
                 mcpServers: mcpServers
             };
 
@@ -510,17 +601,27 @@ class AgentService {
      */
     updatePromptOptions(prompts) {
         this.prompts = prompts || {};
-        const agentPromptSelect = document.getElementById('agentPrompt');
-        if (!agentPromptSelect) {
-            return;
-        }
 
-        agentPromptSelect.innerHTML = '<option value="">请选择系统提示词</option>';
-        Object.entries(this.prompts).forEach(([promptId, prompt]) => {
-            const option = document.createElement('option');
-            option.value = promptId;
-            option.textContent = prompt.name;
-            agentPromptSelect.appendChild(option);
+        // 更新所有提示词选择框
+        document.querySelectorAll('.prompt-select').forEach(select => {
+            const currentValue = select.value;
+            select.innerHTML = '<option value="">请选择系统提示词</option>';
+
+            Object.entries(this.prompts).forEach(([promptId, prompt]) => {
+                const option = document.createElement('option');
+                option.value = promptId;
+                option.textContent = prompt.name;
+                if (promptId === currentValue) {
+                    option.selected = true;
+                }
+                select.appendChild(option);
+            });
+
+            // 重新绑定change事件监听器
+            select.removeEventListener('change', this.handlePromptSelectChange);
+            select.addEventListener('change', () => {
+                this.checkAndAddEmptyPromptRow();
+            });
         });
     }
 
