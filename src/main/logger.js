@@ -126,7 +126,7 @@ class Logger {
     info(...args) {
         const { file, line } = this.getCallerInfo();
         const message = this.formatMessage(args);
-        const logMessage = this.encodeMessage(`[${this.getTimestamp()}] [${this.moduleName}] [${file}:${line}] INFO: ${message}`);
+        const logMessage = this.encodeMessage(`[${this.getTimestamp()}] [INFO] [${this.moduleName}] [${file}:${line}] ${message}`);
         console.log(logMessage);
         this.writeToFile(logMessage);
     }
@@ -138,7 +138,7 @@ class Logger {
     warn(...args) {
         const { file, line } = this.getCallerInfo();
         const message = this.formatMessage(args);
-        const logMessage = this.encodeMessage(`[${this.getTimestamp()}] [${this.moduleName}] [${file}:${line}] WARN: ${message}`);
+        const logMessage = this.encodeMessage(`[${this.getTimestamp()}] [WARN] [${this.moduleName}] [${file}:${line}] ${message}`);
         console.warn(logMessage);
         this.writeToFile(logMessage);
     }
@@ -150,7 +150,7 @@ class Logger {
     error(...args) {
         const { file, line } = this.getCallerInfo();
         const message = this.formatMessage(args);
-        const logMessage = this.encodeMessage(`[${this.getTimestamp()}] [${this.moduleName}] [${file}:${line}] ERROR: ${message}`);
+        const logMessage = this.encodeMessage(`[${this.getTimestamp()}] [ERR ] [${this.moduleName}] [${file}:${line}] ${message}`);
         console.error(logMessage);
         this.writeToFile(logMessage);
     }
