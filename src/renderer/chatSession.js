@@ -270,11 +270,6 @@ class ChatSessionService {
             this.modelSelect.value = this.data.modelId;
         }
 
-        // 提示词现在使用多选结构，由 tabManager 管理，不在此处更新
-        // this.promptSelect.value = this.data.promptId; // 已移除，避免空指针错误
-
-        // MCP UI现在由tabManager管理，无需在此处更新
-
         this.statusElement.textContent = i18n.t('ui.status.sessionLoaded', { name: this.data.name });
     }
 
@@ -290,14 +285,14 @@ class ChatSessionService {
         this.data.name = session.name;
         this.data.agentId = session.agentId;
         this.data.modelId = session.modelId;
-        this.data.promptId = session.promptId;
+        this.data.promptIds = session.promptIds;
         this.data.mcpServers = session.mcpServers;
 
         return {
             name: session.name,
             agentId: session.agentId,
             modelId: session.modelId,
-            promptId: session.promptId,
+            promptIds: session.promptIds,
             mcpServers: session.mcpServers
         }
     }
@@ -312,7 +307,7 @@ class ChatSessionService {
             await ipcRenderer.invoke('select-session-prompt', this.sessionId, promptIds);
 
             // 更新本地数据
-            this.data.promptId = promptIds;
+            this.data.promptIds = promptIds;
 
             log.info(`会话 ${this.sessionId} 提示词已更新为:`, promptIds);
         } catch (error) {

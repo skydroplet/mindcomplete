@@ -687,17 +687,17 @@ class TabManagerService {
         const mcpDropdownContent = document.getElementById(`mcp-dropdown-content-${tabId}`);
 
         // 根据agentId模式决定配置来源
-        if (agentId && agentId !== 'free-mode') {
-            // 选择Agent时：使用Agent配置填充模型、提示词、mcp下拉列表
-            await this.setModelDropdownWithAgentConfig(modelSelect, tabId, agentId);
-            await this.setPromptDropdownWithAgentConfig(promptDropdownBtn, promptDropdownContent, tabId, agentId);
-            await this.setMcpDropdownWithAgentConfig(mcpDropdownBtn, mcpDropdownContent, tabId, agentId);
-        } else {
-            // 选择自由模式时：使用会话配置填充模型、提示词、mcp下拉列表
-            await this.setModelDropdownWithSessionConfig(modelSelect, tabId);
-            await this.setPromptDropdownWithSessionConfig(promptDropdownBtn, promptDropdownContent, tabId);
-            await this.setMcpDropdownWithSessionConfig(mcpDropdownBtn, mcpDropdownContent, tabId);
-        }
+        // // if (agentId && agentId !== 'free-mode') {
+        // //     // 选择Agent时：使用Agent配置填充模型、提示词、mcp下拉列表
+        // //     await this.setModelDropdownWithAgentConfig(modelSelect, tabId, agentId);
+        // //     await this.setPromptDropdownWithAgentConfig(promptDropdownBtn, promptDropdownContent, tabId, agentId);
+        // //     await this.setMcpDropdownWithAgentConfig(mcpDropdownBtn, mcpDropdownContent, tabId, agentId);
+        // // } else {
+        //     // 选择自由模式时：使用会话配置填充模型、提示词、mcp下拉列表
+        await this.setModelDropdownWithSessionConfig(modelSelect, tabId);
+        await this.setPromptDropdownWithSessionConfig(promptDropdownBtn, promptDropdownContent, tabId);
+        await this.setMcpDropdownWithSessionConfig(mcpDropdownBtn, mcpDropdownContent, tabId);
+        // }
 
         this.updateMcpButtonDisplay(mcpDropdownBtn, mcpDropdownContent);
     }
@@ -805,35 +805,6 @@ class TabManagerService {
     }
 
     /**
-     * 通用方法：初始化和更新提示词下拉选择器
-     * @param {HTMLSelectElement} select 下拉元素
-     * @param {string} tabId 标签ID
-     * @returns {Promise<void>}
-     */
-    async setPromptDropdown(select, tabId) {
-        // 获取所有提示词
-        const prompts = await ipcRenderer.invoke('get-prompts');
-        log.info("提示词列表：", prompts);
-
-        // 清空并重新填充下拉框
-        select.innerHTML = `<option value="add_new">${i18n.t('prompts.addNew')}</option>`;
-
-        // 添加所有提示词
-        Object.entries(prompts || {}).forEach(([promptId, prompt]) => {
-            const option = document.createElement('option');
-            option.value = promptId;
-            option.textContent = prompt.name;
-            select.appendChild(option);
-        });
-
-        // 获取当前会话选择的提示词
-        const session = this.tabSessions.get(tabId);
-        const sessionConfig = await session.getConfig();
-        select.value = sessionConfig.promptId;
-        log.info(`当前会话 ${session.data.id} ${session.data.name} 使用的提示词：${sessionConfig.promptId}`);
-    }
-
-    /**
      * 使用Agent配置填充提示词下拉选择器
      * @param {HTMLElement} promptDropdownBtn 提示词下拉按钮
      * @param {HTMLElement} promptDropdownContent 提示词下拉内容
@@ -850,22 +821,11 @@ class TabManagerService {
 
         // 获取提示词列表
         const prompts = await ipcRenderer.invoke('get-prompts');
-        log.info("提示词列表：", prompts);
 
         // 获取Agent配置的提示词
         const agents = await ipcRenderer.invoke('get-agents');
         const agent = agents[agentId];
-        let selectedPromptIds = [];
-
-        if (agent && agent.promptId) {
-            // 处理Agent的promptId，支持数组格式
-            if (Array.isArray(agent.promptId)) {
-                selectedPromptIds = agent.promptId;
-            } else {
-                selectedPromptIds = [agent.promptId];
-            }
-            log.info(`Agent ${agentId} 使用的提示词：${JSON.stringify(selectedPromptIds)}`);
-        }
+        const selectedPromptIds = agent.promptIds;
 
         // 保存当前的显示状态
         const wasShown = promptDropdownContent.classList.contains('show');
@@ -2552,19 +2512,11 @@ class TabManagerService {
 
         // 获取提示词列表
         const prompts = await ipcRenderer.invoke('get-prompts');
-        log.info("提示词列表：", prompts);
 
         // 获取当前会话的提示词配置
         const session = this.tabSessions.get(tabId);
         const sessionConfig = await session.getConfig();
-        let selectedPromptIds = [];
-
-        // 处理promptId数组格式，兼容旧格式
-        if (Array.isArray(sessionConfig.promptId)) {
-            selectedPromptIds = sessionConfig.promptId;
-        } else if (sessionConfig.promptId) {
-            selectedPromptIds = [sessionConfig.promptId];
-        }
+        const selectedPromptIds = sessionConfig.promptIds;
 
         // 保存当前的显示状态
         const wasShown = promptDropdownContent.classList.contains('show');
