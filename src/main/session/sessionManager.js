@@ -255,7 +255,7 @@ class SessionManager extends EventEmitter {
             return false;
         }
 
-        session.setPromptId(promptId);
+        session.setPromptIds(promptId);
         this.updateSessionInfo(session);
         return true;
     }

@@ -172,7 +172,7 @@ class AgentService {
         }
 
         // 设置提示词列表
-        this.fillPromptsList(agent.promptId || []);
+        this.fillPromptsList(agent.promptIds);
 
         // 设置MCP服务列表
         this.fillMcpServicesList(agent.mcpServers || []);
@@ -460,7 +460,7 @@ class AgentService {
             const agentData = {
                 name: agentName,
                 modelId: agentModel || null,
-                promptId: selectedPrompts, // 传递prompt数组
+                promptIds: selectedPrompts, // 传递prompt数组
                 mcpServers: mcpServers
             };
 

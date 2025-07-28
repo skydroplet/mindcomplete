@@ -21,6 +21,33 @@ class AgentConfig extends BaseConfigManager {
 
         super('agents.json', defaultConfig);
         log.info('Agent配置管理器初始化完成');
+
+        // 初始化完成后，检查并转换所有agent的promptId格式
+        this.convertPromptIdToArray();
+    }
+
+    /**
+     * 转换所有agent的promptId为数组格式
+     * @private
+     */
+    convertPromptIdToArray() {
+        let hasChanges = false;
+        const agents = this.config.agents;
+
+        for (const agentId in agents) {
+            const agent = agents[agentId];
+
+            // 如果不存在promptIds字段，但存在promptId字段
+            if (!agent.hasOwnProperty('promptIds') && agent.hasOwnProperty('promptId')) {
+                agent.promptIds = [agent.promptId];
+                hasChanges = true;
+            }
+        }
+
+        // 如果有变更，保存配置
+        if (hasChanges) {
+            this.saveConfig();
+        }
     }
 
     /**
@@ -49,17 +76,7 @@ class AgentConfig extends BaseConfigManager {
             return null;
         }
 
-        // 确保promptId是数组格式，兼容旧格式
-        const clonedAgent = { ...agent };
-        if (!Array.isArray(clonedAgent.promptId)) {
-            if (clonedAgent.promptId) {
-                clonedAgent.promptId = [clonedAgent.promptId];
-            } else {
-                clonedAgent.promptId = [];
-            }
-        }
-
-        return clonedAgent;
+        return agent;
     }
 
     /**
@@ -67,7 +84,7 @@ class AgentConfig extends BaseConfigManager {
      * @param {Object} agent - Agent配置对象
      * @param {string} agent.name - Agent名称
      * @param {string} agent.modelId - 关联的模型ID
-     * @param {string|Array} agent.promptId - 关联的提示词ID或ID数组
+     * @param {Array} agent.promptIds - 关联的提示词ID或ID数组
      * @param {Array} agent.mcpServers - MCP服务ID列表
      * @returns {string} 新创建的Agent ID
      */
@@ -81,14 +98,6 @@ class AgentConfig extends BaseConfigManager {
             throw new Error('Agent名称不能为空');
         }
 
-        // 处理promptId格式，确保是数组
-        let promptIds = [];
-        if (Array.isArray(agent.promptId)) {
-            promptIds = agent.promptId;
-        } else if (agent.promptId) {
-            promptIds = [agent.promptId];
-        }
-
         // 生成唯一ID
         const agentId = this.generateUniqueId('agent', this.config.agents);
 
@@ -97,7 +106,7 @@ class AgentConfig extends BaseConfigManager {
             id: agentId,
             name: agent.name,
             modelId: agent.modelId || null,
-            promptId: promptIds,
+            promptIds: agent.promptIds,
             mcpServers: agent.mcpServers || [],
             createdAt: new Date().toLocaleString(),
             updatedAt: new Date().toLocaleString()
@@ -135,21 +144,13 @@ class AgentConfig extends BaseConfigManager {
             throw new Error('Agent名称不能为空');
         }
 
-        // 处理promptId格式，确保是数组
-        let promptIds = [];
-        if (Array.isArray(agent.promptId)) {
-            promptIds = agent.promptId;
-        } else if (agent.promptId) {
-            promptIds = [agent.promptId];
-        }
-
         // 更新Agent配置
         const existingAgent = this.config.agents[agentId];
         this.config.agents[agentId] = {
             ...existingAgent,
             name: agent.name,
             modelId: agent.modelId || null,
-            promptId: promptIds,
+            promptIds: agent.promptIds, // 新字段
             mcpServers: agent.mcpServers || [],
             updatedAt: new Date().toLocaleString()
         };
@@ -182,13 +183,7 @@ class AgentConfig extends BaseConfigManager {
 
         delete this.config.agents[agentId];
 
-        if (this.saveConfig()) {
-            log.info('删除Agent配置成功:', agentId);
-            return true;
-        } else {
-            log.error('保存Agent配置失败');
-            return false;
-        }
+        return this.saveConfig();
     }
 
     /**
@@ -199,29 +194,23 @@ class AgentConfig extends BaseConfigManager {
     copyAgent(agentId) {
         const sourceAgent = this.getAgent(agentId);
         if (!sourceAgent) {
-            log.error('要复制的Agent不存在:', agentId);
+            log.error('source agent not exist:', agentId);
             return null;
         }
 
-        try {
-            const newAgent = {
-                name: sourceAgent.name + ' (副本)',
-                modelId: sourceAgent.modelId,
-                promptId: [...(sourceAgent.promptId || [])], // 复制数组
-                mcpServers: [...(sourceAgent.mcpServers || [])]
-            };
+        const newAgent = {
+            name: sourceAgent.name + ' (副本)',
+            modelId: sourceAgent.modelId,
+            promptIds: [...(sourceAgent.promptIds || [])],
+            mcpServers: [...(sourceAgent.mcpServers || [])]
+        };
 
-            const newAgentId = this.addAgent(newAgent);
-            log.info('复制Agent配置成功:', agentId, '->', newAgentId);
-            return newAgentId;
-        } catch (error) {
-            log.error('复制Agent配置失败:', error.message);
-            return null;
-        }
+        const newAgentId = this.addAgent(newAgent);
+        log.info('copy agent:', agentId, '->', newAgentId);
+        return newAgentId;
     }
 }
 
 // 创建单例实例
 const agentConfig = new AgentConfig();
-
 module.exports = agentConfig; 

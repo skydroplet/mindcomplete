@@ -8,10 +8,8 @@ const i18n = require('../../locales/i18n');
 
 const modelConfig = require('../config/modelConfig');
 const promptConfig = require('../config/promptConfig');
-const mcpConfig = require('../config/mcpConfig');
 const agentConfig = require('../config/agentConfig');
-const mcp = require('../mcp/mcpClient');
-const mcpClientManager = require('../mcp/mcpClient');
+const mcpClient = require('../mcp/mcpClient');
 
 function getFormattedDate(date) {
     const year = date.getFullYear();
@@ -25,51 +23,34 @@ function getFormattedDate(date) {
  */
 class ChatSession {
     constructor(filePath, sessionTemplate) {
-        try {
-            if (filePath) {
-                const data = fs.readFileSync(filePath, 'utf8');
-                this.data = JSON.parse(data);
-                this.data.createdAt = new Date(this.data.createdAt);
+        if (filePath) {
+            const data = fs.readFileSync(filePath, 'utf8');
+            this.data = JSON.parse(data);
+            this.data.createdAt = new Date(this.data.createdAt);
 
-                // 确保promptId是数组格式，兼容旧格式
-                if (!Array.isArray(this.data.promptId)) {
-                    if (this.data.promptId) {
-                        this.data.promptId = [this.data.promptId];
-                    } else {
-                        this.data.promptId = [];
-                    }
-                }
-
-                this.filePath = filePath;
-                log.info("加载会话: ", filePath)
-            } else {
-                this.newSession();
-                if (sessionTemplate) {
-                    this.data.agentId = sessionTemplate.data.agentId;
-                    this.data.modelId = sessionTemplate.data.modelId;
-
-                    // 确保promptId是数组格式
-                    if (Array.isArray(sessionTemplate.data.promptId)) {
-                        this.data.promptId = sessionTemplate.data.promptId;
-                    } else if (sessionTemplate.data.promptId) {
-                        this.data.promptId = [sessionTemplate.data.promptId];
-                    } else {
-                        this.data.promptId = [];
-                    }
-
-                    this.data.mcpServers = sessionTemplate.data.mcpServers;
-                    this.data.conversationMode = sessionTemplate.data.conversationMode;
-                }
-
+            if (!this.data.hasOwnProperty('promptIds') && this.data.hasOwnProperty('promptId')) {
+                this.data.promptIds = [this.data.promptId];
                 this.saveToFile();
-                log.info("创建新会话")
             }
 
-            // 用于中断消息生成的控制器
-            this.abortController = null;
-        } catch (err) {
-            log.error('初始化会话失败:', err.message);
+            this.filePath = filePath;
+            log.info("load session: ", filePath)
+        } else {
+            this.newSession();
+            if (sessionTemplate) {
+                this.data.agentId = sessionTemplate.data.agentId;
+                this.data.modelId = sessionTemplate.data.modelId;
+                this.data.promptIds = sessionTemplate.data.promptIds;
+                this.data.mcpServers = sessionTemplate.data.mcpServers;
+                this.data.conversationMode = sessionTemplate.data.conversationMode;
+            }
+
+            this.saveToFile();
+            log.info('new session by template', sessionTemplate.data.id)
         }
+
+        // 用于中断消息生成的控制器
+        this.abortController = null;
     }
 
     setModelId(modelId) {
@@ -79,15 +60,10 @@ class ChatSession {
         this.saveToFile();
     }
 
-    setPromptId(promptIds) {
-        // 支持数组格式和单个值格式
-        if (Array.isArray(promptIds)) {
-            this.data.promptId = promptIds;
-        } else {
-            this.data.promptId = [promptIds];
-        }
+    setPromptIds(promptIds) {
+        this.data.promptIds = promptIds;
         this.data.agentId = 'free-mode';
-        log.info(`id: ${this.data.id}, agentId: ${this.data.agentId}, promptId: ${JSON.stringify(this.data.promptId)}`);
+        log.info(`id: ${this.data.id}, agentId: ${this.data.agentId}, promptId: ${JSON.stringify(this.data.promptIds)}`);
         this.saveToFile();
     }
 
@@ -97,34 +73,20 @@ class ChatSession {
             const agent = agentConfig.getAgent(this.data.agentId);
             if (agent) {
                 this.data.modelId = agent.modelId;
-                // 确保promptId是数组格式
-                if (Array.isArray(agent.promptId)) {
-                    this.data.promptId = agent.promptId;
-                } else if (agent.promptId) {
-                    this.data.promptId = [agent.promptId];
-                } else {
-                    this.data.promptId = [];
-                }
+                this.data.promptIds = agent.promptIds;
                 this.data.mcpServers = agent.mcpServers;
             }
         } else {
             const agent = agentConfig.getAgent(agentId);
             if (agent) {
                 this.data.modelId = agent.modelId;
-                // 确保promptId是数组格式
-                if (Array.isArray(agent.promptId)) {
-                    this.data.promptId = agent.promptId;
-                } else if (agent.promptId) {
-                    this.data.promptId = [agent.promptId];
-                } else {
-                    this.data.promptId = [];
-                }
+                this.data.promptIds = agent.promptIds;
                 this.data.mcpServers = agent.mcpServers;
             }
         }
 
         this.data.agentId = agentId;
-        log.info(`id: ${this.data.id}, agentId: ${this.data.agentId}, modelId: ${this.data.modelId}, promptId: ${JSON.stringify(this.data.promptId)}, mcpServers: ${this.data.mcpServers}`);
+        log.info(`id: ${this.data.id}, agentId: ${this.data.agentId}, modelId: ${this.data.modelId}, promptId: ${JSON.stringify(this.data.promptIds)}, mcpServers: ${this.data.mcpServers}`);
         this.saveToFile();
     }
 
@@ -166,7 +128,7 @@ class ChatSession {
             messageCount: 0,
             sessionStartMessageId: 0,
             conversationMode: 'multi-turn',
-            promptId: [], // 改为数组格式
+            promptIds: [],
             messages: []
         }
     }
@@ -272,14 +234,6 @@ class ChatSession {
      * 获取摘要信息
      */
     getSummary() {
-        // 确保promptId是数组格式，兼容旧格式
-        let promptIds = [];
-        if (Array.isArray(this.data.promptId)) {
-            promptIds = this.data.promptId;
-        } else if (this.data.promptId) {
-            promptIds = [this.data.promptId];
-        }
-
         return {
             id: this.data.id,
             name: this.data.name,
@@ -288,7 +242,7 @@ class ChatSession {
             messageCount: this.data.messageCount,
             agentId: this.data.agentId,
             modelId: this.data.modelId,
-            promptId: promptIds,
+            promptIds: this.data.promptIds,
             mcpServers: this.data.mcpServers || [],
             conversationMode: this.data.conversationMode || 'single-turn',
             dataFile: this.filePath
@@ -349,20 +303,12 @@ class ChatSession {
 
     /**
      * 根据agentId获取配置信息
-     * @returns {Object} 配置对象 {modelId, promptId, mcpServers}
+     * @returns {Object} 配置对象 {modelId, promptIds, mcpServers}
      */
     getSessionConfig() {
-        // 确保promptId是数组格式，兼容旧格式
-        let promptIds = [];
-        if (Array.isArray(this.data.promptId)) {
-            promptIds = this.data.promptId;
-        } else if (this.data.promptId) {
-            promptIds = [this.data.promptId];
-        }
-
         const config = {
             modelId: this.data.modelId,
-            promptId: promptIds,
+            promptIds: this.data.promptIds || [],
             mcpServers: this.data.mcpServers || []
         };
 
@@ -377,32 +323,29 @@ class ChatSession {
     getPromptMessages(promptIds) {
         const messages = [];
 
-        if (promptIds && promptIds.length > 0) {
-            let combinedContent = '';
-            let promptType = 'system'; // 默认类型
+        let combinedContent = '';
 
-            // 遍历所有promptId，获取内容并拼接
-            for (const promptId of promptIds) {
-                const prompt = promptConfig.getPromptById(promptId);
-                if (prompt) {
-                    log.warn(`get prompt ${promptId} failed`);
-                    continue;
-                }
-
-                if (prompt.type !== 'system') {
-                    continue;
-                }
-
-                combinedContent += prompt.content;
-                combinedContent += '\n';
+        // 遍历所有promptId，获取内容并拼接
+        for (const promptId of promptIds) {
+            const prompt = promptConfig.getPromptById(promptId);
+            if (!prompt) {
+                log.warn(`get prompt ${promptId} failed`);
+                continue;
             }
 
-            if (combinedContent) {
-                messages.push({
-                    role: promptType,
-                    content: combinedContent
-                });
+            if (prompt.type !== 'system') {
+                continue;
             }
+
+            combinedContent += prompt.content;
+            combinedContent += '\n';
+        }
+
+        if (combinedContent !== '') {
+            messages.push({
+                role: 'system',
+                content: combinedContent
+            });
         }
 
         return messages;
@@ -416,7 +359,7 @@ class ChatSession {
     getMcpTools(mcpServers) {
         let tools = [];
         if (mcpServers && mcpServers.length > 0) {
-            tools = mcp.getToolsForServer(mcpServers);
+            tools = mcpClient.getToolsForServer(mcpServers);
         }
 
         return tools;
@@ -465,7 +408,7 @@ class ChatSession {
             let messages = [];
 
             // 添加系统提示词
-            const promptMessages = this.getPromptMessages(config.promptId);
+            const promptMessages = this.getPromptMessages(config.promptIds);
             messages = messages.concat(promptMessages);
 
             // 获取MCP工具
@@ -693,7 +636,7 @@ class ChatSession {
             // 查找工具所在的MCP服务
             const config = this.getSessionConfig();
             if (config.mcpServers && config.mcpServers.length > 0) {
-                const tools = mcp.getToolsForServer(config.mcpServers);
+                const tools = mcpClient.getToolsForServer(config.mcpServers);
                 const tool = tools.find(t => t.function.name === toolName);
                 if (tool) {
                     serverId = tool.function.serverId;
@@ -714,7 +657,7 @@ class ChatSession {
             let serverName = null;
             const config = this.getSessionConfig();
             if (config.mcpServers && config.mcpServers.length > 0) {
-                const tools = mcp.getToolsForServer(config.mcpServers);
+                const tools = mcpClient.getToolsForServer(config.mcpServers);
                 const tool = tools.find(t => t.function.serverId === serverId);
                 if (tool) {
                     serverName = tool.function.serverName;
@@ -788,7 +731,7 @@ class ChatSession {
                     this.replyMessage(event, signal, responseId, toolMsgId, 'tool', toolMessage, toolName, serverName);
 
                     // 检查工具是否已授权
-                    const isAuthorized = serverId ? mcp.isToolAuthorized(toolName, serverId) : false;
+                    const isAuthorized = serverId ? mcpClient.isToolAuthorized(toolName, serverId) : false;
                     if (!isAuthorized && serverId) {
                         log.info(`工具 ${toolName} 未授权，发送授权请求`);
 
@@ -807,12 +750,12 @@ class ChatSession {
                             // 监听授权结果
                             const onAuthResult = (result) => {
                                 if (result.toolName === toolName && result.serverId === serverId) {
-                                    mcp.removeListener('tool-authorization-result', onAuthResult);
+                                    mcpClient.removeListener('tool-authorization-result', onAuthResult);
                                     resolve(result);
                                 }
                             };
 
-                            mcp.on('tool-authorization-result', onAuthResult);
+                            mcpClient.on('tool-authorization-result', onAuthResult);
                         });
 
                         // 如果授权被拒绝，跳过此工具
@@ -837,12 +780,12 @@ class ChatSession {
 
                         // 如果永久授权，更新授权状态
                         if (authResult.permanent) {
-                            await mcp.updateToolAuthorizationStatus(toolName, serverId, true);
+                            await mcpClient.updateToolAuthorizationStatus(toolName, serverId, true);
                         }
                     }
 
                     // 调用工具执行器(mcp)执行工具
-                    const result = await mcp.executeTool(this.data.id, {
+                    const result = await mcpClient.executeTool(this.data.id, {
                         name: toolName,
                         arguments: args,
                         serverId: serverId,
