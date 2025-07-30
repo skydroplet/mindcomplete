@@ -19,6 +19,7 @@ const exportService = require('../exportService');
 const ImportService = require('../importService');
 const mcpRuntimeService = require('../mcpRuntimeService');
 const agentService = require('../agentService');
+const PromptMarketManager = require('../config/market/promptMarket');
 
 // 创建导入服务实例
 const importService = new ImportService();
@@ -182,7 +183,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         // 同步MCP全局变量与服务
         window.mcpConfig = mcpServerService.getMcpConfig();
 
-        // 初始化提示词相关事件
+        // 初始化提示词相关事件监听器
         promptService.initPromptEventListeners();
 
         // 加载提示词列表
@@ -194,6 +195,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         } catch (error) {
             log.error('加载提示词列表失败:', error.message);
         }
+
+        // 初始化提示词市场管理器
+        const promptMarketManager = new PromptMarketManager();
+        promptMarketManager.init();
 
         // 初始化Agent配置相关事件
         await agentService.initAgentEventListeners();
@@ -474,7 +479,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // 模型市场项点击事件
         function initMarketModelItems() {
-            const marketModelItems = document.querySelectorAll('.market-model-item');
+            const marketModelItems = document.querySelectorAll('#market-models-container .market-model-item');
             marketModelItems.forEach(item => {
                 item.addEventListener('click', function () {
                     marketModelItems.forEach(i => i.classList.remove('active'));
@@ -511,6 +516,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             // 填充模型信息
             document.getElementById('market-model-name').textContent = model.name;
+
+            // 填充模型描述
             document.getElementById('market-model-provider').textContent = model.provider;
             document.getElementById('market-model-description').textContent = model.description;
             document.getElementById('market-context-window').textContent = model.contextWindow + 'K';
@@ -705,6 +712,18 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
             }
         });
+
+        // 监听主进程发送的提示词市场数据更新事件
+        ipcRenderer.on('prompt-market-updated', async (event, data) => {
+            log.info('Received prompt market data update notification:', data);
+            if (data && data.prompts && Array.isArray(data.prompts)) {
+                // This event is for prompts, not models.
+                // If you need to update the model market list, you'd need to re-fetch it.
+                // For now, we'll just log the update.
+                log.info('Prompt market data updated:', data.prompts.length, 'prompts');
+            }
+        });
+
     } catch (error) {
         log.error('配置页面初始化失败:', error.message);
         alert(`初始化配置页面失败: ${error.message}`);

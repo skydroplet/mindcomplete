@@ -332,45 +332,117 @@
             </div>
         </div>
 
-        <!-- 提示词标签页 -->
+        <!-- 提示词配置标签页 -->
         <div class="tab-content" id="prompts">
-            <div class="model-list">
-                <button class="add-btn" id="addPromptBtn" data-i18n="settings.buttons.addPromptBtn">添加提示词</button>
-                <div id="promptList" class="config-list"></div>
-            </div>
-            <div class="model-form">
-                <form id="promptForm">
-                    <div class="form-group">
-                        <label for="promptName" data-i18n="settings.labels.promptName">提示词名称</label>
-                        <input type="text" id="promptName" name="promptName" placeholder=""
-                            data-i18n-placeholder="settings.placeholders.promptName" required>
+            <div class="model-flex-container">
+                <!-- 左侧一级目录 -->
+                <div class="model-sidebar">
+                    <ul class="model-menu">
+                        <li class="model-menu-item active" data-menu="config">提示词配置</li>
+                        <li class="model-menu-item" data-menu="market">提示词市场</li>
+                    </ul>
+                </div>
+                <!-- 中间列表面板 -->
+                <div class="model-list-panel">
+                    <!-- 提示词配置列表 -->
+                    <div class="model-list" id="prompt-config-section">
+                        <button class="add-btn" id="addPromptBtn"
+                            data-i18n="settings.buttons.addPromptBtn">添加提示词</button>
+                        <div id="promptList" class="config-list"></div>
                     </div>
-                    <div class="form-group">
-                        <label for="promptType" data-i18n="settings.labels.promptType">提示词类型</label>
-                        <select id="promptType" name="promptType">
-                            <option value="system" data-i18n="prompts.systemType">系统提示词 (system)</option>
-                            <option value="user" data-i18n="prompts.userType">用户提示词 (user)</option>
-                        </select>
-                        <div class="form-help-text" data-i18n="prompts.typeHelp">
-                            系统提示词(System)用于设定AI的行为和角色，用户提示词(User)可用于提供特定指令或上下文
+                    <!-- 提示词市场列表 -->
+                    <div class="prompt-market-section">
+                        <div class="market-model-list">
+                            <!-- 刷新按钮 -->
+                            <div class="market-actions">
+                                <button class="add-btn" id="refresh-prompt-market-btn"
+                                    data-i18n="settings.buttons.refreshPromptMarket">刷新数据</button>
+                            </div>
+                            <!-- 加载状态 -->
+                            <div id="prompt-market-loading" class="market-loading-state hidden-display">
+                                <p>正在加载提示词数据...</p>
+                            </div>
+                            <!-- 错误状态 -->
+                            <div id="prompt-market-error" class="market-error-state hidden-display">
+                                <p id="prompt-market-error-message">加载提示词数据失败，请检查网络连接</p>
+                                <button onclick="location.reload()" class="add-btn">重试</button>
+                            </div>
+                            <!-- 提示词列表容器 -->
+                            <div id="market-prompts-container"></div>
                         </div>
                     </div>
-                    <div class="form-group">
-                        <label for="promptContent" data-i18n="settings.labels.promptContent">提示词内容</label>
-                        <textarea id="promptContent" name="promptContent" rows="5" placeholder=""
-                            data-i18n-placeholder="settings.placeholders.promptContent"></textarea>
-                    </div>
-                </form>
+                </div>
+                <!-- 右侧详情面板 -->
+                <div class="model-detail-panel">
+                    <!-- 提示词配置表单 -->
+                    <div class="model-form" id="prompt-config-detail">
+                        <form id="promptForm">
+                            <div class="form-group">
+                                <label for="promptName" data-i18n="settings.labels.promptName">提示词名称</label>
+                                <input type="text" id="promptName" name="promptName" placeholder=""
+                                    data-i18n-placeholder="settings.placeholders.promptName" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="promptType" data-i18n="settings.labels.promptType">提示词类型</label>
+                                <select id="promptType" name="promptType">
+                                    <option value="system" data-i18n="prompts.systemType">系统提示词 (system)</option>
+                                    <option value="user" data-i18n="prompts.userType">用户提示词 (user)</option>
+                                </select>
+                                <div class="form-help-text" data-i18n="prompts.typeHelp">
+                                    系统提示词(System)用于设定AI的行为和角色，用户提示词(User)可用于提供特定指令或上下文
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="promptContent" data-i18n="settings.labels.promptContent">提示词内容</label>
+                                <textarea id="promptContent" name="promptContent" rows="5" placeholder=""
+                                    data-i18n-placeholder="settings.placeholders.promptContent"></textarea>
+                            </div>
+                        </form>
 
-                <!-- 提示词按钮 -->
-                <div class="form-buttons" id="prompt-buttons">
-                    <button class="delete-btn hidden" id="deletePromptBtn"
-                        data-i18n="settings.buttons.deletePromptBtn">删除</button>
-                    <button class="copy-btn hidden" id="copyPromptBtn"
-                        data-i18n="settings.buttons.copyPromptBtn">复制</button>
-                    <button class="cancel-btn" id="cancelPromptBtn"
-                        data-i18n="settings.buttons.cancelPromptBtn">取消</button>
-                    <button class="save-btn" id="savePromptBtn" data-i18n="settings.buttons.savePromptBtn">保存</button>
+                        <!-- 提示词配置按钮 -->
+                        <div class="form-buttons" id="prompt-buttons">
+                            <button class="delete-btn hidden" id="deletePromptBtn"
+                                data-i18n="settings.buttons.deletePromptBtn">删除</button>
+                            <button class="copy-btn hidden" id="copyPromptBtn"
+                                data-i18n="settings.buttons.copyPromptBtn">复制</button>
+                            <button class="cancel-btn" id="cancelPromptBtn"
+                                data-i18n="settings.buttons.cancelPromptBtn">取消</button>
+                            <button class="save-btn" id="savePromptBtn"
+                                data-i18n="settings.buttons.savePromptBtn">保存</button>
+                        </div>
+                    </div>
+                    <!-- 提示词市场详情 -->
+                    <div class="prompt-market-detail">
+                        <div id="market-prompt-info">
+                            <!-- 提示词详情模板 -->
+                            <div id="prompt-detail-template" class="market-detail-container hidden-display">
+                                <div class="market-detail-header">
+                                    <h2 id="market-prompt-name" class="market-detail-title"></h2>
+                                </div>
+
+                                <div class="market-detail-section">
+                                    <h4>提示词内容</h4>
+                                    <div id="market-prompt-content" class="prompt-content-display">
+                                        <!-- 提示词内容将由JavaScript动态填充 -->
+                                    </div>
+                                </div>
+
+                                <div class="market-detail-actions">
+                                    <button id="add-market-prompt-btn" class="add-btn market-add-button"
+                                        data-i18n="settings.buttons.addMarketPrompt">
+                                        添加到我的提示词
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- 空状态（提示词不存在时显示） -->
+                            <div id="prompt-market-empty-state" class="empty-state hidden-display">
+                                <div class="empty-state-icon">❌</div>
+                                <h3>提示词不存在</h3>
+                                <p>无法找到指定的提示词信息。</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

@@ -273,7 +273,9 @@
             "copyAgentBtn": "复制",
             "addMcpServer": "添加MCP服务",
             "addMarketModel": "添加到配置",
-            "refreshMarket": "刷新数据"
+            "refreshMarket": "刷新数据",
+            "refreshPromptMarket": "刷新数据",
+            "addMarketPrompt": "添加到我的提示词"
         },
         "modelMarket": {
             "features": {
@@ -307,6 +309,19 @@
                 "logFetchStart": "从API获取模型市场数据",
                 "logFetchFailed": "API返回数据格式异常",
                 "logFetchFailedWithError": "获取模型市场数据失败: {error}"
+            }
+        },
+        "promptMarket": {
+            "messages": {
+                "noPromptData": "暂无可用的提示词数据",
+                "loadFailed": "加载提示词数据失败，请检查网络连接",
+                "addSuccess": "提示词 \"{name}\" 已成功添加到您的配置中！",
+                "addFailed": "添加提示词 \"{name}\" 失败，请重试！",
+                "saveError": "保存提示词 \"{name}\" 时出错: {error}",
+                "logFetchSuccess": "成功获取提示词市场数据: {count} 个提示词",
+                "logFetchStart": "从API获取提示词市场数据",
+                "logFetchFailed": "API返回数据格式异常",
+                "logFetchFailedWithError": "获取提示词市场数据失败: {error}"
             }
         }
     },

@@ -266,7 +266,9 @@
             "copyAgentBtn": "Copy",
             "addMcpServer": "Add MCP Server",
             "addMarketModel": "Add to Config",
-            "refreshMarket": "Refresh Data"
+            "refreshMarket": "Refresh Data",
+            "refreshPromptMarket": "Refresh Data",
+            "addMarketPrompt": "Add to My Prompts"
         },
         "modelMarket": {
             "features": {
@@ -300,6 +302,19 @@
                 "logFetchStart": "Fetching model market data from API",
                 "logFetchFailed": "API returned abnormal data format",
                 "logFetchFailedWithError": "Failed to fetch model market data: {error}"
+            }
+        },
+        "promptMarket": {
+            "messages": {
+                "noPromptData": "No prompt data available",
+                "loadFailed": "Failed to load prompt data, please check network connection",
+                "addSuccess": "Prompt \"{name}\" has been successfully added to your configuration!",
+                "addFailed": "Failed to add prompt \"{name}\", please try again!",
+                "saveError": "Error saving prompt \"{name}\": {error}",
+                "logFetchSuccess": "Successfully fetched prompt market data: {count} prompts",
+                "logFetchStart": "Fetching prompt market data from API",
+                "logFetchFailed": "API returned abnormal data format",
+                "logFetchFailedWithError": "Failed to fetch prompt market data: {error}"
             }
         }
     },

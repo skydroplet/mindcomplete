@@ -21,6 +21,7 @@ class AppConfig extends BaseConfigManager {
                 "https://api.github.com/repos/skydroplet/mindcomplete/releases/latest",
             ],
             modelMarketApiUrl: 'https://api.mindcomplete.me/v1/market/models',
+            promptMarketApiUrl: 'https://api.mindcomplete.me/v1/market/prompts',
             latestVersion: {},
             lastUpdateCheck: null,
         };
@@ -63,6 +64,16 @@ class AppConfig extends BaseConfigManager {
         }
 
         return this.config.modelMarketApiUrl;
+    }
+
+    // 获取提示市场API URL
+    getPromptMarketApiUrl() {
+        if (this.config.promptMarketApiUrl === null || this.config.promptMarketApiUrl === undefined) {
+            this.config.promptMarketApiUrl = 'https://api.mindcomplete.me/v1/market/prompts';
+            this.saveConfig()
+        }
+
+        return this.config.promptMarketApiUrl;
     }
 
     // 保存标签页状态

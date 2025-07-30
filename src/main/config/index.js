@@ -9,6 +9,7 @@ const mcpConfig = require('./mcpConfig');
 const promptConfig = require('./promptConfig');
 const agentConfig = require('./agentConfig');
 const modelMarketConfig = require('./modelMarketConfig');
+const promptMarketConfig = require('./promptMarketConfig');
 const { createConfigWindow, registerConfigIPC, openConfigWindowWithTab } = require('./configWindow');
 
 module.exports = {
@@ -18,6 +19,7 @@ module.exports = {
     promptConfig,
     agentConfig,
     modelMarketConfig,
+    promptMarketConfig,
     createConfigWindow,
     registerConfigIPC,
     openConfigWindowWithTab

@@ -99,7 +99,7 @@ class PromptService {
 
     /**
      * 保存当前提示词
-     * @returns {Promise<void>}
+     * @returns {Promise<boolean>}
      */
     async saveCurrentPrompt() {
         try {
@@ -130,11 +130,14 @@ class PromptService {
                 window.prompts = prompts;
                 this.updatePromptList(prompts);
                 this.resetPromptForm();
+                return true;
             } else {
-                throw new Error(i18n.t('errors.saveFailed'));
+                log.error('保存失败');
+                return false;
             }
         } catch (error) {
             log.error('保存提示词时出错:', error.message);
+            return false;
         }
     }
 

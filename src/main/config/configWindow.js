@@ -16,6 +16,7 @@ const mcpManager = require('./mcpConfig');
 const promptManager = require('./promptConfig');
 const agentManager = require('./agentConfig');
 const modelMarketConfig = require('./modelMarketConfig');
+const promptMarketConfig = require('./promptMarketConfig');
 
 // 配置窗口实例引用
 let configWindow;
@@ -52,6 +53,9 @@ function createConfigWindow(activeTab) {
 
     // 注册配置窗口以接收模型市场数据更新
     modelMarketConfig.registerWindow(configWindow.webContents);
+
+    // 注册配置窗口以接收提示词市场数据更新
+    promptMarketConfig.registerWindow(configWindow.webContents);
 
     // 如果指定了激活的标签页，在窗口加载完成后切换到该标签页
     if (activeTab) {
@@ -354,6 +358,64 @@ function registerConfigIPC() {
             return result;
         } catch (error) {
             log.error('获取模型市场缓存信息失败:', error.message);
+            throw error;
+        }
+    });
+
+    // 提示词市场相关IPC处理程序
+    ipcMain.handle('get-market-prompts', async (event) => {
+        log.info('处理获取提示词市场数据请求');
+        try {
+            const result = promptMarketConfig.getMarketPrompts();
+            log.info('获取提示词市场数据成功，共', result.count, '个提示词');
+            return result;
+        } catch (error) {
+            log.error('获取提示词市场数据失败:', error.message);
+            throw error;
+        }
+    });
+
+    ipcMain.handle('get-market-prompt-by-id', async (event, promptId) => {
+        log.info('处理获取指定提示词市场数据请求, promptId:', promptId);
+        try {
+            const result = promptMarketConfig.getPromptById(promptId);
+            if (result) {
+                log.info('获取提示词市场数据成功:', result.name);
+            } else {
+                log.warn('未找到指定的提示词市场数据, promptId:', promptId);
+            }
+            return result;
+        } catch (error) {
+            log.error('获取提示词市场数据失败:', error.message);
+            throw error;
+        }
+    });
+
+    ipcMain.handle('refresh-market-prompts', async (event) => {
+        log.info('处理刷新提示词市场数据请求');
+        try {
+            const result = await promptMarketConfig.refreshData();
+            log.info('刷新提示词市场数据结果:', result.success ? '成功' : '失败');
+            return result;
+        } catch (error) {
+            log.error('刷新提示词市场数据失败:', error.message);
+            return {
+                success: false,
+                message: error.message,
+                prompts: [],
+                lastUpdated: null
+            };
+        }
+    });
+
+    ipcMain.handle('get-prompt-market-cache-info', async (event) => {
+        log.info('处理获取提示词市场缓存信息请求');
+        try {
+            const result = promptMarketConfig.getCacheInfo();
+            log.info('获取提示词市场缓存信息成功');
+            return result;
+        } catch (error) {
+            log.error('获取提示词市场缓存信息失败:', error.message);
             throw error;
         }
     });
