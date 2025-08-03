@@ -9,9 +9,6 @@
  * - 定期更新数据
  */
 
-const { app } = require('electron');
-const fs = require('fs');
-const path = require('path');
 const https = require('https');
 const http = require('http');
 const BaseConfigManager = require('./baseConfigManager');
@@ -113,7 +110,7 @@ class ModelMarketConfig extends BaseConfigManager {
                             if (rsp && rsp.models && Array.isArray(rsp.models)) {
                                 // 处理数据格式
                                 const processedModels = rsp.models.map(model => ({
-                                    id: model.name.replace(/[^a-zA-Z0-9-_]/g, '-'), // 生成安全的ID
+                                    id: model.id,
                                     name: model.name,
                                     modelType: model.modelType,
                                     provider: model.provider,

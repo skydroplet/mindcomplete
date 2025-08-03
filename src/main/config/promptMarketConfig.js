@@ -9,9 +9,6 @@
  * - 定期更新数据
  */
 
-const { app } = require('electron');
-const fs = require('fs');
-const path = require('path');
 const https = require('https');
 const http = require('http');
 const BaseConfigManager = require('./baseConfigManager');
@@ -113,12 +110,9 @@ class PromptMarketConfig extends BaseConfigManager {
                             if (rsp && rsp.prompts && Array.isArray(rsp.prompts)) {
                                 // 处理数据格式
                                 const processedPrompts = rsp.prompts.map(prompt => ({
-                                    id: this.generatePromptId(prompt.name), // 生成安全的ID
+                                    id: prompt.id,
                                     name: prompt.name,
-                                    content: prompt.content,
-                                    type: 'system',
-                                    source: 'market',
-                                    version: rsp.version || '1.0'
+                                    content: prompt.content
                                 }));
 
                                 // 更新内存缓存
