@@ -317,6 +317,7 @@
                 "loadFailed": "加载提示词数据失败，请检查网络连接",
                 "addSuccess": "提示词 \"{name}\" 已成功添加到您的配置中！",
                 "addFailed": "添加提示词 \"{name}\" 失败，请重试！",
+                "duplicatePrompt": "提示词 \"{name}\" 已存在！",
                 "saveError": "保存提示词 \"{name}\" 时出错: {error}",
                 "logFetchSuccess": "成功获取提示词市场数据: {count} 个提示词",
                 "logFetchStart": "从API获取提示词市场数据",

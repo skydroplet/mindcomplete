@@ -310,6 +310,7 @@
                 "loadFailed": "Failed to load prompt data, please check network connection",
                 "addSuccess": "Prompt \"{name}\" has been successfully added to your configuration!",
                 "addFailed": "Failed to add prompt \"{name}\", please try again!",
+                "duplicatePrompt": "Prompt \"{name}\" already exists.",
                 "saveError": "Error saving prompt \"{name}\": {error}",
                 "logFetchSuccess": "Successfully fetched prompt market data: {count} prompts",
                 "logFetchStart": "Fetching prompt market data from API",

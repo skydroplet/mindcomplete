@@ -280,39 +280,41 @@ class PromptMarketManager {
 
         log.info('Adding market prompt to config:', prompt.name);
 
-        // 填充表单数据到后台（不显示在UI上）
-        const promptNameEl = document.getElementById('promptName');
-        const promptTypeEl = document.getElementById('promptType');
-        const promptContentEl = document.getElementById('promptContent');
-
-        if (!promptNameEl || !promptTypeEl || !promptContentEl) {
-            log.error('Form elements not found:', {
-                promptName: !!promptNameEl,
-                promptType: !!promptTypeEl,
-                promptContent: !!promptContentEl
-            });
-            alert('配置表单元素未找到，请刷新页面重试');
+        // 检查市场提示词ID是否已存在
+        try {
+            const exists = await ipcRenderer.invoke('check-prompt-exists', prompt.id);
+            if (exists) {
+                log.warn('Market prompt with same ID already exists:', prompt.id);
+                const message = i18n.t('settings.promptMarket.messages.duplicatePrompt', { name: prompt.name });
+                alert(message);
+                return;
+            }
+        } catch (error) {
+            log.error('Error checking market prompt existence:', error);
+            alert('检查提示词是否存在时出错，请重试');
             return;
         }
 
-        promptNameEl.value = prompt.name;
-        promptTypeEl.value = prompt.type || 'system';
-        promptContentEl.value = prompt.content;
-
-        // 清除当前提示词ID，确保作为新提示词添加
-        window.currentPromptId = null;
-
-        log.info('Form fields populated, calling saveCurrentPrompt');
-
-        // 需要从外部传入promptService
-        const promptService = require('../../promptService');
+        // 直接调用后端API添加提示词，使用市场提示词的ID作为key
+        const promptData = {
+            name: prompt.name,
+            content: prompt.content,
+            type: prompt.type || 'system'
+        };
 
         try {
-            const success = await promptService.saveCurrentPrompt();
-            log.info('SaveCurrentPrompt result:', success);
+            const promptId = await ipcRenderer.invoke('add-prompt', promptData, prompt.id);
+            const success = !!promptId;
+            log.info('Add prompt result:', success);
 
             if (success) {
-                log.info('Prompt configuration saved automatically successfully:', prompt.name);
+                log.info('Prompt configuration saved successfully:', prompt.name);
+                // 刷新提示词列表
+                const prompts = await ipcRenderer.invoke('get-all-prompts');
+                window.prompts = prompts;
+                const promptService = require('../../promptService');
+                promptService.updatePromptList(prompts);
+
                 const message = i18n.t('settings.promptMarket.messages.addSuccess', { name: prompt.name });
                 alert(message);
                 ipcRenderer.invoke('reset-window-focus');

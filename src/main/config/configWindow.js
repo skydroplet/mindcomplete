@@ -254,9 +254,9 @@ function registerConfigIPC() {
         return promptManager.setCurrentPrompt(promptId);
     });
 
-    ipcMain.handle('add-prompt', (event, prompt) => {
-        log.info('处理添加提示词请求, 提示词数据:', JSON.stringify(prompt, null, 2));
-        const promptId = promptManager.addPrompt(prompt);
+    ipcMain.handle('add-prompt', (event, prompt, customId = null) => {
+        log.info('处理添加提示词请求, 提示词数据:', JSON.stringify(prompt, null, 2), 'customId:', customId);
+        const promptId = promptManager.addPrompt(prompt, customId);
         return promptId;
     });
 
@@ -268,6 +268,11 @@ function registerConfigIPC() {
     ipcMain.handle('delete-prompt', (event, promptId) => {
         log.info('处理删除提示词请求, promptId:', promptId);
         return promptManager.deletePrompt(promptId);
+    });
+
+    ipcMain.handle('check-prompt-exists', (event, promptId) => {
+        log.info('处理检查提示词是否存在请求, promptId:', promptId);
+        return promptManager.checkPromptExists(promptId);
     });
 
     // Agent配置相关IPC处理

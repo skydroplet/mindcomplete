@@ -98,11 +98,12 @@ class PromptConfig extends BaseConfigManager {
     /**
      * 添加新提示词
      * @param {Object} prompt 提示词对象，包含name和content属性 
+     * @param {string} customId 可选的自定义ID，如果提供则使用此ID
      * @returns {string} 新创建的提示词ID
      */
-    addPrompt(prompt) {
+    addPrompt(prompt, customId = null) {
         try {
-            const promptId = this.generateUniqueId('prompt', this.config.prompts);
+            const promptId = customId || this.generateUniqueId('prompt', this.config.prompts);
             this.config.prompts[promptId] = prompt;
             this.saveConfig();
             return promptId;
@@ -129,6 +130,15 @@ class PromptConfig extends BaseConfigManager {
             log.error('更新提示词失败:', error.message);
             throw error;
         }
+    }
+
+    /**
+     * 检查提示词ID是否已存在
+     * @param {string} promptId 提示词ID
+     * @returns {boolean} 存在返回true，不存在返回false
+     */
+    checkPromptExists(promptId) {
+        return !!this.config.prompts[promptId];
     }
 
     /**
