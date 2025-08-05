@@ -15,8 +15,7 @@ const { ipcRenderer } = require('electron');
 const Logger = require('../main/logger');
 const log = new Logger('chatService');
 const i18n = require('../locales/i18n');
-const marked = require('marked');
-const hljs = require('highlight.js');
+const markdownRenderer = require('./utils/markdownRenderer');
 const sidebarSessionService = require('./sidebarSession');
 const modelService = require('./modelService');
 const promptService = require('./promptService');
@@ -37,9 +36,6 @@ class ChatSessionService {
         // session
         this.sessionId = sessionId;
         this.data = null;
-
-        // 配置 marked 使用 highlight.js
-        this.configureMarked();
 
         // 用于跟踪当前是否有AI正在生成回复
         this.isGenerating = false;
@@ -173,24 +169,6 @@ class ChatSessionService {
         this.messageInput = document.getElementById(`message-input-${this.tabId}`);
 
         this.updateUi();
-    }
-
-    /**
-     * 配置 marked 使用 highlight.js
-     */
-    configureMarked() {
-        marked.setOptions({
-            highlight: function (code, lang) {
-                const language = hljs.getLanguage(lang) ? lang : 'plaintext';
-                return hljs.highlight(code, { language }).value;
-            },
-            langPrefix: 'hljs language-',
-            breaks: true,      // 启用换行符转换为 <br>
-            gfm: true,         // 启用 GitHub 风格的 Markdown
-            mangle: false,     // 禁用自动转义 HTML
-            headerIds: true,   // 为标题生成 ID
-            smartLists: true   // 使用更智能的列表行为
-        });
     }
 
     /**
@@ -615,16 +593,11 @@ class ChatSessionService {
         // 保存当前折叠状态
         const wasCollapsed = messageDiv.classList.contains('collapsed');
 
-        // 解析普通消息内容
-        messageDiv.innerHTML = marked.parse(content);
+        // 解析普通消息内容 - 使用公共Markdown渲染器
+        markdownRenderer.renderContent(content, messageDiv, 'message-content');
 
         // 确保内容可选择
         messageDiv.style.userSelect = 'text';
-
-        // 高亮代码块
-        messageDiv.querySelectorAll('pre code').forEach((block) => {
-            hljs.highlightElement(block);
-        });
 
         // 恢复折叠状态
         if (wasCollapsed) {

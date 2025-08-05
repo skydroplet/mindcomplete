@@ -16,7 +16,6 @@ const { ipcRenderer } = require('electron');
 const Logger = require('../../main/logger');
 const log = new Logger('renderer');
 const i18n = require('../../locales/i18n');
-const hljs = require('highlight.js');
 
 // 导入服务模块
 const sidebarSession = require('../sidebarSession');

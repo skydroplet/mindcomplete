@@ -12,6 +12,7 @@
 const { ipcRenderer } = require('electron');
 const Logger = require('../../../main/logger');
 const i18n = require('../../../locales/i18n');
+const markdownRenderer = require('../../utils/markdownRenderer');
 
 const log = new Logger('promptMarket');
 
@@ -242,9 +243,14 @@ class PromptMarketManager {
         // 填充提示词信息
         document.getElementById('market-prompt-name').textContent = prompt.name;
 
-        // 填充提示词内容
+        // 填充提示词内容 - 使用Markdown渲染
         const contentContainer = document.getElementById('market-prompt-content');
-        contentContainer.innerHTML = `<pre class="prompt-content-text">${prompt.content}</pre>`;
+        markdownRenderer.renderWithFallback(
+            prompt.content,
+            contentContainer,
+            'message-content',
+            'prompt-content-text'
+        );
 
         // 设置添加按钮的数据属性
         this.setupAddButton(prompt);

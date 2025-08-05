@@ -3,9 +3,9 @@ const Logger = require('../main/logger');
 const log = new Logger('updateService');
 const i18n = require('../locales/i18n');
 const themeService = require('./themeService');
+const markdownRenderer = require('./utils/markdownRenderer');
 const fs = require('fs');
 const path = require('path');
-const marked = require('marked');
 
 class UpdateService {
     constructor() {
@@ -205,7 +205,10 @@ class UpdateService {
     populateNotificationData(notification, updateInfo) {
         notification.querySelector('#update-version').textContent = updateInfo.version;
         notification.querySelector('#update-date').textContent = updateInfo.releaseDate;
-        notification.querySelector('#update-desc').innerHTML = marked.parse(updateInfo.releaseNotes);
+
+        // 使用公共Markdown渲染器渲染更新说明
+        const descElement = notification.querySelector('#update-desc');
+        markdownRenderer.renderContent(updateInfo.releaseNotes, descElement, 'message-content');
     }
 
     // 翻译通知内容
