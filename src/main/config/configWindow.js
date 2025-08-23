@@ -163,11 +163,18 @@ function registerConfigIPC() {
         return modelManager.selectModel(modelId);
     });
 
-    ipcMain.handle('add-model', async (event, model) => {
-        log.info('处理添加模型请求, 模型数据:', JSON.stringify(model, null, 2));
-        const modelId = modelManager.addModel(model);
+    ipcMain.handle('add-model', async (event, model, customId = null) => {
+        log.info('处理添加模型请求, 模型数据:', JSON.stringify(model, null, 2), '自定义ID:', customId);
+        const modelId = modelManager.addModel(model, customId);
         log.info('添加模型结果:', modelId);
-        return !!modelId;
+        return modelId;
+    });
+
+    ipcMain.handle('check-model-exists', async (event, modelId) => {
+        log.info('检查模型是否存在:', modelId);
+        const exists = modelManager.modelExists(modelId);
+        log.info('模型存在检查结果:', exists);
+        return exists;
     });
 
     ipcMain.handle('update-model', async (event, { modelId, model }) => {

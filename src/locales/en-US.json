@@ -295,6 +295,7 @@
                 "addSuccess": "{name} added successfully!",
                 "addFailed": "Failed to add {name}, please check configuration and save manually.",
                 "saveError": "Error saving {name}: {error}",
+                "duplicateModel": "Model \"{name}\" already exists, cannot add duplicate!",
                 "setupInstructions": "Please follow these steps to complete configuration:\n1. Click the registration link to register\n2. Click the API key link to get the key and update model configuration",
                 "registerLink": "Registration link: {url}",
                 "apiKeyLink": "API key: {url}",

@@ -24,22 +24,29 @@ class ModelConfig extends BaseConfigManager {
     /**
      * 添加新模型
      * @param {Object} model - 模型配置对象，包含name、type、apiKey等属性
+     * @param {string} customId - 可选的自定义ID，如果不提供则自动生成
      * @returns {string|null} 成功时返回新创建的模型ID，失败时返回null
      */
-    addModel(model) {
+    addModel(model, customId = null) {
         if (!this.config.models) {
             this.config.models = {};
         }
 
-        // 生成唯一ID
-        const modelId = this.generateUniqueId('model', this.config.models);
+        // 使用自定义ID或生成唯一ID
+        const modelId = customId || this.generateUniqueId('model', this.config.models);
+
+        // 如果使用自定义ID，检查是否已存在
+        if (customId && this.config.models[customId]) {
+            this.logger.warn('模型ID已存在:', customId);
+            return null;
+        }
 
         this.config.models[modelId] = {
             id: modelId,
             name: model.name,
             type: model.type,
             apiKey: model.apiKey,
-            apiBaseUrl: model.apiBaseUrl,
+            apiBaseUrl: model.apiBaseUrl || model.apiUrl, // 支持两种字段名
             contextWindowSize: model.contextWindowSize || 4096,
             temperature: model.temperature || 0.7
         }
@@ -47,6 +54,15 @@ class ModelConfig extends BaseConfigManager {
         // 保存配置并返回新创建的模型ID
         const saved = this.saveConfig();
         return saved ? modelId : null;
+    }
+
+    /**
+     * 检查模型是否存在
+     * @param {string} modelId - 模型ID
+     * @returns {boolean} 模型是否存在
+     */
+    modelExists(modelId) {
+        return !!(this.config.models && this.config.models[modelId]);
     }
 
     /**

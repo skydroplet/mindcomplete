@@ -302,6 +302,7 @@
                 "addSuccess": "{name} 添加成功！",
                 "addFailed": "添加 {name} 失败，请检查配置信息后手动保存。",
                 "saveError": "保存 {name} 时出错: {error}",
+                "duplicateModel": "模型 \"{name}\" 已存在，无法重复添加！",
                 "setupInstructions": "请按照以下步骤完成配置：\n1. 点击邀请链接进行注册\n2. 点击API秘钥获取秘钥更新模型配置",
                 "registerLink": "注册链接: {url}",
                 "apiKeyLink": "API秘钥获取: {url}",
