@@ -27,7 +27,7 @@ class ModelMarketConfig extends BaseConfigManager {
      */
     constructor() {
         const defaultConfig = {
-            models: [],
+            models: {}, // 改为对象map格式
             lastUpdated: null,
             version: '1.0'
         };
@@ -43,8 +43,8 @@ class ModelMarketConfig extends BaseConfigManager {
         // 缓存更新间隔（毫秒）- 4小时
         this.updateInterval = 4 * 60 * 60 * 1000;
 
-        // 内存缓存
-        this.marketModels = [];
+        // 内存缓存 - 改为对象map格式
+        this.marketModels = {};
 
         // 初始化数据
         this.initialize();
@@ -56,9 +56,9 @@ class ModelMarketConfig extends BaseConfigManager {
     async initialize() {
         try {
             // 加载本地缓存的数据
-            if (this.config.models && Array.isArray(this.config.models) && this.config.models.length > 0) {
+            if (this.config.models && typeof this.config.models === 'object' && Object.keys(this.config.models).length > 0) {
                 this.marketModels = this.config.models;
-                log.info('从本地缓存加载模型市场数据，共', this.marketModels.length, '个模型');
+                log.info('从本地缓存加载模型市场数据，共', Object.keys(this.marketModels).length, '个模型');
             }
 
             // 异步获取最新数据
@@ -107,22 +107,27 @@ class ModelMarketConfig extends BaseConfigManager {
                             const rsp = JSON.parse(data);
                             log.info('获取到模型市场数据:', rsp);
 
-                            if (rsp && rsp.models && Array.isArray(rsp.models)) {
-                                // 处理数据格式
-                                const processedModels = rsp.models.map(model => ({
-                                    id: model.id,
-                                    name: model.name,
-                                    modelType: model.modelType,
-                                    provider: model.provider,
-                                    description: model.description,
-                                    apiUrl: model.apiUrl,
-                                    mainUrl: model.mainUrl,
-                                    registerUrl: model.registerUrl,
-                                    apiKeyUrl: model.apiKeyUrl,
-                                    contextWindow: Math.floor(model.windowSize / 1024), // 转换为K单位
-                                    features: this.extractFeatures(model.description), // 从描述中提取特性
-                                    pricingMode: model.pricingMode,
-                                }));
+                            if (rsp && rsp.models && typeof rsp.models === 'object' && !Array.isArray(rsp.models)) {
+                                // 处理数据格式 - 将map对象转换为处理后的map对象
+                                const processedModels = {};
+                                for (const [key, model] of Object.entries(rsp.models)) {
+                                    // 使用模型的ID作为map的键，确保一致性
+                                    const modelId = model.id || key;
+                                    processedModels[modelId] = {
+                                        id: modelId,
+                                        name: model.name,
+                                        modelType: model.modelType,
+                                        provider: model.provider,
+                                        description: model.description,
+                                        apiUrl: model.apiUrl,
+                                        mainUrl: model.mainUrl,
+                                        registerUrl: model.registerUrl,
+                                        apiKeyUrl: model.apiKeyUrl,
+                                        contextWindow: Math.floor(model.windowSize / 1024), // 转换为K单位
+                                        features: this.extractFeatures(model.description), // 从描述中提取特性
+                                        pricingMode: model.pricingMode,
+                                    };
+                                }
 
                                 // 更新内存缓存
                                 this.marketModels = processedModels;
@@ -132,7 +137,7 @@ class ModelMarketConfig extends BaseConfigManager {
                                 this.config.lastUpdated = new Date().toISOString();
                                 this.saveConfig();
 
-                                log.info('模型市场数据获取成功，共', processedModels.length, '个模型');
+                                log.info('模型市场数据获取成功，共', Object.keys(processedModels).length, '个模型');
                                 resolve(processedModels);
 
                                 // 通知所有注册的窗口
@@ -205,10 +210,12 @@ class ModelMarketConfig extends BaseConfigManager {
      * 获取所有模型市场数据
      */
     getMarketModels() {
+        // 将对象map转换为数组格式供前端使用
+        const modelsArray = Object.values(this.marketModels);
         return {
-            models: this.marketModels,
+            models: modelsArray,
             lastUpdated: this.config.lastUpdated,
-            count: this.marketModels.length
+            count: modelsArray.length
         };
     }
 
@@ -216,7 +223,8 @@ class ModelMarketConfig extends BaseConfigManager {
      * 根据ID获取指定模型
      */
     getModelById(modelId) {
-        return this.marketModels.find(model => model.id === modelId);
+        // 直接从map中获取，如果找不到则遍历查找
+        return this.marketModels[modelId] || Object.values(this.marketModels).find(model => model.id === modelId);
     }
 
     /**
@@ -225,18 +233,20 @@ class ModelMarketConfig extends BaseConfigManager {
     async refreshData() {
         try {
             await this.fetchMarketData();
+            const modelsArray = Object.values(this.marketModels);
             return {
                 success: true,
                 message: '数据刷新成功',
-                models: this.marketModels,
+                models: modelsArray,
                 lastUpdated: this.config.lastUpdated
             };
         } catch (error) {
             log.error('手动刷新模型市场数据失败:', error.message);
+            const modelsArray = Object.values(this.marketModels);
             return {
                 success: false,
                 message: error.message,
-                models: this.marketModels,
+                models: modelsArray,
                 lastUpdated: this.config.lastUpdated
             };
         }
@@ -247,7 +257,7 @@ class ModelMarketConfig extends BaseConfigManager {
      */
     getCacheInfo() {
         return {
-            modelCount: this.marketModels.length,
+            modelCount: Object.keys(this.marketModels).length,
             lastUpdated: this.config.lastUpdated,
             cacheFile: this.configPath,
             updateInterval: this.updateInterval / (1000 * 60 * 60) // 转换为小时

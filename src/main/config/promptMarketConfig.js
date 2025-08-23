@@ -27,7 +27,7 @@ class PromptMarketConfig extends BaseConfigManager {
      */
     constructor() {
         const defaultConfig = {
-            prompts: [],
+            prompts: {}, // 改为对象map格式
             lastUpdated: null,
             version: '1.0'
         };
@@ -43,8 +43,8 @@ class PromptMarketConfig extends BaseConfigManager {
         // 缓存更新间隔（毫秒）- 4小时
         this.updateInterval = 4 * 60 * 60 * 1000;
 
-        // 内存缓存
-        this.marketPrompts = [];
+        // 内存缓存 - 改为对象map格式
+        this.marketPrompts = {};
 
         // 初始化数据
         this.initialize();
@@ -56,9 +56,9 @@ class PromptMarketConfig extends BaseConfigManager {
     async initialize() {
         try {
             // 加载本地缓存的数据
-            if (this.config.prompts && Array.isArray(this.config.prompts) && this.config.prompts.length > 0) {
+            if (this.config.prompts && typeof this.config.prompts === 'object' && Object.keys(this.config.prompts).length > 0) {
                 this.marketPrompts = this.config.prompts;
-                log.info('从本地缓存加载提示词市场数据，共', this.marketPrompts.length, '个提示词');
+                log.info('从本地缓存加载提示词市场数据，共', Object.keys(this.marketPrompts).length, '个提示词');
             }
 
             // 异步获取最新数据
@@ -107,13 +107,18 @@ class PromptMarketConfig extends BaseConfigManager {
                             const rsp = JSON.parse(data);
                             log.info('获取到提示词市场数据:', rsp);
 
-                            if (rsp && rsp.prompts && Array.isArray(rsp.prompts)) {
-                                // 处理数据格式
-                                const processedPrompts = rsp.prompts.map(prompt => ({
-                                    id: prompt.id,
-                                    name: prompt.name,
-                                    content: prompt.content
-                                }));
+                            if (rsp && rsp.prompts && typeof rsp.prompts === 'object' && !Array.isArray(rsp.prompts)) {
+                                // 处理数据格式 - 将map对象转换为处理后的map对象
+                                const processedPrompts = {};
+                                for (const [key, prompt] of Object.entries(rsp.prompts)) {
+                                    // 使用提示词的ID作为map的键，确保一致性
+                                    const promptId = prompt.id || key;
+                                    processedPrompts[promptId] = {
+                                        id: promptId,
+                                        name: prompt.name,
+                                        content: prompt.content
+                                    };
+                                }
 
                                 // 更新内存缓存
                                 this.marketPrompts = processedPrompts;
@@ -124,7 +129,7 @@ class PromptMarketConfig extends BaseConfigManager {
                                 this.config.version = rsp.version || '1.0';
                                 this.saveConfig();
 
-                                log.info('提示词市场数据获取成功，共', processedPrompts.length, '个提示词');
+                                log.info('提示词市场数据获取成功，共', Object.keys(processedPrompts).length, '个提示词');
                                 resolve(processedPrompts);
 
                                 // 通知所有注册的窗口
@@ -173,10 +178,12 @@ class PromptMarketConfig extends BaseConfigManager {
      * 获取所有提示词市场数据
      */
     getMarketPrompts() {
+        // 将对象map转换为数组格式供前端使用
+        const promptsArray = Object.values(this.marketPrompts);
         return {
-            prompts: this.marketPrompts,
+            prompts: promptsArray,
             lastUpdated: this.config.lastUpdated,
-            count: this.marketPrompts.length,
+            count: promptsArray.length,
             version: this.config.version
         };
     }
@@ -185,7 +192,8 @@ class PromptMarketConfig extends BaseConfigManager {
      * 根据ID获取指定提示词
      */
     getPromptById(promptId) {
-        return this.marketPrompts.find(prompt => prompt.id === promptId);
+        // 直接从map中获取，如果找不到则遍历查找
+        return this.marketPrompts[promptId] || Object.values(this.marketPrompts).find(prompt => prompt.id === promptId);
     }
 
     /**
@@ -194,18 +202,20 @@ class PromptMarketConfig extends BaseConfigManager {
     async refreshData() {
         try {
             await this.fetchMarketData();
+            const promptsArray = Object.values(this.marketPrompts);
             return {
                 success: true,
                 message: '数据刷新成功',
-                prompts: this.marketPrompts,
+                prompts: promptsArray,
                 lastUpdated: this.config.lastUpdated
             };
         } catch (error) {
             log.error('手动刷新提示词市场数据失败:', error.message);
+            const promptsArray = Object.values(this.marketPrompts);
             return {
                 success: false,
                 message: error.message,
-                prompts: this.marketPrompts,
+                prompts: promptsArray,
                 lastUpdated: this.config.lastUpdated
             };
         }
@@ -216,7 +226,7 @@ class PromptMarketConfig extends BaseConfigManager {
      */
     getCacheInfo() {
         return {
-            promptCount: this.marketPrompts.length,
+            promptCount: Object.keys(this.marketPrompts).length,
             lastUpdated: this.config.lastUpdated,
             cacheFile: this.configPath,
             updateInterval: this.updateInterval / (1000 * 60 * 60), // 转换为小时
