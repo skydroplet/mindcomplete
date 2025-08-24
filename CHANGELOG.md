@@ -1,6 +1,17 @@
 # Changelog
 
 
+## [0.2.0](https://github.com/skydroplet/mindcomplete/compare/v0.1.7...v0.2.0) (2025-08-24)
+
+
+### ✨ 新功能
+
+* 调整模型市场数据结构, 需要升级版本进行兼容 ([55a989d](https://github.com/skydroplet/mindcomplete/commit/55a989dc2b5a88c1b0049d9e873b597f4d416577))
+* 增加快捷键提示 ([fdc41d9](https://github.com/skydroplet/mindcomplete/commit/fdc41d92677001899cb3b6d856ee31695ead04bc))
+* 支持快速开启新会话 ([3f669ee](https://github.com/skydroplet/mindcomplete/commit/3f669ee65a90710728f5975fb1b078b4f4ce3fc4))
+* 支持设置多个提示词，统一管理 ([3c240c0](https://github.com/skydroplet/mindcomplete/commit/3c240c0b9566a3d1106606fa09de7fa4195713b2))
+* 增加提示词市场 ([c9d4fb9](https://github.com/skydroplet/mindcomplete/commit/c9d4fb9cc8bec045b46b90106aaace9d5d42d10f))
+
 ## [0.1.7](https://github.com/skydroplet/mindcomplete/compare/v0.1.6...v0.1.7) (2025-07-19)
 
 ### ✨ 新功能
