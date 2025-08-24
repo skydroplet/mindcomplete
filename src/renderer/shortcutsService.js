@@ -52,22 +52,6 @@ class ShortcutsService {
                     description: 'shortcuts.menu.settings'
                 },
                 {
-                    key: 'Ctrl+Q',
-                    description: 'shortcuts.menu.quit'
-                },
-                {
-                    key: 'Ctrl+R',
-                    description: 'shortcuts.menu.reload'
-                },
-                {
-                    key: 'Ctrl+Shift+R',
-                    description: 'shortcuts.menu.forceReload'
-                },
-                {
-                    key: 'Ctrl+Shift+I',
-                    description: 'shortcuts.menu.devTools'
-                },
-                {
                     key: 'F11',
                     description: 'shortcuts.menu.fullscreen'
                 }

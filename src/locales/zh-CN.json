@@ -4,7 +4,7 @@
         "description": "让每个人都能自由地和数字世界交互。"
     },
     "ui": {
-        "inputPlaceholder": "输入消息，按Enter发送，Ctrl+Enter换行，↑↓切换历史消息，Ctrl+P选择用户提示词，Ctrl+N重置会话...",
+        "inputPlaceholder": "输入消息，按Enter发送，Ctrl+Enter换行，↑↓切换历史消息，Ctrl+P选择用户提示词，Ctrl+N开启新会话...",
         "sendButton": "发送",
         "status": {
             "ready": "就绪",
@@ -501,7 +501,7 @@
     },
     "shortcuts": {
         "title": "快捷键",
-        "chatSection": "聊天功能",
+        "chatSection": "输入框",
         "menuSection": "菜单功能",
         "navigationSection": "导航功能",
         "chat": {
@@ -509,7 +509,7 @@
             "newLine": "换行",
             "history": "浏览历史消息",
             "selectPrompt": "选择提示词",
-            "resetSession": "重置会话"
+            "resetSession": "开启新会话"
         },
         "menu": {
             "settings": "打开设置",

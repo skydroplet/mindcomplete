@@ -297,7 +297,7 @@ class InputManagerService {
                     e.preventDefault();
                     this.showPromptSelector(e.target);
                 } else if (e.key === 'n' && e.ctrlKey) {
-                    // Ctrl+N 重置会话
+                    // Ctrl+N 开启新会话
                     e.preventDefault();
 
                     // 从输入框ID中提取tabId (格式: message-input-{tabId})
@@ -305,14 +305,14 @@ class InputManagerService {
                     const tabId = inputId.replace('message-input-', '');
 
                     if (tabId && typeof window.resetSessionForTab === 'function') {
-                        log.info(`通过快捷键Ctrl+N重置会话，标签: ${tabId}`);
+                        log.info(`通过快捷键Ctrl+N开启新会话，标签: ${tabId}`);
                         await window.resetSessionForTab(tabId);
 
-                        // 重置会话后清空输入框
+                        // 开启新会话后清空输入框
                         e.target.value = '';
                         this.adjustTextareaHeight(e.target);
                     } else {
-                        log.warn('无法重置会话：未找到标签ID或重置函数');
+                        log.warn('无法开启新会话：未找到标签ID或重置函数');
                     }
                 }
             }
@@ -439,7 +439,7 @@ class InputManagerService {
             <div class="input-group">
                 <textarea 
                     id="message-input-${tabId}" 
-                    placeholder="输入消息，按Enter发送，Ctrl+Enter换行，↑↓切换历史消息，Ctrl+P选择用户提示词，Ctrl+N重置会话..." 
+                    placeholder="输入消息，按Enter发送，Ctrl+Enter换行，↑↓切换历史消息，Ctrl+P选择用户提示词，Ctrl+N开启新会话..." 
                     rows="1"
                 ></textarea>
             </div>

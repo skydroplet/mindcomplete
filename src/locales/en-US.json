@@ -4,7 +4,7 @@
         "description": "Let everyone can freely interact with the digital world."
     },
     "ui": {
-        "inputPlaceholder": "Type a message, press Enter to send, Ctrl+Enter for new line, ↑↓ for history, Ctrl+P for prompts, Ctrl+N to reset session...",
+        "inputPlaceholder": "Type a message, press Enter to send, Ctrl+Enter for new line, ↑↓ for history, Ctrl+P for prompts, Ctrl+N to start new session...",
         "sendButton": "Send",
         "status": {
             "ready": "Ready",
@@ -494,7 +494,7 @@
     },
     "shortcuts": {
         "title": "Shortcuts",
-        "chatSection": "Chat Functions",
+        "chatSection": "Input Box",
         "menuSection": "Menu Functions",
         "navigationSection": "Navigation Functions",
         "chat": {
@@ -502,7 +502,7 @@
             "newLine": "New line",
             "history": "Browse message history",
             "selectPrompt": "Select prompt",
-            "resetSession": "Reset session"
+            "resetSession": "Start new session"
         },
         "menu": {
             "settings": "Open settings",
