@@ -146,6 +146,7 @@
     "sidebar": {
         "sessionList": "会话列表",
         "settings": "设置",
+        "shortcuts": "快捷键",
         "system": "系统",
         "about": "关于",
         "collapse": "折叠侧边栏",
@@ -497,5 +498,32 @@
         "ready": "就绪",
         "loading": "正在加载...",
         "loadingRuntimeInfo": "正在加载运行环境信息..."
+    },
+    "shortcuts": {
+        "title": "快捷键",
+        "chatSection": "聊天功能",
+        "menuSection": "菜单功能",
+        "navigationSection": "导航功能",
+        "chat": {
+            "send": "发送消息",
+            "newLine": "换行",
+            "history": "浏览历史消息",
+            "selectPrompt": "选择提示词",
+            "resetSession": "重置会话"
+        },
+        "menu": {
+            "settings": "打开设置",
+            "quit": "退出应用",
+            "reload": "重新加载",
+            "forceReload": "强制重新加载",
+            "devTools": "开发者工具",
+            "fullscreen": "切换全屏"
+        },
+        "navigation": {
+            "resetZoom": "重置缩放",
+            "zoomIn": "放大",
+            "zoomOut": "缩小",
+            "minimize": "最小化窗口"
+        }
     }
 }

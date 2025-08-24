@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="../assets/main-styles.css">
     <link rel="stylesheet" href="../assets/tabs.css">
     <link rel="stylesheet" href="../assets/promptSelector.css">
+    <link rel="stylesheet" href="../assets/shortcuts-dialog.css">
     <link id="highlight-theme" rel="stylesheet" href="../assets/highlight.js/styles/github.min.css">
 </head>
 
@@ -41,6 +42,11 @@
                 <button id="settings-btn" class="settings-btn" title="设置">
                     <span class="settings-text" id="settings-text">设置</span>
                     <span class="settings-icon">⚙️</span>
+                </button>
+
+                <button id="shortcuts-btn" class="settings-btn" title="快捷键" data-i18n-title="sidebar.shortcuts">
+                    <span class="settings-text" id="shortcuts-text" data-i18n="sidebar.shortcuts">快捷键</span>
+                    <span class="settings-icon">⌨️</span>
                 </button>
 
                 <button id="system-btn" class="settings-btn" title="系统" style="position: relative;">
@@ -157,6 +163,36 @@
             <div class="prompt-selector-close">×</div>
         </div>
         <div class="prompt-list"></div>
+    </div>
+
+    <!-- 快捷键对话框 -->
+    <div id="shortcuts-dialog" class="shortcuts-dialog" style="display: none;">
+        <div class="shortcuts-content">
+            <div class="shortcuts-header">
+                <h3 id="shortcuts-title" data-i18n="shortcuts.title">快捷键</h3>
+                <button class="shortcuts-close" id="shortcuts-close-btn">×</button>
+            </div>
+            <div class="shortcuts-body">
+                <div class="shortcuts-section">
+                    <h4 data-i18n="shortcuts.chatSection">聊天功能</h4>
+                    <div class="shortcuts-list" id="chat-shortcuts-list">
+                        <!-- 聊天快捷键将通过JavaScript动态生成 -->
+                    </div>
+                </div>
+                <div class="shortcuts-section">
+                    <h4 data-i18n="shortcuts.menuSection">菜单功能</h4>
+                    <div class="shortcuts-list" id="menu-shortcuts-list">
+                        <!-- 菜单快捷键将通过JavaScript动态生成 -->
+                    </div>
+                </div>
+                <div class="shortcuts-section">
+                    <h4 data-i18n="shortcuts.navigationSection">导航功能</h4>
+                    <div class="shortcuts-list" id="navigation-shortcuts-list">
+                        <!-- 导航快捷键将通过JavaScript动态生成 -->
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- JavaScript引用 -->

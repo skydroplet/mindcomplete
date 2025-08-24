@@ -1,0 +1,263 @@
+/**
+ * shortcuts-dialog.css
+ * 快捷键对话框样式
+ */
+
+/* 快捷键对话框遮罩层 */
+.shortcuts-dialog {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.shortcuts-dialog.show {
+    opacity: 1;
+}
+
+/* 快捷键对话框内容容器 */
+.shortcuts-content {
+    background: var(--bg-color, #ffffff);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    max-width: 600px;
+    width: 90%;
+    max-height: 80vh;
+    overflow: hidden;
+    transform: scale(0.9);
+    transition: transform 0.3s ease;
+}
+
+.shortcuts-dialog.show .shortcuts-content {
+    transform: scale(1);
+}
+
+/* 快捷键对话框头部 */
+.shortcuts-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border-color, #e0e0e0);
+    background: var(--header-bg, #f8f9fa);
+}
+
+.shortcuts-header h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-color, #333333);
+}
+
+.shortcuts-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: var(--text-secondary, #666666);
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.shortcuts-close:hover {
+    background-color: var(--hover-bg, #e9ecef);
+    color: var(--text-color, #333333);
+}
+
+/* 快捷键对话框主体 */
+.shortcuts-body {
+    padding: 24px;
+    max-height: calc(80vh - 80px);
+    overflow-y: auto;
+}
+
+/* 快捷键分类 */
+.shortcuts-section {
+    margin-bottom: 28px;
+}
+
+.shortcuts-section:last-child {
+    margin-bottom: 0;
+}
+
+.shortcuts-section h4 {
+    margin: 0 0 16px 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-color, #333333);
+    border-bottom: 1px solid var(--border-light, #f0f0f0);
+    padding-bottom: 8px;
+}
+
+/* 快捷键列表 */
+.shortcuts-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* 快捷键项 */
+.shortcut-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: var(--item-bg, #f8f9fa);
+    border-radius: 8px;
+    border: 1px solid var(--border-light, #e9ecef);
+    transition: all 0.2s ease;
+}
+
+.shortcut-item:hover {
+    background: var(--item-hover-bg, #e9ecef);
+    border-color: var(--border-color, #dee2e6);
+}
+
+/* 快捷键按键显示 */
+.shortcut-key {
+    font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', 'Fira Mono', 'Droid Sans Mono', 'Consolas', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    background: var(--key-bg, #ffffff);
+    color: var(--key-text, #495057);
+    padding: 6px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--key-border, #ced4da);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    min-width: 80px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+/* 快捷键描述 */
+.shortcut-description {
+    font-size: 14px;
+    color: var(--text-color, #333333);
+    margin-left: 16px;
+    flex: 1;
+}
+
+/* 深色模式样式 */
+[data-theme="dark"] .shortcuts-dialog {
+    background-color: rgba(0, 0, 0, 0.7);
+}
+
+[data-theme="dark"] .shortcuts-content {
+    background: var(--dark-bg-secondary, #2d3748);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="dark"] .shortcuts-header {
+    background: var(--dark-bg-primary, #1a202c);
+    border-bottom-color: var(--dark-border, #4a5568);
+}
+
+[data-theme="dark"] .shortcuts-header h3 {
+    color: var(--dark-text-primary, #e2e8f0);
+}
+
+[data-theme="dark"] .shortcuts-close {
+    color: var(--dark-text-secondary, #a0aec0);
+}
+
+[data-theme="dark"] .shortcuts-close:hover {
+    background-color: var(--dark-hover-bg, #4a5568);
+    color: var(--dark-text-primary, #e2e8f0);
+}
+
+[data-theme="dark"] .shortcuts-section h4 {
+    color: var(--dark-text-primary, #e2e8f0);
+    border-bottom-color: var(--dark-border-light, #4a5568);
+}
+
+[data-theme="dark"] .shortcut-item {
+    background: var(--dark-item-bg, #4a5568);
+    border-color: var(--dark-border-light, #718096);
+}
+
+[data-theme="dark"] .shortcut-item:hover {
+    background: var(--dark-item-hover-bg, #718096);
+    border-color: var(--dark-border, #a0aec0);
+}
+
+[data-theme="dark"] .shortcut-key {
+    background: var(--dark-key-bg, #1a202c);
+    color: var(--dark-key-text, #e2e8f0);
+    border-color: var(--dark-key-border, #718096);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .shortcut-description {
+    color: var(--dark-text-primary, #e2e8f0);
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .shortcuts-content {
+        width: 95%;
+        max-height: 90vh;
+    }
+
+    .shortcuts-header {
+        padding: 16px 20px;
+    }
+
+    .shortcuts-body {
+        padding: 20px;
+    }
+
+    .shortcut-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .shortcut-key {
+        min-width: auto;
+        align-self: flex-start;
+    }
+
+    .shortcut-description {
+        margin-left: 0;
+    }
+}
+
+/* 滚动条样式 */
+.shortcuts-body::-webkit-scrollbar {
+    width: 6px;
+}
+
+.shortcuts-body::-webkit-scrollbar-track {
+    background: var(--scrollbar-track, transparent);
+}
+
+.shortcuts-body::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb, rgba(128, 128, 128, 0.3));
+    border-radius: 3px;
+}
+
+.shortcuts-body::-webkit-scrollbar-thumb:hover {
+    background: var(--scrollbar-thumb-hover, rgba(128, 128, 128, 0.5));
+}
+
+[data-theme="dark"] .shortcuts-body::-webkit-scrollbar-thumb {
+    background: var(--dark-scrollbar-thumb, rgba(255, 255, 255, 0.2));
+}
+
+[data-theme="dark"] .shortcuts-body::-webkit-scrollbar-thumb:hover {
+    background: var(--dark-scrollbar-thumb-hover, rgba(255, 255, 255, 0.3));
+}

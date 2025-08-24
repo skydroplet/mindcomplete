@@ -141,6 +141,7 @@
     "sidebar": {
         "sessionList": "Session List",
         "settings": "Settings",
+        "shortcuts": "Shortcuts",
         "system": "System",
         "about": "About",
         "collapse": "Collapse Sidebar",
@@ -490,5 +491,32 @@
         "selectModel": "Please select a model to use",
         "selectPrompt": "Please select a system prompt",
         "selectMcpService": "Please add available MCP services"
+    },
+    "shortcuts": {
+        "title": "Shortcuts",
+        "chatSection": "Chat Functions",
+        "menuSection": "Menu Functions",
+        "navigationSection": "Navigation Functions",
+        "chat": {
+            "send": "Send message",
+            "newLine": "New line",
+            "history": "Browse message history",
+            "selectPrompt": "Select prompt",
+            "resetSession": "Reset session"
+        },
+        "menu": {
+            "settings": "Open settings",
+            "quit": "Quit application",
+            "reload": "Reload",
+            "forceReload": "Force reload",
+            "devTools": "Developer tools",
+            "fullscreen": "Toggle fullscreen"
+        },
+        "navigation": {
+            "resetZoom": "Reset zoom",
+            "zoomIn": "Zoom in",
+            "zoomOut": "Zoom out",
+            "minimize": "Minimize window"
+        }
     }
 }

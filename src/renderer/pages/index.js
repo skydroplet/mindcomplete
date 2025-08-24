@@ -28,6 +28,7 @@ const themeService = require('../themeService');
 const aboutService = require('../aboutService');
 const updateService = require('../updateService');
 const tabManager = require('../tabManager');
+const shortcutsService = require('../shortcutsService');
 
 // 导入 UI 初始化模块
 const uiInit = require('../ui-init');
@@ -528,6 +529,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // 初始化关于窗口服务
     aboutService.initAboutService();
+
+    // 初始化快捷键服务
+    shortcutsService.init();
 });
 
 
@@ -611,6 +615,11 @@ ipcRenderer.on('locale-updated', async () => {
     const activeSession = tabManager.getActiveSession();
     if (activeSession) {
         await activeSession.loadSession();
+    }
+
+    // 更新快捷键服务的国际化文本
+    if (shortcutsService) {
+        shortcutsService.updateI18nText();
     }
 });
 
