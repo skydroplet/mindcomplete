@@ -420,13 +420,6 @@ class ModelMarketManager {
                 let message = i18n.t('settings.modelMarket.messages.addSuccess', { name: model.name }) + '\n\n';
                 message += i18n.t('settings.modelMarket.messages.setupInstructions') + '\n\n';
 
-                if (model.registerUrl) {
-                    message += i18n.t('settings.modelMarket.messages.registerLink', { url: model.registerUrl }) + '\n';
-                }
-                if (model.apiKeyUrl) {
-                    message += i18n.t('settings.modelMarket.messages.apiKeyLink', { url: model.apiKeyUrl });
-                }
-
                 alert(message);
                 ipcRenderer.invoke('reset-window-focus');
             } else {
